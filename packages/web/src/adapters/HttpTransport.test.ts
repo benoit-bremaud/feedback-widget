@@ -36,6 +36,7 @@ describe('adapters/HttpTransport', () => {
       endpoint: 'https://api.test/endpoint',
       token: 'public-id',
       maxAttempts: 1,
+      timeoutMs: 10_000,
       backoffMs: () => 0,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleep: async () => {},
@@ -57,11 +58,30 @@ describe('adapters/HttpTransport', () => {
     );
   });
 
+  it('passes an AbortSignal to fetch for each attempt', async () => {
+    const fetchImpl = vi.fn(async () => mockResponse(200));
+    const transport = createHttpTransport({
+      endpoint: 'https://api.test/endpoint',
+      maxAttempts: 1,
+      timeoutMs: 10_000,
+      backoffMs: () => 0,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleep: async () => {},
+    });
+
+    await transport.send(payload);
+
+    const init = fetchImpl.mock.calls[0][1] as RequestInit;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(init.signal?.aborted).toBe(false);
+  });
+
   it('returns rate-limited on 429 without retry', async () => {
     const fetchImpl = vi.fn(async () => mockResponse(429));
     const transport = createHttpTransport({
       endpoint: 'https://api.test/endpoint',
       maxAttempts: 3,
+      timeoutMs: 10_000,
       backoffMs: () => 0,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleep: async () => {},
@@ -78,6 +98,7 @@ describe('adapters/HttpTransport', () => {
     const transport = createHttpTransport({
       endpoint: 'https://api.test/endpoint',
       maxAttempts: 3,
+      timeoutMs: 10_000,
       backoffMs: () => 0,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleep: async () => {},
@@ -95,6 +116,7 @@ describe('adapters/HttpTransport', () => {
     const transport = createHttpTransport({
       endpoint: 'https://api.test/endpoint',
       maxAttempts: 3,
+      timeoutMs: 10_000,
       backoffMs: (n) => n * 100,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleep,
@@ -114,6 +136,7 @@ describe('adapters/HttpTransport', () => {
     const transport = createHttpTransport({
       endpoint: 'https://api.test/endpoint',
       maxAttempts: 2,
+      timeoutMs: 10_000,
       backoffMs: () => 0,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleep: async () => {},
@@ -123,5 +146,106 @@ describe('adapters/HttpTransport', () => {
 
     expect(result).toEqual({ ok: false, status: null, reason: 'network' });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('aborts the fetch when the request exceeds timeoutMs', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchImpl = vi.fn((_url: string, init?: RequestInit) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('aborted', 'AbortError'));
+          });
+        });
+      });
+
+      const transport = createHttpTransport({
+        endpoint: 'https://api.test/endpoint',
+        maxAttempts: 1,
+        timeoutMs: 5_000,
+        backoffMs: () => 0,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        sleep: async () => {},
+      });
+
+      const sendPromise = transport.send(payload);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const result = await sendPromise;
+
+      expect(result).toEqual({ ok: false, status: null, reason: 'network' });
+      const init = fetchImpl.mock.calls[0][1] as RequestInit;
+      expect(init.signal?.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('retries after a timeout and succeeds on a later attempt', async () => {
+    vi.useFakeTimers();
+    try {
+      let call = 0;
+      const fetchImpl = vi.fn((_url: string, init?: RequestInit) => {
+        call += 1;
+        if (call === 1) {
+          return new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => {
+              reject(new DOMException('aborted', 'AbortError'));
+            });
+          });
+        }
+        return Promise.resolve(mockResponse(200));
+      });
+
+      const transport = createHttpTransport({
+        endpoint: 'https://api.test/endpoint',
+        maxAttempts: 3,
+        timeoutMs: 5_000,
+        backoffMs: () => 0,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        sleep: async () => {},
+      });
+
+      const sendPromise = transport.send(payload);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const result = await sendPromise;
+
+      expect(result).toEqual({ ok: true, status: 200 });
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('returns network reason after every attempt times out', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchImpl = vi.fn((_url: string, init?: RequestInit) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('aborted', 'AbortError'));
+          });
+        });
+      });
+
+      const transport = createHttpTransport({
+        endpoint: 'https://api.test/endpoint',
+        maxAttempts: 3,
+        timeoutMs: 5_000,
+        backoffMs: () => 0,
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        sleep: async () => {},
+      });
+
+      const sendPromise = transport.send(payload);
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const result = await sendPromise;
+
+      expect(result).toEqual({ ok: false, status: null, reason: 'network' });
+      expect(fetchImpl).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

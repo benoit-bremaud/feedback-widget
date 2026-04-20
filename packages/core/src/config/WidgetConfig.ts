@@ -10,6 +10,7 @@ export interface WidgetConfig {
   rateLimitMaxAttempts?: number;
   minFormOpenMs?: number;
   maxTransportAttempts?: number;
+  transportTimeoutMs?: number;
   mailtoFallback?: string;
   position?: 'bottom-right' | 'bottom-left' | 'bottom-center';
 }
@@ -28,6 +29,7 @@ const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
   rateLimitMaxAttempts: 3,
   minFormOpenMs: 2000,
   maxTransportAttempts: 3,
+  transportTimeoutMs: 10_000,
   mailtoFallback: null,
   position: 'bottom-right',
 };
@@ -44,6 +46,7 @@ export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
     rateLimitMaxAttempts: input.rateLimitMaxAttempts ?? DEFAULTS.rateLimitMaxAttempts,
     minFormOpenMs: input.minFormOpenMs ?? DEFAULTS.minFormOpenMs,
     maxTransportAttempts: input.maxTransportAttempts ?? DEFAULTS.maxTransportAttempts,
+    transportTimeoutMs: input.transportTimeoutMs ?? DEFAULTS.transportTimeoutMs,
     mailtoFallback: input.mailtoFallback ?? null,
     position: input.position ?? DEFAULTS.position,
   };

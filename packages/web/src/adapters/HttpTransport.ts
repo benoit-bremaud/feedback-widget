@@ -5,6 +5,7 @@ export interface HttpTransportDeps {
   endpoint: string;
   token?: string;
   maxAttempts: number;
+  timeoutMs: number;
   backoffMs: (attempt: number) => number;
   fetchImpl: typeof fetch;
   sleep: (ms: number) => Promise<void>;
@@ -16,11 +17,15 @@ export function createHttpTransport(deps: HttpTransportDeps): Transport {
       let lastStatus: number | null = null;
 
       for (let attempt = 1; attempt <= deps.maxAttempts; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), deps.timeoutMs);
+
         try {
           const response = await deps.fetchImpl(deps.endpoint, {
             method: 'POST',
             headers: buildHeaders(deps.token),
             body: JSON.stringify(payload),
+            signal: controller.signal,
           });
 
           lastStatus = response.status;
@@ -38,6 +43,8 @@ export function createHttpTransport(deps: HttpTransportDeps): Transport {
           }
         } catch {
           lastStatus = null;
+        } finally {
+          clearTimeout(timer);
         }
 
         if (attempt < deps.maxAttempts) {
