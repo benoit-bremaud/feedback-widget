@@ -58,11 +58,15 @@ describe('adapters/HttpTransport', () => {
     );
   });
 
-  it('passes an AbortSignal to fetch for each attempt', async () => {
-    const fetchImpl = vi.fn(async () => mockResponse(200));
+  it('passes a distinct AbortSignal to fetch for each attempt', async () => {
+    let call = 0;
+    const fetchImpl = vi.fn(async () => {
+      call += 1;
+      return call === 1 ? mockResponse(503) : mockResponse(200);
+    });
     const transport = createHttpTransport({
       endpoint: 'https://api.test/endpoint',
-      maxAttempts: 1,
+      maxAttempts: 2,
       timeoutMs: 10_000,
       backoffMs: () => 0,
       fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -71,9 +75,14 @@ describe('adapters/HttpTransport', () => {
 
     await transport.send(payload);
 
-    const init = fetchImpl.mock.calls[0][1] as RequestInit;
-    expect(init.signal).toBeInstanceOf(AbortSignal);
-    expect(init.signal?.aborted).toBe(false);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const init1 = fetchImpl.mock.calls[0][1] as RequestInit;
+    const init2 = fetchImpl.mock.calls[1][1] as RequestInit;
+    expect(init1.signal).toBeInstanceOf(AbortSignal);
+    expect(init2.signal).toBeInstanceOf(AbortSignal);
+    expect(init1.signal).not.toBe(init2.signal);
+    expect(init1.signal?.aborted).toBe(false);
+    expect(init2.signal?.aborted).toBe(false);
   });
 
   it('returns rate-limited on 429 without retry', async () => {
