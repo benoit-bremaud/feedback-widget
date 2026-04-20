@@ -1,0 +1,32 @@
+{
+  "name": "@benoit-bremaud/feedback-widget",
+  "version": "0.1.0",
+  "description": "Web (browser / Web Component) implementation of the feedback widget. For dev/QA in-app bug reporting.",
+  "author": "Benoît Bremaud",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@benoit-bremaud/feedback-widget-core": "workspace:*"
+  }
+}
