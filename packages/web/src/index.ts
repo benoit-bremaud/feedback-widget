@@ -1,2 +1,3 @@
-// Placeholder — actual exports added in Phase 2 when code is migrated.
-export {}
+export { mountFeedbackWidget } from './widget';
+export type { FeedbackWidgetHandle } from './widget';
+export type { WidgetConfig, Category } from '@benoit-bremaud/feedback-widget-core';
