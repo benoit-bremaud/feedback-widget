@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `HttpTransport` now aborts each fetch attempt after a configurable
+  `timeoutMs` (required dep). An aborted request is treated as a network
+  error and retried until `maxAttempts` is exhausted. Prevents the widget
+  from being stuck in the `sending` step when the backend never responds.
+- `WidgetConfig` gains an optional `transportTimeoutMs` (defaults to
+  10 000 ms). The composition root wires it into `createHttpTransport`.
+
 ## [0.1.0] - 2026-04-20
 
 ### Added
