@@ -78,18 +78,30 @@ the only reliable verification is the first command (reading the
 protection payload); the rest become meaningful once such an account
 is available.
 
+Each rejection test below must actually attempt a real change — a
+bare `git push origin main` when local and origin already match is a
+no-op (`Everything up-to-date`) and would falsely pass even if
+protection were not enforced. The commands below create concrete
+divergence before pushing, and clean up after.
+
 ```bash
 # Read current protection (owner: reliable)
 gh api repos/benoit-bremaud/feedback-widget/branches/main/protection
 
-# Attempt a direct push (should be rejected for non-admins)
-git push origin main
+# Direct-push test: create a real local commit, then try to push it.
+git checkout main
+git pull --ff-only
+git commit --allow-empty -m "verify: branch-protection direct-push test"
+git push origin main                   # expected: rejected for non-admins
+git reset --hard origin/main           # cleanup (discard the local commit)
 
-# Attempt a force-push (should be rejected for non-admins)
-git push --force origin main
+# Force-push test: rewrite the last commit to diverge from origin.
+git commit --amend --no-edit --date=now
+git push --force origin main           # expected: rejected for non-admins
+git reset --hard origin/main           # cleanup (re-align with origin)
 
-# Attempt to delete main remotely (should be rejected for non-admins)
-git push origin --delete main
+# Delete test: concrete attempt, no setup needed.
+git push origin --delete main          # expected: rejected for non-admins
 ```
 
 ## Remove (if ever needed)
