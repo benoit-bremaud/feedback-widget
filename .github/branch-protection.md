@@ -63,12 +63,20 @@ EOF
 
 ## Verify
 
-Use a **non-admin** account/token for the rejection checks below.
-Because `enforce_admins` is `false`, the repository owner/admin is
-allowed to push, force-push, or delete `main` as an emergency bypass —
-so these commands will **not** be rejected when run as the owner, even
-though the protection is active. As owner, only the first command
-(reading the protection payload) is a reliable verification.
+Use a collaborator account with **write access but not admin/owner**
+for the rejection checks below. This is important: read-only access
+would also reject the commands, but for the wrong reason (insufficient
+permission instead of branch protection), so the test would not prove
+the policy is active. Conversely, because `enforce_admins` is `false`,
+the owner is allowed to push, force-push, or delete `main` as an
+emergency bypass, so the commands will **not** be rejected when run
+as the owner even though the protection is active.
+
+This project is currently solo, so a matching non-admin-with-write
+account does not exist today. Until a second collaborator is added,
+the only reliable verification is the first command (reading the
+protection payload); the rest become meaningful once such an account
+is available.
 
 ```bash
 # Read current protection (owner: reliable)
