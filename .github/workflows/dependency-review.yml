@@ -11,6 +11,11 @@ jobs:
   review:
     name: Review dependency changes
     runs-on: ubuntu-latest
+    # Dependency review requires GitHub Advanced Security on private
+    # repositories. This project is private and does not have GHAS,
+    # so the job is gated on visibility: it runs on public repos and
+    # auto-activates if the repo is ever made public.
+    if: github.event.pull_request.base.repo.visibility == 'public'
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
