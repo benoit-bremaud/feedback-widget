@@ -84,3 +84,22 @@ New entries are appended to the bottom as events occur.
   (`prio:P0`).
 - **Ref:** PR [#18](https://github.com/benoit-bremaud/feedback-widget/pull/18),
   merge commit [`004ee35`](https://github.com/benoit-bremaud/feedback-widget/commit/004ee35)
+
+### PR #19 merged — branch protection policy + activation on `main`
+
+- **What:** Added `.github/branch-protection.md` as the canonical,
+  committed reference for the `main`-branch protection config: PR
+  required before merge, strict status checks (`build-test` +
+  `SonarCloud Code Analysis`), linear history, force-pushes blocked,
+  deletions blocked, `required_approving_review_count: 0` (solo-dev
+  pragmatism), `enforce_admins: false` (owner bypass kept as an
+  emergency escape hatch). The `gh api` command was applied on `main`
+  after the PR merged; the protection payload was read back to confirm
+  the declared policy is active.
+- **Why:** Prevent accidental destructive operations on `main`
+  (direct pushes, force-pushes, deletions) and require the CI gates
+  to pass before any merge, while staying practical for a solo-dev
+  workflow. Closes issue [#9](https://github.com/benoit-bremaud/feedback-widget/issues/9)
+  (`prio:P1`).
+- **Ref:** PR [#19](https://github.com/benoit-bremaud/feedback-widget/pull/19),
+  merge commit [`caa99e0`](https://github.com/benoit-bremaud/feedback-widget/commit/caa99e0)
