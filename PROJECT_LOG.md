@@ -131,4 +131,24 @@ New entries are appended to the bottom as events occur.
   than deferred to the next PR, after user feedback to record
   everything in the logbook as work happens.
 - **Ref:** PR [#20](https://github.com/benoit-bremaud/feedback-widget/pull/20),
+  merge commit [`193d37a`](https://github.com/benoit-bremaud/feedback-widget/commit/193d37a)
+
+### PR #21 merged — comprehensive README
+
+- **What:** Replaced the 2-line stub `README.md` with a full integration
+  guide: status banner, badges (CI, Gitleaks, SonarCloud, Node, pnpm,
+  License), quickstart, mermaid diagram of the widget UX flow,
+  installation with two auth flavours (git+HTTPS+PAT, git+SSH) including
+  consumer-CI examples, configuration table for the 10 `WidgetConfig`
+  fields, minimal + full TypeScript examples, API reference for
+  `mountFeedbackWidget` + `FeedbackWidgetHandle` + exported types,
+  production-disable pattern via `import.meta.env.DEV`, VitePress
+  integration example (Impropedia case), local development workflow
+  including `pnpm link`, roadmap, related docs cross-links, and a link
+  to the historical Impropedia `feedback-widget-spec.md`.
+- **Why:** An integrator (future-me in 6 months, or a new collaborator)
+  should be able to mount the widget in under 10 minutes. Closes issue
+  [#3](https://github.com/benoit-bremaud/feedback-widget/issues/3)
+  (`prio:P0`).
+- **Ref:** PR [#21](https://github.com/benoit-bremaud/feedback-widget/pull/21),
   merge commit: *to be updated post-merge*
