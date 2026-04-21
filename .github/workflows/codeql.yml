@@ -22,7 +22,7 @@ jobs:
     # This project is private and does not have GHAS, so the job is
     # gated on visibility: it runs on public repos and auto-activates
     # if the repo is ever made public.
-    if: github.event.repository.visibility == 'public' || github.event.pull_request.base.repo.visibility == 'public'
+    if: github.event.repository.visibility == 'public'
     strategy:
       fail-fast: false
       matrix:
