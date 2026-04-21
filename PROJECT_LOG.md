@@ -70,3 +70,17 @@ New entries are appended to the bottom as events occur.
   outbox and mailto once attempts are exhausted.
 - **Ref:** PR [#2](https://github.com/benoit-bremaud/feedback-widget/pull/2),
   merge commit [`9334f8f`](https://github.com/benoit-bremaud/feedback-widget/commit/9334f8f)
+
+### PR #18 merged — initialise PROJECT_LOG.md
+
+- **What:** Added `PROJECT_LOG.md` at the repo root with five initial
+  entries reconstituted from `git log` (initial commit, monorepo
+  scaffold, extraction from Impropedia, v0.1.0 release, PR #2 merge).
+  Established the `What / Why / Ref` format and the convention that new
+  entries are appended at the bottom.
+- **Why:** The global governance policy requires a day-to-day operational
+  logbook for every project, distinct from `CHANGELOG.md` (releases
+  only). Closes issue [#6](https://github.com/benoit-bremaud/feedback-widget/issues/6)
+  (`prio:P0`).
+- **Ref:** PR [#18](https://github.com/benoit-bremaud/feedback-widget/pull/18),
+  merge commit [`004ee35`](https://github.com/benoit-bremaud/feedback-widget/commit/004ee35)
