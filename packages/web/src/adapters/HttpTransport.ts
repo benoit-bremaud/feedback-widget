@@ -5,10 +5,13 @@ export interface HttpTransportDeps {
   endpoint: string;
   token?: string;
   maxAttempts: number;
+  timeoutMs: number;
   backoffMs: (attempt: number) => number;
   fetchImpl: typeof fetch;
   sleep: (ms: number) => Promise<void>;
 }
+
+const hasAbortController = typeof AbortController !== 'undefined';
 
 export function createHttpTransport(deps: HttpTransportDeps): Transport {
   return {
@@ -16,11 +19,20 @@ export function createHttpTransport(deps: HttpTransportDeps): Transport {
       let lastStatus: number | null = null;
 
       for (let attempt = 1; attempt <= deps.maxAttempts; attempt++) {
+        let controller: AbortController | null = null;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        if (hasAbortController) {
+          controller = new AbortController();
+          const localController = controller;
+          timer = setTimeout(() => localController.abort(), deps.timeoutMs);
+        }
+
         try {
           const response = await deps.fetchImpl(deps.endpoint, {
             method: 'POST',
             headers: buildHeaders(deps.token),
             body: JSON.stringify(payload),
+            signal: controller?.signal,
           });
 
           lastStatus = response.status;
@@ -38,6 +50,8 @@ export function createHttpTransport(deps: HttpTransportDeps): Transport {
           }
         } catch {
           lastStatus = null;
+        } finally {
+          if (timer !== undefined) clearTimeout(timer);
         }
 
         if (attempt < deps.maxAttempts) {

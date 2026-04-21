@@ -17,7 +17,18 @@ describe('config/resolveConfig', () => {
     expect(resolved.rateLimitMaxAttempts).toBe(3);
     expect(resolved.minFormOpenMs).toBe(2000);
     expect(resolved.maxTransportAttempts).toBe(3);
+    expect(resolved.transportTimeoutMs).toBe(10_000);
     expect(resolved.position).toBe('bottom-right');
+  });
+
+  it('respects an explicit transportTimeoutMs override', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'impropedia',
+      transportTimeoutMs: 3000,
+    });
+
+    expect(resolved.transportTimeoutMs).toBe(3000);
   });
 
   it('respects overrides on each field', () => {

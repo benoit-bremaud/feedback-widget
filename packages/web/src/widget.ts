@@ -79,6 +79,7 @@ function attachController(
     endpoint: config.endpoint,
     token: config.token ?? undefined,
     maxAttempts: config.maxTransportAttempts,
+    timeoutMs: config.transportTimeoutMs,
     backoffMs: defaultBackoff,
     fetchImpl: window.fetch.bind(window),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
