@@ -25,6 +25,16 @@ diffed, or audited without needing access to the GitHub UI.
 
 ## Apply / update
 
+The two required status checks below come from two different sources:
+
+- `build-test` — job in [`.github/workflows/ci.yml`](workflows/ci.yml) (lives in this repo).
+- `SonarCloud Code Analysis` — posted by the **SonarCloud GitHub App**
+  integration (no workflow file in this repo). The string must match
+  the check name exactly as it appears on a PR. If the SonarCloud
+  integration is ever uninstalled, renamed, or disabled, the `contexts`
+  array **must be updated in the same change** — otherwise the missing
+  check will never report and all merges to `main` will be blocked.
+
 Run this command (idempotent — overwrites the current protection
 config with what is declared here):
 
@@ -53,17 +63,24 @@ EOF
 
 ## Verify
 
+Use a **non-admin** account/token for the rejection checks below.
+Because `enforce_admins` is `false`, the repository owner/admin is
+allowed to push, force-push, or delete `main` as an emergency bypass —
+so these commands will **not** be rejected when run as the owner, even
+though the protection is active. As owner, only the first command
+(reading the protection payload) is a reliable verification.
+
 ```bash
-# Read current protection
+# Read current protection (owner: reliable)
 gh api repos/benoit-bremaud/feedback-widget/branches/main/protection
 
-# Attempt a direct push (should be rejected)
+# Attempt a direct push (should be rejected for non-admins)
 git push origin main
 
-# Attempt a force-push (should be rejected)
+# Attempt a force-push (should be rejected for non-admins)
 git push --force origin main
 
-# Attempt to delete main remotely (should be rejected)
+# Attempt to delete main remotely (should be rejected for non-admins)
 git push origin --delete main
 ```
 
