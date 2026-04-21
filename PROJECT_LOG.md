@@ -133,13 +133,13 @@ New entries are appended to the bottom as events occur.
 - **Ref:** PR [#20](https://github.com/benoit-bremaud/feedback-widget/pull/20),
   merge commit [`193d37a`](https://github.com/benoit-bremaud/feedback-widget/commit/193d37a)
 
-### PR #21 merged — comprehensive README
+### PR #21 — comprehensive README
 
 - **What:** Replaced the 2-line stub `README.md` with a full integration
   guide: status banner, badges (CI, Gitleaks, SonarCloud, Node, pnpm,
   License), quickstart, mermaid diagram of the widget UX flow,
   installation with two auth flavours (git+HTTPS+PAT, git+SSH) including
-  consumer-CI examples, configuration table for the 10 `WidgetConfig`
+  consumer-CI examples, configuration table for the 12 `WidgetConfig`
   fields, minimal + full TypeScript examples, API reference for
   `mountFeedbackWidget` + `FeedbackWidgetHandle` + exported types,
   production-disable pattern via `import.meta.env.DEV`, VitePress

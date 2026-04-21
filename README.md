@@ -67,18 +67,48 @@ git over HTTPS with a Personal Access Token, or git over SSH.
 
 ### Option A — git + HTTPS + PAT
 
-1. Create a GitHub PAT with scope `repo` (classic) or a fine-grained
-   token scoped to this repo with `Contents: Read` permission.
-2. Install in your consumer project:
+Install with a token-less URL — this is important: embedding the
+PAT directly in the URL would cause pnpm to persist the expanded
+URL (with the token) into `package.json` and/or `pnpm-lock.yaml`,
+leaking the secret into the consumer's git history.
 
 ```sh
-pnpm add "https://${GH_TOKEN}@github.com/benoit-bremaud/feedback-widget.git#main"
+pnpm add "https://github.com/benoit-bremaud/feedback-widget.git#main"
 ```
 
 Pin to a tag for reproducible builds:
 
 ```sh
-pnpm add "https://${GH_TOKEN}@github.com/benoit-bremaud/feedback-widget.git#v0.1.0"
+pnpm add "https://github.com/benoit-bremaud/feedback-widget.git#v0.1.0"
+```
+
+The install above only works once git itself knows how to
+authenticate to GitHub. Configure that once, separately from the
+install command, using one of the approaches below.
+
+**Local dev — credential helper (recommended)** — PAT cached by the
+OS, prompted once on first access:
+
+```sh
+# macOS Keychain (default on macOS)
+git config --global credential.helper osxkeychain
+# Windows Credential Manager
+git config --global credential.helper manager
+# Linux: libsecret, or the built-in cache helper
+git config --global credential.helper "cache --timeout=3600"
+```
+
+1. Create a GitHub PAT with scope `repo` (classic) or a fine-grained
+   token scoped to this repo with `Contents: Read` permission.
+2. Run `git ls-remote https://github.com/benoit-bremaud/feedback-widget.git`
+   once — git prompts for your username + the PAT as the password;
+   the helper stores it.
+
+**Local dev — url.insteadOf rewrite (alternative)** — stores a
+rewrite rule in `~/.gitconfig`, never in project files:
+
+```sh
+git config --global url."https://<PAT>@github.com/".insteadOf "https://github.com/"
 ```
 
 ### Option B — git + SSH
@@ -89,32 +119,36 @@ With an SSH key already registered on your GitHub account:
 pnpm add "git+ssh://git@github.com/benoit-bremaud/feedback-widget.git#main"
 ```
 
-SSH is simpler on a dev workstation but harder to ship to CI; prefer
-Option A for automated environments.
+SSH avoids PAT management and keychain/credential-helper setup
+entirely — the key in `~/.ssh/` is picked up automatically. Simpler
+on a dev workstation, harder in CI (needs a deploy key or
+ssh-agent step).
 
 ### Consumer CI authentication
 
-CI environments installing via git need credentials. Both methods
-above work, but have different trade-offs:
+CI environments installing via git need credentials wired to the
+git process itself — NOT just to the install command's env. Two
+sanctioned patterns:
 
-- **git + HTTPS + PAT** — store the PAT as a secret
-  (`FEEDBACK_WIDGET_INSTALL_TOKEN`), expose as `GH_TOKEN`, and inject
-  it into the repo URL at install time. Portable across most CI
-  providers.
-- **git + SSH** — add a deploy key or the CI runner's SSH key to the
-  repository's deploy-keys list; the install step must have SSH-agent
-  access. Less portable but avoids PAT management.
-
-Example GitHub Actions step with PAT:
+**git + HTTPS + PAT via `url.insteadOf`** — portable across most CI
+providers, no secrets in project files:
 
 ```yaml
-- name: Install dependencies
-  run: pnpm install
+- name: Configure git credentials
   env:
     GH_TOKEN: ${{ secrets.FEEDBACK_WIDGET_INSTALL_TOKEN }}
+  run: |
+    git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+- name: Install dependencies
+  run: pnpm install
 ```
 
-Example GitHub Actions step with SSH:
+The `url.insteadOf` rewrite lives in the runner-wide git config
+only; it does NOT leak into `package.json` or `pnpm-lock.yaml`.
+
+**git + SSH via deploy key** — add a deploy key or a dedicated
+service account SSH key to the repository's deploy-keys list, then:
 
 ```yaml
 - name: Set up SSH for private git dep
