@@ -538,5 +538,29 @@ New entries are appended to the bottom as events occur.
   at PR-open time rather than at review time. Verified locally:
   `pnpm lint` returns zero errors / zero warnings,
   `pnpm format:check` is clean, all 40 tests still pass.
+- **Scope expansion during review:** Two follow-up pieces landed on
+  this same branch after the first Quality-Gate failure:
+  - **View-layer tests** — `IntersectionViewportDetector.test.ts`,
+    `widget.test.ts`, `WebComponentView.test.ts` (60 new tests, all
+    happy + sad + edge). Lifts `packages/web` coverage from 19% to
+    ~85% statements / ~88% lines, clearing the SonarCloud 80%
+    new-code gate. Partially closes issue #38 opened specifically
+    for this scope carve-out.
+  - **Security Hotspot fix (breaking change)** —
+    `defaultGenerateId()` in `LocalStorageOutbox.ts` previously
+    fell back to `Math.random()` when `crypto.randomUUID` was
+    unavailable. SonarCloud flagged the PRNG as
+    Weak-Cryptography (`typescript:S2245`). Replaced the fallback
+    with `crypto.getRandomValues()` for environments that expose
+    `crypto` without `randomUUID`, and made the function throw
+    when neither is available rather than fall back to a weak
+    PRNG. **This is a behavioral / breaking change** vs the
+    previous pre-PR #37 implementation — runtimes without Web
+    Crypto (ancient browsers, restricted sandboxes) that
+    previously worked silently will now error at enqueue-time.
+    Supported runtimes (Node ≥ 20, evergreen browsers) are
+    unaffected. Documented inline in the function's JSDoc. Rule
+    of thumb: security/quality gates are not negotiated — fix the
+    code, do not mark the Hotspot Safe.
 - **Ref:** PR [#37](https://github.com/benoit-bremaud/feedback-widget/pull/37),
   merge commit: _to be updated post-merge_

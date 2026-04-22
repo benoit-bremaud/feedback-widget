@@ -86,17 +86,33 @@ export function createLocalStorageOutbox(
   }
 }
 
+/**
+ * Supported runtime requirement: the host environment MUST expose the
+ * Web Crypto API (`globalThis.crypto`) with at least `randomUUID` or
+ * `getRandomValues`. All runtimes we ship for in `package.json`
+ * `engines` (Node ≥ 20) and every evergreen browser (Chrome ≥ 92,
+ * Firefox ≥ 95, Safari ≥ 15.4, Edge ≥ 92) satisfy this.
+ *
+ * When neither function exists (ancient browsers, sandboxes that
+ * strip Web Crypto) the function throws rather than fall back to
+ * `Math.random()`. `Math.random` is not cryptographically secure
+ * (SonarCloud rule typescript:S2245 — "Weak Cryptography"); falling
+ * back to it would silently weaken every ID generated in that
+ * environment. Fail-loud is the safer default here — the caller
+ * (`enqueue`) surfaces the error to the widget which can disable the
+ * outbox cleanly rather than store weak IDs.
+ *
+ * Note: this is a breaking change vs the pre-PR #37 fallback that
+ * used `Math.random()`. Consumers on unsupported runtimes must
+ * upgrade or inject a custom `generateId` via `createLocalStorageOutbox`
+ * options.
+ */
 function defaultGenerateId(): string {
   const cryptoRef: Crypto | undefined =
     typeof globalThis !== 'undefined' ? globalThis.crypto : undefined
   if (cryptoRef && typeof cryptoRef.randomUUID === 'function') {
     return cryptoRef.randomUUID()
   }
-  // Fallback for environments that expose `crypto` but not the newer
-  // `randomUUID` (older WebViews, Node < 14.17). `getRandomValues` ships
-  // cryptographically secure bytes everywhere `crypto` is available, so
-  // no PRNG (Math.random) is ever used — the SonarCloud Weak-Cryptography
-  // Hotspot on the previous implementation is resolved by design.
   if (cryptoRef && typeof cryptoRef.getRandomValues === 'function') {
     const bytes = new Uint8Array(6)
     cryptoRef.getRandomValues(bytes)
@@ -105,8 +121,6 @@ function defaultGenerateId(): string {
     )
     return `fw-${Date.now().toString(36)}-${hex}`
   }
-  // No Crypto API at all — unsupported target. Throw rather than fall
-  // back to `Math.random()` (weak PRNG, not cryptographically secure).
   throw new Error(
     'feedback-widget: no Crypto API available (crypto.randomUUID or crypto.getRandomValues required).',
   )

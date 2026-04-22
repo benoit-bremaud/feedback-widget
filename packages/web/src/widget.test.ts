@@ -163,15 +163,20 @@ describe('mountFeedbackWidget — sad / edge paths', () => {
     // Temporarily replace the global window with undefined via the
     // `typeof` check in mountFeedbackWidget. Since we cannot actually
     // `delete window` in happy-dom, we stub `customElements` to the
-    // `undefined` branch by stashing and restoring it.
+    // `undefined` branch by stashing and restoring it. Wrapped in
+    // try/finally so a failing assertion never leaks the deleted
+    // global into later tests.
     const originalCustomElements = globalThis.customElements
-    // @ts-expect-error intentional removal for SSR-guard test
-    delete (globalThis as { customElements?: unknown }).customElements
+    try {
+      // @ts-expect-error intentional removal for SSR-guard test
+      delete (globalThis as { customElements?: unknown }).customElements
 
-    const handle = mountFeedbackWidget(validConfig)
-    handle.refresh() // must not throw — it's the NOOP handle
-    ;(globalThis as { customElements: unknown }).customElements =
-      originalCustomElements
+      const handle = mountFeedbackWidget(validConfig)
+      handle.refresh() // must not throw — it's the NOOP handle
+    } finally {
+      ;(globalThis as { customElements: unknown }).customElements =
+        originalCustomElements
+    }
   })
 
   it('reuses the existing element + handle when mounted twice', () => {
