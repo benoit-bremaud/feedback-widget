@@ -196,9 +196,13 @@ docs/T-5-contributing
 drives the work, without opening GitHub. When you have five branches checked
 out across two machines, that matters.
 
-**Never commit directly to `main`.** The branch is protected; the push will
-be rejected. This is intentional: every change on `main` must come from a
-reviewed PR.
+**Never commit directly to `main`.** The branch is protected: direct pushes
+by collaborators are rejected, force-pushes are blocked, and deletions are
+blocked. The owner retains an emergency bypass
+(`enforce_admins: false` in the current policy — see
+[.github/branch-protection.md](./.github/branch-protection.md)), but that
+bypass is treated as an emergency escape hatch only. Every routine change
+on `main` must come from a reviewed PR.
 
 ---
 
@@ -217,6 +221,13 @@ fix(core): correct rate-limit window on day boundary
 docs(contributing): write CONTRIBUTING.md with conventions and DoD
 ci(publish): run build before typecheck to resolve workspace .d.ts
 ```
+
+**Scope granularity.** The scope is ideally one of the canonical areas
+above, but a **narrower qualifier** is acceptable when it identifies the
+precise surface being changed — e.g. `ci(publish)` for work on
+`publish.yml`, `ci(security)` for security workflows, `chore(release)` for
+a version bump. The narrower form is preferred over cramming several
+commits under a generic `ci(ci):` or `chore(chore):`.
 
 **Rules:**
 
@@ -241,20 +252,31 @@ Every PR must carry the full GitHub sidebar populated:
 | **Reviewers** | `copilot-pull-request-reviewer` (automated reviewer) |
 | **Labels** | Same triptych as the linked issue — `type:*` + `area:*` + `prio:*` |
 | **Project** | `feedback-widget` (node ID `PVT_kwHOB8rwIc4BVJlN`) |
-| **Milestone** | Inherit from the linked issue (set via `Closes #xx`) |
+| **Milestone** | **Set explicitly** to match the linked issue's milestone |
 | **Body** | Follows the Markdown template below, ends with `Closes #<issue>` |
 
 **Setting these via gh CLI / API.** Because `gh pr edit --add-project` is
-broken for Projects v2, use the GraphQL mutation:
+broken for Projects v2, use the GraphQL mutation. **Note:** `Closes #xx`
+in the PR body links and closes the issue on merge, but it does **not**
+copy the issue's milestone onto the PR. The PR milestone must be set
+explicitly.
 
 ```bash
 # After gh pr create, run:
-PR_ID=$(gh api repos/benoit-bremaud/feedback-widget/pulls/NUMBER --jq '.node_id')
+PR_NUMBER=<n>
+
+# 1. Add the PR to the feedback-widget project (GraphQL — v2)
+PR_ID=$(gh api repos/benoit-bremaud/feedback-widget/pulls/$PR_NUMBER --jq '.node_id')
 gh api graphql -f query='mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}' \
   -f p="PVT_kwHOB8rwIc4BVJlN" -f c="$PR_ID"
 
-# Automated reviewer (best-effort — 422 if the bot is not yet a collaborator)
-gh api repos/benoit-bremaud/feedback-widget/pulls/NUMBER/requested_reviewers \
+# 2. Set the milestone explicitly (replace <N> with the milestone number)
+gh api repos/benoit-bremaud/feedback-widget/issues/$PR_NUMBER \
+  -X PATCH -F milestone=<N>
+
+# 3. Request the automated reviewer
+#    (best-effort — 422 if the bot is not yet a collaborator; add via UI then retry)
+gh api repos/benoit-bremaud/feedback-widget/pulls/$PR_NUMBER/requested_reviewers \
   -X POST --input - <<'EOF'
 {"reviewers": ["copilot-pull-request-reviewer"]}
 EOF
@@ -381,8 +403,10 @@ When they land, failing below the threshold blocks merge.
 
 - Never commit `.env`, credential files, tokens, API keys, PAT, OAuth
   secrets, webhook IDs, chat IDs, bot tokens, or any other secret value.
-- `.env.example` is the canonical template — every variable lives there
-  with a **placeholder**, never a real value.
+- If and when environment variables are introduced, ship a `.env.example`
+  at the repo root with **placeholder** values (never real values) — it
+  becomes the canonical template for contributors. The project currently
+  has no runtime env vars, so there is no `.env.example` yet.
 - Gitleaks runs on every push, every PR, and weekly — any finding fails the
   build.
 
@@ -408,26 +432,44 @@ When they land, failing below the threshold blocks merge.
 
 ## AI attribution — strictly forbidden
 
-**Never leave any trace of AI assistance anywhere in this repository.**
+**Never attribute or credit work to AI anywhere in this repository.**
 
-This applies to every surface tracked by git and every surface on GitHub:
+The rule targets *attribution and credit*, not the naming of tools in
+policy. This section itself necessarily names the forbidden patterns in
+order to define them — that is an explicit exemption for policy and
+governance docs. Everywhere else, the following are banned:
 
 - **No `Co-Authored-By`** lines mentioning any AI agent in commits.
 - **No `claude-code-assisted`**, `copilot-assisted`, `codex-assisted` or
   similar labels on issues or PRs.
 - **No "Generated with Claude Code"**, "Generated with AI", "Made with
-  Copilot" in PR bodies, issue bodies, or code comments.
-- **No AI/Claude/GPT/Copilot mentions** in code comments, docs, commit
-  messages, or CHANGELOG entries.
-- **No "Resolves review comment from <ai-agent>"** in commit messages —
-  credit the review, not the reviewer's nature.
+  Copilot" or equivalent phrases in PR bodies, issue bodies, or code
+  comments.
+- **No AI/Claude/GPT/Copilot mentions** as credit, signature, or
+  byline in code comments, docs, commit messages, or CHANGELOG entries.
+- **No "Resolves review comment from <ai-agent>"** framing in commit
+  messages — credit the substance of the review, not the reviewer's
+  nature.
+
+**Exemptions (documentation only, no credit implied).** The following are
+allowed because they describe the workflow without attributing work:
+
+- The governance documents themselves (`CONTRIBUTING.md`, `AGENTS.md`,
+  `branch-protection.md`, `publish.md`) may name AI tooling when
+  defining rules or documenting workflow steps.
+- GitHub technical identifiers — the bot username
+  `copilot-pull-request-reviewer` is a collaborator handle, not credit.
+- `PROJECT_LOG.md` entries describing review cycles may name the
+  reviewer actor (human or bot) as factual metadata.
 
 **Why.** The project is authored by humans regardless of tooling. The
-value of the work stands on its own; leaking tool identity dilutes
-credibility and creates review bias.
+value of the work stands on its own; leaking tool identity as credit
+dilutes authorship and invites review bias. Naming tools in a policy
+that governs them does neither.
 
 This policy applies to: commits, PRs, issues, comments, README,
-`CHANGELOG.md`, `PROJECT_LOG.md`, and every other file tracked by git.
+`CHANGELOG.md`, and every other file tracked by git — with the narrow
+exemptions above.
 
 ---
 
@@ -509,9 +551,13 @@ Releases are **tag-driven**. The canonical reference is
 4. After merge, tag from `main`:
    ```bash
    git checkout main && git pull
-   git tag -a vX.Y.Z <commit-on-main> -m "release: vX.Y.Z"
+   git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
+   Matches the canonical command in
+   [.github/publish.md](./.github/publish.md). Annotated tags
+   (`git tag -a`) are also accepted — the workflow reads the tag name,
+   not the tag type.
 5. The `publish.yml` workflow fires on `v*` tags: it verifies the
    tagged commit is on `main`, builds, typechecks, auto-detects the
    dist-tag (`vX.Y.Z` → `latest`, `vX.Y.Z-rc*` → `rc`, etc.) and
