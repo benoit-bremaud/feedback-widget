@@ -1,7 +1,7 @@
 name: Task / Chore
 description: A concrete technical task, refactor, infra change, tooling, or process improvement
-title: "chore(<area>): <short description>"
-labels: ["type:task"]
+title: 'chore(<area>): <short description>'
+labels: ['type:task']
 body:
   - type: markdown
     attributes:
@@ -41,14 +41,14 @@ body:
     attributes:
       label: Area
       options:
-        - "area:core"
-        - "area:web"
-        - "area:ci"
-        - "area:react-native"
-        - "area:governance"
-        - "area:testing"
-        - "area:docs"
-        - "area:release"
+        - 'area:core'
+        - 'area:web'
+        - 'area:ci'
+        - 'area:react-native'
+        - 'area:governance'
+        - 'area:testing'
+        - 'area:docs'
+        - 'area:release'
     validations:
       required: true
 
@@ -58,10 +58,10 @@ body:
       label: Priority
       description: P0 blocks everything; use sparingly.
       options:
-        - "prio:P0 — Foundation, blocks everything"
-        - "prio:P1 — High"
-        - "prio:P2 — Medium"
-        - "prio:P3 — Low / nice to have"
+        - 'prio:P0 — Foundation, blocks everything'
+        - 'prio:P1 — High'
+        - 'prio:P2 — Medium'
+        - 'prio:P3 — Low / nice to have'
       default: 2
     validations:
       required: true

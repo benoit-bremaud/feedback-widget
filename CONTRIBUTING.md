@@ -70,16 +70,16 @@ All issue titles follow **Conventional Commits** format:
 
 **Types** (lowercase, singular):
 
-| Type | Use for |
-|---|---|
-| `feat` | New user-visible capability |
-| `fix` | Bug fix (behaviour was wrong or broken) |
-| `chore` | Infra, tooling, maintenance — no feature and no fix |
-| `docs` | Documentation only |
-| `test` | Tests added or reworked without changing behaviour |
+| Type       | Use for                                                     |
+| ---------- | ----------------------------------------------------------- |
+| `feat`     | New user-visible capability                                 |
+| `fix`      | Bug fix (behaviour was wrong or broken)                     |
+| `chore`    | Infra, tooling, maintenance — no feature and no fix         |
+| `docs`     | Documentation only                                          |
+| `test`     | Tests added or reworked without changing behaviour          |
 | `refactor` | Internal restructuring, no behaviour change, no test change |
-| `ci` | CI/CD pipeline change |
-| `release` | Version bump + changelog cut (release PRs only) |
+| `ci`       | CI/CD pipeline change                                       |
+| `release`  | Version bump + changelog cut (release PRs only)             |
 
 **Scopes** — match the affected area:
 
@@ -257,7 +257,7 @@ commits under a generic `ci(ci):` or `chore(chore):`.
 - **Imperative mood** ("add" not "added" or "adds").
 - **No period at the end of the subject line.**
 - **Body** (optional): wrap at 72 columns, separate from subject by a blank
-  line, explain the *why* — the diff already shows the *what*.
+  line, explain the _why_ — the diff already shows the _what_.
 - **Never amend a published commit.** If the commit is on a remote branch
   that others might have pulled, create a new commit instead.
 
@@ -267,14 +267,14 @@ commits under a generic `ci(ci):` or `chore(chore):`.
 
 Every PR must carry the full GitHub sidebar populated:
 
-| Field | Value |
-|---|---|
-| **Assignees** | `benoit-bremaud` (always) |
-| **Reviewers** | `copilot-pull-request-reviewer` (automated reviewer) |
-| **Labels** | Same triptych as the linked issue — `type:*` + `area:*` + `prio:*` |
-| **Project** | `feedback-widget` (node ID `PVT_kwHOB8rwIc4BVJlN`) |
-| **Milestone** | **Set explicitly** to match the linked issue's milestone |
-| **Body** | Follows the Markdown template below, ends with `Closes #<issue>` |
+| Field         | Value                                                              |
+| ------------- | ------------------------------------------------------------------ |
+| **Assignees** | `benoit-bremaud` (always)                                          |
+| **Reviewers** | `copilot-pull-request-reviewer` (automated reviewer)               |
+| **Labels**    | Same triptych as the linked issue — `type:*` + `area:*` + `prio:*` |
+| **Project**   | `feedback-widget` (node ID `PVT_kwHOB8rwIc4BVJlN`)                 |
+| **Milestone** | **Set explicitly** to match the linked issue's milestone           |
+| **Body**      | Follows the Markdown template below, ends with `Closes #<issue>`   |
 
 **Setting these via gh CLI / API.** Because `gh pr edit --add-project` is
 broken for Projects v2, use the GraphQL mutation. **Note:** `Closes #xx`
@@ -323,8 +323,8 @@ GitHub Project board, not through raw issue search. Without `type`/`area`/
 
 ## Tests
 
-| Package | New tests | Total |
-|---|---|---|
+| Package                   | New tests       | Total      |
+| ------------------------- | --------------- | ---------- |
 | `core` (Vitest, node env) | N (description) | **X pass** |
 | `web` (Vitest, happy-dom) | N (description) | **X pass** |
 
@@ -382,10 +382,10 @@ the owner explicitly requests them.
 
 ### Test runner — Vitest in both packages
 
-| Package | Environment | Command | Notes |
-|---|---|---|---|
-| `packages/core` | `node` | `pnpm --filter @benoit-bremaud/feedback-widget-core test` | No DOM, pure logic |
-| `packages/web` | `happy-dom` | `pnpm --filter @benoit-bremaud/feedback-widget test` | Light DOM, not jsdom |
+| Package         | Environment | Command                                                   | Notes                |
+| --------------- | ----------- | --------------------------------------------------------- | -------------------- |
+| `packages/core` | `node`      | `pnpm --filter @benoit-bremaud/feedback-widget-core test` | No DOM, pure logic   |
+| `packages/web`  | `happy-dom` | `pnpm --filter @benoit-bremaud/feedback-widget test`      | Light DOM, not jsdom |
 
 Do not mix. Do not import `happy-dom` in `core` tests. Do not run `core`
 tests in a DOM environment.
@@ -401,7 +401,7 @@ tests in a DOM environment.
   boundaries, network timeouts, rate-limit window edges).
 
 Docs-only PRs obviously do not need tests. Refactors that change no
-behaviour do not need *new* tests but must not break existing ones.
+behaviour do not need _new_ tests but must not break existing ones.
 
 ### Coverage
 
@@ -437,6 +437,77 @@ branch to the upstream repo).
 Coverage thresholds are not yet enforced in CI (tracked in
 [issue #12](https://github.com/benoit-bremaud/feedback-widget/issues/12)).
 When they land, failing below the threshold blocks merge.
+
+---
+
+## Linting and formatting
+
+Code style is enforced by ESLint (correctness + repo conventions) and
+Prettier (whitespace, quotes, semicolons, line wrapping). Both run on
+every push and PR via the `.github/workflows/lint.yml` workflow.
+
+### Commands
+
+```bash
+# Check for lint errors (zero-warnings policy).
+pnpm lint
+
+# Auto-fix the lint errors that ESLint can fix.
+pnpm lint:fix
+
+# Rewrite every source file to match Prettier's style.
+pnpm format
+
+# Verify every file is already formatted — non-destructive.
+pnpm format:check
+```
+
+`pnpm lint` and `pnpm format:check` are both required to pass before
+a PR is merge-eligible (gated by the `Lint` check). `pnpm format`
+rewrites files in place and is the command to run before committing
+once you have made changes.
+
+### Rules enforced
+
+- **No `any`** — `@typescript-eslint/no-explicit-any: error`. Mirror of
+  the CLAUDE.md preference; use `unknown` with a narrowing type guard
+  instead.
+- **No default exports** — `no-restricted-syntax` with an
+  `ExportDefaultDeclaration` selector. Named exports only; the rule
+  matches the CLAUDE.md preference and keeps imports consistent with
+  the repo's barrel style.
+- **Base TypeScript strict rules** — `typescript-eslint/strict`
+  preset, includes rules like `no-unsafe-assignment`,
+  `prefer-as-const`, `no-unnecessary-type-assertion`, etc.
+- **Prettier compatibility** — `eslint-config-prettier` is applied
+  last so formatting rules live in Prettier only, never duplicated
+  in ESLint.
+
+### Configuration files
+
+- **`eslint.config.js`** — ESLint 9 flat config with per-package
+  blocks (`packages/core/src/**/*.ts` for Node env,
+  `packages/web/src/**/*.ts` for browser env + DOM globals)
+- **`prettier.config.js`** — `singleQuote: true`, `semi: false`,
+  `trailingComma: 'all'`, `printWidth: 80`, `arrowParens: 'always'`
+- **`.editorconfig`** — UTF-8, LF, 2-space indent, trim trailing
+  whitespace (except in Markdown where trailing spaces are semantic)
+- **`.prettierignore`** — skip `dist/`, `coverage/`, `node_modules/`,
+  and `pnpm-lock.yaml`
+
+### Editor integration
+
+This repo does not commit editor configuration beyond `.editorconfig`.
+To get auto-format on save:
+
+- **VS Code** — install the Prettier and ESLint extensions; set
+  `editor.formatOnSave: true` and `editor.defaultFormatter:
+"esbenp.prettier-vscode"` in your user settings (not the workspace).
+- **JetBrains** — enable `Prettier` and `ESLint` under Languages &
+  Frameworks → JavaScript; set the actions to run on save.
+
+Husky pre-commit hooks are intentionally out of scope — CI is the
+single source of truth, local tooling is your choice.
 
 ---
 
@@ -477,7 +548,7 @@ When they land, failing below the threshold blocks merge.
 
 **Never attribute or credit work to AI anywhere in this repository.**
 
-The rule targets *attribution and credit*, not the naming of tools in
+The rule targets _attribution and credit_, not the naming of tools in
 policy. This section itself necessarily names the forbidden patterns in
 order to define them — that is an explicit exemption for policy and
 governance docs. Everywhere else, the following are banned:
@@ -725,5 +796,5 @@ Repository ruleset scoped to `refs/tags/v*`:
 
 ---
 
-*This CONTRIBUTING.md is committed and tracked in git. Changes to it
-follow the same PR process as any other change.*
+_This CONTRIBUTING.md is committed and tracked in git. Changes to it
+follow the same PR process as any other change._

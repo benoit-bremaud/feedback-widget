@@ -3,23 +3,25 @@ import type {
   FeedbackPayload,
   TargetBlock,
   Viewport,
-} from '../domain/Feedback';
-import { CURRENT_SCHEMA_VERSION } from '../domain/Feedback';
+} from '../domain/Feedback'
+import { CURRENT_SCHEMA_VERSION } from '../domain/Feedback'
 
 export interface BuildPayloadInput {
-  projectId: string;
-  pageUrl: string;
-  pageTitle: string;
-  target: TargetBlock;
-  category: Category;
-  userMessage: string | null;
-  reporterName: string | null;
-  viewport: Viewport;
-  userAgent: string;
-  timestamp: string;
+  projectId: string
+  pageUrl: string
+  pageTitle: string
+  target: TargetBlock
+  category: Category
+  userMessage: string | null
+  reporterName: string | null
+  viewport: Viewport
+  userAgent: string
+  timestamp: string
 }
 
-export function buildFeedbackPayload(input: BuildPayloadInput): FeedbackPayload {
+export function buildFeedbackPayload(
+  input: BuildPayloadInput,
+): FeedbackPayload {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     meta: {
@@ -40,7 +42,7 @@ export function buildFeedbackPayload(input: BuildPayloadInput): FeedbackPayload 
       category: input.category,
       userMessage: input.userMessage,
     },
-  };
+  }
 }
 
 export const EMPTY_TARGET: TargetBlock = {
@@ -49,4 +51,4 @@ export const EMPTY_TARGET: TargetBlock = {
   blockIndex: null,
   blockTag: null,
   excerpt: null,
-};
+}

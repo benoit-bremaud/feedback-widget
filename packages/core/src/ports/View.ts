@@ -1,4 +1,4 @@
-import type { Category, TargetBlock } from '../domain/Feedback';
+import type { Category, TargetBlock } from '../domain/Feedback'
 
 export type WidgetStep =
   | 'closed'
@@ -8,15 +8,15 @@ export type WidgetStep =
   | 'precision'
   | 'sending'
   | 'confirmed'
-  | 'error';
+  | 'error'
 
 export interface WidgetState {
-  step: WidgetStep;
-  target: TargetBlock | null;
-  selectedCategory: Category | null;
-  userMessage: string;
-  reporterName: string;
-  errorMessage: string | null;
+  step: WidgetStep
+  target: TargetBlock | null
+  selectedCategory: Category | null
+  userMessage: string
+  reporterName: string
+  errorMessage: string | null
 }
 
 export type UserAction =
@@ -30,11 +30,11 @@ export type UserAction =
   | { kind: 'update-message'; value: string }
   | { kind: 'update-reporter'; value: string }
   | { kind: 'submit' }
-  | { kind: 'reset' };
+  | { kind: 'reset' }
 
 export interface View {
-  render(state: WidgetState): void;
-  onUserAction(cb: (action: UserAction) => void): void;
-  showConfirmation(): void;
-  showMailtoFallback(mailtoUrl: string, message: string): void;
+  render(state: WidgetState): void
+  onUserAction(cb: (action: UserAction) => void): void
+  showConfirmation(): void
+  showMailtoFallback(mailtoUrl: string, message: string): void
 }

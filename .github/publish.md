@@ -38,7 +38,7 @@ tag matching `v*`:
 
 1. Checkout the tagged commit (full history).
 2. **Verify the tagged commit is on `main`.** `git merge-base
-   --is-ancestor $GITHUB_SHA origin/main` — if a tag is pushed on a
+--is-ancestor $GITHUB_SHA origin/main` — if a tag is pushed on a
    commit that is not an ancestor of `main`, the workflow fails fast
    and no publish happens. This defends against mistagged or crafted
    tags on unreviewed commits.

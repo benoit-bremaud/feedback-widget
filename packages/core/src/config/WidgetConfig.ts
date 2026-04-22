@@ -1,24 +1,26 @@
-import type { Category } from '../domain/Feedback';
+import type { Category } from '../domain/Feedback'
 
 export interface WidgetConfig {
-  endpoint: string;
-  projectId: string;
-  token?: string;
-  categories?: readonly Category[];
-  maxMessageLength?: number;
-  rateLimitWindowMs?: number;
-  rateLimitMaxAttempts?: number;
-  minFormOpenMs?: number;
-  maxTransportAttempts?: number;
-  transportTimeoutMs?: number;
-  mailtoFallback?: string;
-  position?: 'bottom-right' | 'bottom-left' | 'bottom-center';
+  endpoint: string
+  projectId: string
+  token?: string
+  categories?: readonly Category[]
+  maxMessageLength?: number
+  rateLimitWindowMs?: number
+  rateLimitMaxAttempts?: number
+  minFormOpenMs?: number
+  maxTransportAttempts?: number
+  transportTimeoutMs?: number
+  mailtoFallback?: string
+  position?: 'bottom-right' | 'bottom-left' | 'bottom-center'
 }
 
-export interface ResolvedWidgetConfig extends Required<Omit<WidgetConfig, 'token' | 'categories' | 'mailtoFallback'>> {
-  token: string | null;
-  categories: readonly Category[] | null;
-  mailtoFallback: string | null;
+export interface ResolvedWidgetConfig extends Required<
+  Omit<WidgetConfig, 'token' | 'categories' | 'mailtoFallback'>
+> {
+  token: string | null
+  categories: readonly Category[] | null
+  mailtoFallback: string | null
 }
 
 const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
@@ -32,7 +34,7 @@ const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
   transportTimeoutMs: 10_000,
   mailtoFallback: null,
   position: 'bottom-right',
-};
+}
 
 export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
   return {
@@ -43,11 +45,13 @@ export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
     categories: input.categories ?? null,
     maxMessageLength: input.maxMessageLength ?? DEFAULTS.maxMessageLength,
     rateLimitWindowMs: input.rateLimitWindowMs ?? DEFAULTS.rateLimitWindowMs,
-    rateLimitMaxAttempts: input.rateLimitMaxAttempts ?? DEFAULTS.rateLimitMaxAttempts,
+    rateLimitMaxAttempts:
+      input.rateLimitMaxAttempts ?? DEFAULTS.rateLimitMaxAttempts,
     minFormOpenMs: input.minFormOpenMs ?? DEFAULTS.minFormOpenMs,
-    maxTransportAttempts: input.maxTransportAttempts ?? DEFAULTS.maxTransportAttempts,
+    maxTransportAttempts:
+      input.maxTransportAttempts ?? DEFAULTS.maxTransportAttempts,
     transportTimeoutMs: input.transportTimeoutMs ?? DEFAULTS.transportTimeoutMs,
     mailtoFallback: input.mailtoFallback ?? null,
     position: input.position ?? DEFAULTS.position,
-  };
+  }
 }

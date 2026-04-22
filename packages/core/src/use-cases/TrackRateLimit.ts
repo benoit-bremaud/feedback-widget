@@ -1,13 +1,13 @@
-import type { RateLimiter } from '../ports/RateLimiter';
+import type { RateLimiter } from '../ports/RateLimiter'
 
 export interface TrackRateLimitResult {
-  allowed: boolean;
+  allowed: boolean
 }
 
 export function checkRateLimit(limiter: RateLimiter): TrackRateLimitResult {
-  return { allowed: limiter.canSubmit() };
+  return { allowed: limiter.canSubmit() }
 }
 
 export function recordSubmission(limiter: RateLimiter): void {
-  limiter.recordSubmission();
+  limiter.recordSubmission()
 }

@@ -28,12 +28,12 @@ audit, per the repo's private-first policy.
 ## Quickstart
 
 ```ts
-import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget';
+import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget'
 
 mountFeedbackWidget({
   endpoint: 'https://api.example.com/feedback',
   projectId: 'my-project',
-});
+})
 ```
 
 That's the minimum. The widget renders a floating button in the
@@ -197,37 +197,37 @@ service account SSH key to the repository's deploy-keys list, then:
 
 ### `WidgetConfig`
 
-| Field | Required | Default | Description |
-| ----- | -------- | ------- | ----------- |
-| `endpoint` | ✓ | — | URL that receives the `POST` with the feedback payload (JSON). |
-| `projectId` | ✓ | — | Identifier carried in the payload; lets the backend route/separate per project. |
-| `token` | — | `null` | Sent as `X-Feedback-Token` header. Treat as public — it's bundled in the browser; use the backend to validate caller identity properly. |
-| `categories` | — | `null` | Override the list of categories offered. Values must be drawn from `Category` (see [API Reference](#api-reference)). When `null`, all six built-in categories are shown. |
-| `maxMessageLength` | — | `500` | Max length of the free-text field. Longer input is silently truncated. |
-| `rateLimitWindowMs` | — | `600_000` (10 min) | Rolling window for the client-side rate limiter (per `projectId`, stored in `localStorage`). |
-| `rateLimitMaxAttempts` | — | `3` | Max submissions per window before the widget shows a rate-limit message. |
-| `minFormOpenMs` | — | `2000` | Bot heuristic — submissions faster than this are silently accepted but discarded (honeypot-style). |
-| `maxTransportAttempts` | — | `3` | Retries per submission (exponential backoff starting at 1 s). |
-| `transportTimeoutMs` | — | `10_000` | Per-attempt abort timeout (ms). Implemented via `AbortController`; feature-detected so legacy browsers fall back to a plain fetch. |
-| `mailtoFallback` | — | `null` | When the transport exhausts retries, offer a `mailto:` fallback to this address so users can still reach you. |
-| `position` | — | `'bottom-right'` | Floating button position: `'bottom-right'`, `'bottom-left'`, or `'bottom-center'`. |
+| Field                  | Required | Default            | Description                                                                                                                                                              |
+| ---------------------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `endpoint`             | ✓        | —                  | URL that receives the `POST` with the feedback payload (JSON).                                                                                                           |
+| `projectId`            | ✓        | —                  | Identifier carried in the payload; lets the backend route/separate per project.                                                                                          |
+| `token`                | —        | `null`             | Sent as `X-Feedback-Token` header. Treat as public — it's bundled in the browser; use the backend to validate caller identity properly.                                  |
+| `categories`           | —        | `null`             | Override the list of categories offered. Values must be drawn from `Category` (see [API Reference](#api-reference)). When `null`, all six built-in categories are shown. |
+| `maxMessageLength`     | —        | `500`              | Max length of the free-text field. Longer input is silently truncated.                                                                                                   |
+| `rateLimitWindowMs`    | —        | `600_000` (10 min) | Rolling window for the client-side rate limiter (per `projectId`, stored in `localStorage`).                                                                             |
+| `rateLimitMaxAttempts` | —        | `3`                | Max submissions per window before the widget shows a rate-limit message.                                                                                                 |
+| `minFormOpenMs`        | —        | `2000`             | Bot heuristic — submissions faster than this are silently accepted but discarded (honeypot-style).                                                                       |
+| `maxTransportAttempts` | —        | `3`                | Retries per submission (exponential backoff starting at 1 s).                                                                                                            |
+| `transportTimeoutMs`   | —        | `10_000`           | Per-attempt abort timeout (ms). Implemented via `AbortController`; feature-detected so legacy browsers fall back to a plain fetch.                                       |
+| `mailtoFallback`       | —        | `null`             | When the transport exhausts retries, offer a `mailto:` fallback to this address so users can still reach you.                                                            |
+| `position`             | —        | `'bottom-right'`   | Floating button position: `'bottom-right'`, `'bottom-left'`, or `'bottom-center'`.                                                                                       |
 
 ### Minimal example
 
 ```ts
-import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget';
+import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget'
 
 mountFeedbackWidget({
   endpoint: 'https://api.example.com/feedback',
   projectId: 'my-project',
-});
+})
 ```
 
 ### Full example
 
 ```ts
-import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget';
-import type { WidgetConfig } from '@benoit-bremaud/feedback-widget';
+import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget'
+import type { WidgetConfig } from '@benoit-bremaud/feedback-widget'
 
 const config: WidgetConfig = {
   endpoint: 'https://api.example.com/feedback',
@@ -242,13 +242,13 @@ const config: WidgetConfig = {
   transportTimeoutMs: 8000,
   mailtoFallback: 'team@example.com',
   position: 'bottom-right',
-};
+}
 
-const handle = mountFeedbackWidget(config);
+const handle = mountFeedbackWidget(config)
 
 // Call after a SPA route change or major DOM mutation so the widget's
 // target-block detection is re-scoped to the new content.
-handle.refresh();
+handle.refresh()
 ```
 
 ## API Reference
@@ -291,7 +291,9 @@ recommended pattern uses the bundler's build-time env:
 
 ```ts
 if (import.meta.env.DEV) {
-  mountFeedbackWidget({ /* ... */ });
+  mountFeedbackWidget({
+    /* ... */
+  })
 }
 ```
 
@@ -299,7 +301,9 @@ Or via an explicit flag (Vite-style):
 
 ```ts
 if (import.meta.env.VITE_FEEDBACK_WIDGET_ENABLED === 'true') {
-  mountFeedbackWidget({ /* ... */ });
+  mountFeedbackWidget({
+    /* ... */
+  })
 }
 ```
 
@@ -315,8 +319,8 @@ theme so contributors can report content/UX bugs while authoring.
 `.vitepress/theme/index.ts`:
 
 ```ts
-import DefaultTheme from 'vitepress/theme';
-import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget';
+import DefaultTheme from 'vitepress/theme'
+import { mountFeedbackWidget } from '@benoit-bremaud/feedback-widget'
 
 export default {
   extends: DefaultTheme,
@@ -326,10 +330,10 @@ export default {
         endpoint: import.meta.env.VITE_FEEDBACK_ENDPOINT as string,
         projectId: 'impropedia',
         mailtoFallback: 'contact@impropedia.example',
-      });
+      })
     }
   },
-};
+}
 ```
 
 `.env.local`:

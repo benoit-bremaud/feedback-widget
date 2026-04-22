@@ -1,7 +1,7 @@
 name: Bug Report
 description: Report something that is not working as expected
-title: "fix(<area>): <short description>"
-labels: ["type:bug"]
+title: 'fix(<area>): <short description>'
+labels: ['type:bug']
 body:
   - type: markdown
     attributes:
@@ -44,14 +44,14 @@ body:
       label: Area
       description: The area of the codebase affected. Pick the narrowest match.
       options:
-        - "area:core"
-        - "area:web"
-        - "area:ci"
-        - "area:react-native"
-        - "area:governance"
-        - "area:testing"
-        - "area:docs"
-        - "area:release"
+        - 'area:core'
+        - 'area:web'
+        - 'area:ci'
+        - 'area:react-native'
+        - 'area:governance'
+        - 'area:testing'
+        - 'area:docs'
+        - 'area:release'
     validations:
       required: true
 
@@ -61,10 +61,10 @@ body:
       label: Priority
       description: P0 blocks everything; use sparingly.
       options:
-        - "prio:P0 — Foundation, blocks everything"
-        - "prio:P1 — High"
-        - "prio:P2 — Medium"
-        - "prio:P3 — Low / nice to have"
+        - 'prio:P0 — Foundation, blocks everything'
+        - 'prio:P1 — High'
+        - 'prio:P2 — Medium'
+        - 'prio:P3 — Low / nice to have'
       default: 2
     validations:
       required: true
@@ -73,7 +73,7 @@ body:
     id: version
     attributes:
       label: Version / commit
-      placeholder: "e.g. @benoit-bremaud/feedback-widget@0.1.1-rc2 · commit abc1234"
+      placeholder: 'e.g. @benoit-bremaud/feedback-widget@0.1.1-rc2 · commit abc1234'
 
   - type: textarea
     id: evidence

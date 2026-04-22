@@ -158,7 +158,7 @@ New entries are appended to the bottom as events occur.
 - **What:** Added `.github/workflows/publish.yml` (tag-driven, triggers
   on `push.tags: ['v*']`), the canonical policy doc
   `.github/publish.md`, and wired `publishConfig.registry =
-  https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
+https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
   fields into both packages' `package.json`. All third-party actions
   are SHA-pinned (`actions/checkout@v4`, `pnpm/action-setup@v4`,
   `actions/setup-node@v4`). Updated `README.md` Installation section
@@ -167,7 +167,7 @@ New entries are appended to the bottom as events occur.
   committable `.npmrc` (`${GITHUB_TOKEN}` resolved from env) and a
   PAT scoped `read:packages` only.
 - **Why:** The whole point of the standalone project — `pnpm add
-  @benoit-bremaud/feedback-widget` in any consumer (Impropedia
+@benoit-bremaud/feedback-widget` in any consumer (Impropedia
   first, others later) without git-URL boilerplate and without ever
   embedding a PAT in a URL. Stays on the private-first policy
   (GitHub Packages private registry) while unlocking the real npm
@@ -282,7 +282,7 @@ New entries are appended to the bottom as events occur.
   idempotent PUT; (3) Should Have — `RULESET_ID` extraction adds
   defensive count-and-validate step (fails fast on empty or
   duplicate match). Ruleset activated post-merge via `POST
-  /rulesets` — live ID `15413164`, enforcement `active`, owner
+/rulesets` — live ID `15413164`, enforcement `active`, owner
   (current user) `can_bypass: always`. Existing tags `v0.1.0`,
   `v0.1.1-rc1`, `v0.1.1-rc2` all intact.
 - **Why:** Closes issue
@@ -499,4 +499,43 @@ New entries are appended to the bottom as events occur.
   definition to reference branch `main`, and confirm the
   `SONAR_TOKEN` repo secret exists.
 - **Ref:** PR [#36](https://github.com/benoit-bremaud/feedback-widget/pull/36),
-  merge commit: *to be updated post-merge*
+  merge commit [`7eb3c25`](https://github.com/benoit-bremaud/feedback-widget/commit/7eb3c25)
+
+### PR — set up ESLint + Prettier with shared config
+
+- **What:** Added ESLint 9 flat config at the repo root
+  (`eslint.config.js`) with two scoped blocks — `packages/core/src/**/*.ts`
+  (Node env) and `packages/web/src/**/*.ts` (browser + DOM globals) —
+  extending `@eslint/js` recommended and `typescript-eslint` strict.
+  Two CLAUDE.md preferences enforced as rules:
+  `@typescript-eslint/no-explicit-any: error` and
+  `no-restricted-syntax` with an `ExportDefaultDeclaration` selector
+  so named exports are the only accepted form. Prettier 3 added at
+  the root (`prettier.config.js`) with the style already present in
+  the code (`singleQuote: true`, `semi: false`, `trailingComma: 'all'`,
+  `printWidth: 80`, `arrowParens: 'always'`); `eslint-config-prettier`
+  is the last extends in the ESLint config so formatting rules live
+  in Prettier only. `.editorconfig` at the root for cross-IDE
+  defaults (UTF-8, LF, 2-space indent, trim trailing whitespace).
+  `.prettierignore` skips `dist/`, `coverage/`, `node_modules/`, and
+  the lockfile. Added four scripts at the workspace root: `lint`,
+  `lint:fix`, `format`, `format:check`. New
+  `.github/workflows/lint.yml` runs `pnpm lint` and
+  `pnpm format:check` on every push and PR, SHA-pinned like the
+  other workflows. Reformatted 45 existing files through
+  `pnpm format` — single baseline commit so future diffs stay
+  focused. `CONTRIBUTING.md` gained a new §Linting and formatting
+  section between §Testing requirements and §Security, covering
+  the four commands, the rules enforced, the config files, and
+  editor integration notes. Husky pre-commit hooks are out of
+  scope (CI enforces; local tooling is the contributor's choice).
+- **Why:** Closes issue
+  [#11](https://github.com/benoit-bremaud/feedback-widget/issues/11)
+  (`prio:P2`, `area:ci`). Establishes the style and correctness
+  baseline the repo needed before the codebase grows further —
+  every future PR gets caught on `any` usage or a default export
+  at PR-open time rather than at review time. Verified locally:
+  `pnpm lint` returns zero errors / zero warnings, `pnpm
+format:check` is clean, all 40 tests still pass.
+- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+  merge commit: _to be updated post-merge_

@@ -23,8 +23,8 @@ Full contribution rules: https://github.com/benoit-bremaud/feedback-widget/blob/
 
 ## Tests
 
-| Package | New tests | Total |
-| --- | --- | --- |
+| Package                   | New tests       | Total      |
+| ------------------------- | --------------- | ---------- |
 | `core` (Vitest, node env) | N (description) | **X pass** |
 | `web` (Vitest, happy-dom) | N (description) | **X pass** |
 
