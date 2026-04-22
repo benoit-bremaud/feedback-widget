@@ -24,11 +24,16 @@ run first). Nothing was published to GitHub Packages in the
 
 ## [0.1.1-rc1] - 2026-04-22
 
-First release candidate published to GitHub Packages
-(`https://npm.pkg.github.com`). This is an RC, so the default
-install path (`pnpm add @benoit-bremaud/feedback-widget`) still
-resolves to the git-URL-only `0.1.0` baseline. Consumers who want
-the RC must opt in with `pnpm add @benoit-bremaud/feedback-widget@rc`.
+First release-candidate attempt. **Not published to GitHub Packages
+— the publish workflow failed at the Typecheck step** before the
+`Publish packages` step could run (see `[0.1.1-rc2]` above for the
+fix). The `0.1.1-rc1` version slot remains reserved but unused; the
+tag `v0.1.1-rc1` is kept as the audit-trail marker of the failed
+attempt. Consumers should use `0.1.1-rc2` or later once it is
+actually published.
+
+The changes that this RC *would have* published were the following
+(they ship as part of `0.1.1-rc2`):
 
 ### Added
 
