@@ -36,10 +36,15 @@ The `Publish to GitHub Packages` workflow
 ([`.github/workflows/publish.yml`](workflows/publish.yml)) runs on any
 tag matching `v*`:
 
-1. Checkout the tagged commit.
-2. Install deps with pnpm (frozen lockfile).
-3. Typecheck + build both packages.
-4. `pnpm -r publish --no-git-checks --access restricted` with
+1. Checkout the tagged commit (full history).
+2. **Verify the tagged commit is on `main`.** `git merge-base
+   --is-ancestor $GITHUB_SHA origin/main` — if a tag is pushed on a
+   commit that is not an ancestor of `main`, the workflow fails fast
+   and no publish happens. This defends against mistagged or crafted
+   tags on unreviewed commits.
+3. Install deps with pnpm (frozen lockfile).
+4. Typecheck + build both packages.
+5. `pnpm -r publish --no-git-checks --access restricted` with
    `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}` — the built-in token
    with `packages: write`. No long-lived PAT on the publisher side.
 
