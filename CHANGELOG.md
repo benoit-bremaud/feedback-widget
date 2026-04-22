@@ -31,8 +31,8 @@ options.
   gate, AI attribution ban, public-release checklist, changelog +
   project-log distinction, release workflow); GitHub issue
   templates (bug / feature / docs / task) with auto-labels and
-  mandatory Goal / Scope / DoD / Notes body; repo-root
-  `PULL_REQUEST_TEMPLATE.md` mirroring the CONTRIBUTING template.
+  mandatory Goal / Scope / DoD / Notes body;
+  `.github/PULL_REQUEST_TEMPLATE.md` mirroring the CONTRIBUTING template.
 - **Tag protection** — repository ruleset scoped to `refs/tags/v*`
   with `creation` / `update` / `deletion` all blocked and an Admin
   bypass (`.github/tag-protection.md`). Full cross-project
@@ -41,8 +41,9 @@ options.
   (naming, lifecycle, protection, progressive signing, release
   notes, monorepo lockstep, failed-publish handling).
 - **Lint + format** — ESLint 9 flat config (`eslint.config.js`)
-  with `typescript-eslint/strict` + custom rules (`no-explicit-any:
-error`, `no-restricted-syntax` banning default exports).
+  with `typescript-eslint/strict` + custom rules
+  (`no-explicit-any: error`, `no-restricted-syntax` banning
+  default exports).
   Prettier 3 (`prettier.config.js`) with the repo style
   (`singleQuote`, `semi: false`, `trailingComma: 'all'`,
   `proseWrap: 'preserve'`). Workspace scripts `lint` / `lint:fix` /
@@ -71,10 +72,10 @@ error`, `no-restricted-syntax` banning default exports).
   Hotspot on `typescript:S2245`.
 - **`CONTRIBUTING.md`** — new §Linting and formatting (commands,
   rules, config files, editor integration) and §Tag conventions
-  (seven pillars of the cross-project tag policy). `§Issue body
-— mandatory sections` now scopes the Goal / Scope / DoD / Notes
-  rule to `feat` / `docs` / `task` issues and exempts bug reports
-  (which use the bug-specific fields defined by
+  (seven pillars of the cross-project tag policy). The
+  §Issue-body mandatory-sections rule now scopes Goal / Scope /
+  DoD / Notes to `feat` / `docs` / `task` issues and exempts bug
+  reports (which use the bug-specific fields defined by
   `.github/ISSUE_TEMPLATE/bug_report.yml`). Notes & Links marked
   explicitly as optional.
 - **`PROJECT_LOG.md`** — 15 entries covering every PR merged from
