@@ -399,7 +399,7 @@ New entries are appended to the bottom as events occur.
   template is the runtime enforcement of that policy at PR-open
   time.
 - **Ref:** PR [#34](https://github.com/benoit-bremaud/feedback-widget/pull/34),
-  merge commit: *to be updated post-merge*
+  merge commit [`dbaca34`](https://github.com/benoit-bremaud/feedback-widget/commit/dbaca34)
 
 ### PR — add issue templates (bug, feature, docs, task)
 
