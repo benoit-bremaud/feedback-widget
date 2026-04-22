@@ -339,20 +339,31 @@ pnpm typecheck       # tsc --noEmit across packages
 
 ### Testing changes in a consumer project (before cutting a tag)
 
-Use pnpm's global link:
+Use pnpm's global link, making sure the **workspace package** is linked
+(not the root private package):
 
 ```sh
-# In this repo
+# In this repo — link the web package, not the workspace root
 pnpm install
 pnpm build
-pnpm link --global
+pnpm --filter @benoit-bremaud/feedback-widget link --global
+```
 
-# In the consumer project
+Alternative (equivalent): `cd packages/web && pnpm link --global`.
+
+Do NOT run `pnpm link --global` at the workspace root — that links the
+root `feedback-widget` private package, not `@benoit-bremaud/feedback-widget`,
+and the next consumer-side link then fails with a broken-link warning.
+
+Then in the consumer project:
+
+```sh
 pnpm link --global @benoit-bremaud/feedback-widget
 ```
 
-Rebuild with `pnpm build` after changes; the consumer picks up the
-new `dist/` automatically on its next import.
+Rebuild with `pnpm --filter @benoit-bremaud/feedback-widget build`
+after changes; the consumer picks up the new `dist/` automatically
+on its next import.
 
 ### Contributing
 
