@@ -7,6 +7,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-23
+
+First `latest` release. Closes the foundations phase started with
+`0.1.0` (extraction) and iterated on `0.1.1-rc1` / `0.1.1-rc2`
+(publish pipeline). This release is governance-, quality-, and
+security-complete: every convention documented, every workflow
+gated, every module unit-tested, no weak PRNG anywhere.
+
+**Breaking change** — `LocalStorageOutbox`'s default id generator
+no longer falls back to `Math.random()` when the Web Crypto API is
+absent. It now requires either `crypto.randomUUID` or
+`crypto.getRandomValues` and throws otherwise. Every target runtime
+(Node ≥ 20, evergreen browsers Chrome 92+ / Firefox 95+ / Safari
+15.4+ / Edge 92+) satisfies this. Consumers on unsupported runtimes
+can inject a custom `generateId` via `createLocalStorageOutbox`
+options.
+
+### Added
+
+- **Governance** — repo-root `CONTRIBUTING.md` (single source of
+  truth for branch / commit / PR / issue conventions, DoD, merge
+  gate, AI attribution ban, public-release checklist, changelog +
+  project-log distinction, release workflow); GitHub issue
+  templates (bug / feature / docs / task) with auto-labels and
+  mandatory Goal / Scope / DoD / Notes body;
+  `.github/PULL_REQUEST_TEMPLATE.md` mirroring the CONTRIBUTING template.
+- **Tag protection** — repository ruleset scoped to `refs/tags/v*`
+  with `creation` / `update` / `deletion` all blocked and an Admin
+  bypass (`.github/tag-protection.md`). Full cross-project
+  convention codified in `~/.claude/CLAUDE.md` §Tag Conventions and
+  mirrored in this repo's `CONTRIBUTING.md` §Tag conventions
+  (naming, lifecycle, protection, progressive signing, release
+  notes, monorepo lockstep, failed-publish handling).
+- **Lint + format** — ESLint 9 flat config (`eslint.config.js`)
+  with `typescript-eslint/strict` + custom rules
+  (`no-explicit-any: error`, `no-restricted-syntax` banning
+  default exports).
+  Prettier 3 (`prettier.config.js`) with the repo style
+  (`singleQuote`, `semi: false`, `trailingComma: 'all'`,
+  `proseWrap: 'preserve'`). Workspace scripts `lint` / `lint:fix` /
+  `format` / `format:check` and a dedicated
+  `.github/workflows/lint.yml`. `.editorconfig` and
+  `.prettierignore` at repo root.
+- **CI coverage + SonarCloud** — Vitest emits `lcov` reporters,
+  `.github/workflows/ci.yml` runs `pnpm test:coverage`, uploads the
+  LCOV artifact, and feeds it to SonarCloud via
+  `SonarSource/sonarqube-scan-action` (SHA-pinned v6, guarded for
+  forked PRs). `sonar-project.properties` at repo root with
+  per-package tsconfig paths.
+- **View-layer tests** — `IntersectionViewportDetector.test.ts`
+  (20 tests), `widget.test.ts` (20 tests),
+  `WebComponentView.test.ts` (20 tests) covering happy + sad + edge
+  paths for the browser adapters that shipped in `0.1.0` without
+  direct coverage. Web package coverage: 19% → 85% statements,
+  88% lines.
+
+### Changed
+
+- **Security** — `LocalStorageOutbox.defaultGenerateId()` rewritten
+  to prefer `crypto.randomUUID`, fall back to `crypto.getRandomValues`
+  for environments without `randomUUID`, and throw otherwise. Fully
+  documented in JSDoc. Resolves the SonarCloud Weak-Cryptography
+  Hotspot on `typescript:S2245`.
+- **`CONTRIBUTING.md`** — new §Linting and formatting (commands,
+  rules, config files, editor integration) and §Tag conventions
+  (seven pillars of the cross-project tag policy). The
+  §Issue-body mandatory-sections rule now scopes Goal / Scope /
+  DoD / Notes to `feat` / `docs` / `task` issues and exempts bug
+  reports (which use the bug-specific fields defined by
+  `.github/ISSUE_TEMPLATE/bug_report.yml`). Notes & Links marked
+  explicitly as optional.
+- **`PROJECT_LOG.md`** — 15 entries covering every PR merged from
+  #2 through #37, each with What / Why / Ref and merge commit
+  links. Single source of truth for project narrative in
+  complement to this changelog.
+- **`README.md`** reformatted under Prettier baseline; content
+  unchanged.
+
+### Fixed
+
+- **Prettier + Markdown** — set `proseWrap: 'preserve'` so prose
+  rewrapping does not split inline code spans across lines and
+  break bullet-list continuation indentation.
+- **CI SonarCloud scan** — guarded with
+  `if: github.event.pull_request.head.repo.fork != true` so forked
+  PRs do not fail for want of `SONAR_TOKEN` (GitHub does not expose
+  secrets to forks).
+- **CI action pinning** — the remaining `@v4` tag-pinned actions in
+  `ci.yml` (`actions/checkout`, `pnpm/action-setup`,
+  `actions/setup-node`) are now SHA-pinned to match every other
+  workflow. `actions/checkout` uses `fetch-depth: 0` so SonarCloud
+  has full SCM history for blame annotations.
+
 ## [0.1.1-rc2] - 2026-04-22
 
 Retry of `0.1.1-rc1` after the first publish workflow failed at the

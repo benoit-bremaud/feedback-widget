@@ -563,4 +563,32 @@ New entries are appended to the bottom as events occur.
     of thumb: security/quality gates are not negotiated — fix the
     code, do not mark the Hotspot Safe.
 - **Ref:** PR [#37](https://github.com/benoit-bremaud/feedback-widget/pull/37),
+  merge commit [`1ebde5c`](https://github.com/benoit-bremaud/feedback-widget/commit/1ebde5c)
+
+### PR — release v0.2.0 (foundations complete)
+
+- **What:** Bumped `packages/core` and `packages/web` versions from
+  `0.1.1-rc2` to `0.2.0` in lockstep (monorepo convention). Rewrote
+  `CHANGELOG.md` — moved the previously-empty `[Unreleased]` block
+  into a full `[0.2.0] — 2026-04-23` section with a narrative
+  covering everything merged since `0.1.1-rc2`: governance
+  (CONTRIBUTING, issue templates, PR template, tag protection,
+  tag conventions), quality (ESLint + Prettier, coverage + SonarCloud
+  wiring, view-layer tests), security (the breaking
+  `defaultGenerateId` change, PRNG removed), and CI hardening
+  (SHA-pinning, fork guard, `fetch-depth: 0`). Sections follow
+  Keep a Changelog format — Added / Changed / Fixed — with the
+  breaking-change intent called out at the top of the release
+  block.
+- **Why:** First `latest` release. Every foundations issue from the
+  `v0.2.0 — Foundations` milestone is closed (#5, #7, #8, #10, #11,
+  #29, #31, #32, #38) or becomes a nice-to-have follow-up (#12
+  coverage thresholds, #13 release doc, #14 Renovate — all P2, none
+  blocking a stable tag). Releasing now unblocks the consumer-side
+  roadmap (Phase B — n8n pipeline, Phase C — first real integration
+  in Impropedia) that the widget was built for.
+- **Ref:** PR [#39](https://github.com/benoit-bremaud/feedback-widget/pull/39),
   merge commit: _to be updated post-merge_
+- **Follow-up:** After merge, tag `v0.2.0` from `main` and push —
+  `publish.yml` fires, both packages land on GitHub Packages under
+  the `latest` dist-tag for the first time.
