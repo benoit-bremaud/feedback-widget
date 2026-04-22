@@ -48,9 +48,21 @@ tag matching `v*`:
    `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}` — the built-in token
    with `packages: write`. No long-lived PAT on the publisher side.
 
-Pre-releases (`v0.2.0-rc1`, `-beta.2`, etc.) follow the same path —
-the `v*` pattern matches; npm handles the `dist-tag` correctly based
-on the version string.
+### Stable vs prerelease dist-tag
+
+The workflow derives the npm `--tag` from the git tag name before
+publishing, so a prerelease never becomes the default install:
+
+- Stable (`v0.2.0`, `v1.0.0`) → `--tag latest`. Consumers running
+  `pnpm add @benoit-bremaud/feedback-widget` get this version.
+- Prerelease (`v0.2.0-rc1`, `v0.2.0-beta.2`, `v1.0.0-alpha`, …) →
+  `--tag rc`. Consumers who want the prerelease must opt in with
+  `pnpm add @benoit-bremaud/feedback-widget@rc`, which never
+  promotes the prerelease to the default install for anyone else.
+
+The detection is a simple `[[ "$TAG" == *-* ]]` in the `Determine
+npm dist-tag` workflow step — any hyphen in the version string
+flags it as prerelease.
 
 ## Consumer-side installation
 
@@ -128,7 +140,7 @@ EOF
 pnpm init -y
 export GITHUB_TOKEN="<your-PAT-with-read:packages>"
 pnpm add @benoit-bremaud/feedback-widget
-node -e "require('@benoit-bremaud/feedback-widget')"
+node --input-type=module -e "await import('@benoit-bremaud/feedback-widget')"
 ```
 
 ## Remove / unpublish (emergency only)

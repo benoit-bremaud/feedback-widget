@@ -51,7 +51,23 @@ jobs:
       - name: Build
         run: pnpm -r build
 
+      - name: Determine npm dist-tag
+        id: disttag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Stable releases (vX.Y.Z) go to the `latest` dist-tag.
+          # Prereleases (vX.Y.Z-rc1, -beta.2, -alpha, etc.) go to `rc`,
+          # so `pnpm add @benoit-bremaud/feedback-widget` never installs
+          # a prerelease by default — consumers must opt in with
+          # `pnpm add @benoit-bremaud/feedback-widget@rc`.
+          if [[ "$TAG" == *-* ]]; then
+            echo "tag=rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Resolved dist-tag for $TAG: $(grep ^tag "$GITHUB_OUTPUT" | cut -d= -f2)"
+
       - name: Publish packages
-        run: pnpm -r publish --no-git-checks --access restricted
+        run: pnpm -r publish --no-git-checks --access restricted --tag ${{ steps.disttag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

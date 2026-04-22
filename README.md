@@ -16,11 +16,14 @@ target DOM block), and POSTs the payload to your backend.
 ## Status
 
 Currently at `v0.1.0`, private, `UNLICENSED`. This project is
-intentionally private. It is **not published to npm** —
-consumers install it directly from this GitHub repository (see
-[Installation](#installation)). The transition to public will only
-happen after a full security audit, per the repo's private-first
-policy.
+intentionally private and is **not published to the public npm
+registry**. Consumers install it from the **GitHub Packages
+private registry** under this repository — see
+[Installation](#installation) for the recommended path
+(`pnpm add @benoit-bremaud/feedback-widget` with a
+`read:packages` PAT), or one of the git-URL fallbacks. The
+transition to public npm will only happen after a full security
+audit, per the repo's private-first policy.
 
 ## Quickstart
 
