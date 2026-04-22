@@ -1,11 +1,13 @@
 <!--
 Thank you for opening a PR.
 
-This template is the single source of truth for PR structure in this repo.
+This is the auto-loaded runtime PR template. It mirrors the canonical
+contribution policy documented in CONTRIBUTING.md — CONTRIBUTING.md is
+the source of truth; this file enforces the format at PR-open time.
 Keep the sections below. Delete any section that does not apply (for
 example, drop "Tests" on a docs-only PR). Finish with `Closes #<issue>`.
 
-Full contribution rules: ../CONTRIBUTING.md
+Full contribution rules: https://github.com/benoit-bremaud/feedback-widget/blob/main/CONTRIBUTING.md
 -->
 
 ## Summary

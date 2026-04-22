@@ -373,9 +373,9 @@ New entries are appended to the bottom as events occur.
 - **Ref:** PR [#33](https://github.com/benoit-bremaud/feedback-widget/pull/33),
   merge commit [`453e92a`](https://github.com/benoit-bremaud/feedback-widget/commit/453e92a)
 
-### PR — add PR description template at `.github/pull_request_template.md`
+### PR — add PR description template at `.github/PULL_REQUEST_TEMPLATE.md`
 
-- **What:** Created `.github/pull_request_template.md` so GitHub
+- **What:** Created `.github/PULL_REQUEST_TEMPLATE.md` so GitHub
   auto-loads a consistent structure on every new PR opened against
   this repo. The template mirrors the `CONTRIBUTING.md` §Pull
   Request description template (Summary with per-Area sub-blocks,
