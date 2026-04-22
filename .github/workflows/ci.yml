@@ -44,10 +44,11 @@ jobs:
           if-no-files-found: error
 
       - name: SonarCloud scan
-        # Skip on forked PRs (secrets.SONAR_TOKEN is not exposed to forked
-        # workflows) and guard against any other context where the token is
-        # missing. Keep the rest of CI green for external contributions.
-        if: ${{ secrets.SONAR_TOKEN != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) }}
+        # Skip on forked PRs — secrets.SONAR_TOKEN is not exposed to forked
+        # workflows, so the scan would fail for external contributors. The
+        # fork check covers the common case; pushes to main and internal
+        # PRs always run the scan.
+        if: github.event.pull_request.head.repo.fork != true
         uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402 # v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
