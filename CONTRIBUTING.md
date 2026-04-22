@@ -405,12 +405,34 @@ behaviour do not need *new* tests but must not break existing ones.
 
 ### Coverage
 
-Coverage is measured with `@vitest/coverage-v8`:
+Coverage is measured with `@vitest/coverage-v8`. Each `vitest.config.ts`
+emits `lcov` and `text` reporters, so coverage reports land as
+`packages/core/coverage/lcov.info` and `packages/web/coverage/lcov.info`.
+
+Run locally from the repo root:
 
 ```bash
-pnpm --filter @benoit-bremaud/feedback-widget-core test -- --coverage
-pnpm --filter @benoit-bremaud/feedback-widget test -- --coverage
+pnpm test:coverage
 ```
+
+CI runs `pnpm test:coverage` on every push and PR and uploads the
+LCOV files as a `coverage-lcov` workflow artifact. On internal PRs
+and on pushes to `main`, it also feeds those reports to SonarCloud
+via `SonarSource/sonarqube-scan-action` so the SonarCloud Quality
+Gate check reports a real coverage percentage. The SonarCloud
+project is configured for CI-based analysis (not Automatic
+Analysis) so LCOV data is read directly; the scan step relies on
+the `SONAR_TOKEN` repository secret.
+
+**Forked PRs do not run the SonarCloud scan** — GitHub does not
+expose repository secrets to workflows triggered from forks, so the
+scan would fail with an authentication error. The workflow step is
+guarded with `if: github.event.pull_request.head.repo.fork != true`
+and simply skips on fork PRs, keeping the rest of CI (build,
+typecheck, tests, LCOV artifact upload) green for external
+contributors. Quality Gate decoration then only appears when the PR
+is rerun in a trusted context (e.g. by a maintainer pushing the
+branch to the upstream repo).
 
 Coverage thresholds are not yet enforced in CI (tracked in
 [issue #12](https://github.com/benoit-bremaud/feedback-widget/issues/12)).
