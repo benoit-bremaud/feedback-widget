@@ -10,13 +10,16 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Sonar analysis needs full history for blame / SCM metadata.
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -41,6 +44,10 @@ jobs:
           if-no-files-found: error
 
       - name: SonarCloud scan
+        # Skip on forked PRs (secrets.SONAR_TOKEN is not exposed to forked
+        # workflows) and guard against any other context where the token is
+        # missing. Keep the rest of CI green for external contributions.
+        if: ${{ secrets.SONAR_TOKEN != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) }}
         uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402 # v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

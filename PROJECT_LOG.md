@@ -461,14 +461,28 @@ New entries are appended to the bottom as events occur.
   SonarCloud scan (`SonarSource/sonarqube-scan-action@v4`, SHA-pinned)
   with `SONAR_TOKEN` from repo secrets. Rewrote `CONTRIBUTING.md`
   §Coverage to reflect the new CI-enforced flow (LCOV emitted, artifact
-  uploaded, feed to SonarCloud, `SONAR_TOKEN` secret required).
+  uploaded, fed to SonarCloud, `SONAR_TOKEN` secret required).
   Verified locally — `pnpm test:coverage` produces
   `packages/core/coverage/lcov.info` (2.6 KB) and
   `packages/web/coverage/lcov.info` (14 KB), and prints the coverage
   summary: core at 96% statements, web at 19% statements (low because
   `widget.ts`, `WebComponentView.ts`, and `IntersectionViewportDetector.ts`
   have no direct unit tests; a follow-up issue will cover the
-  view-layer tests).
+  view-layer tests). Review cycle added six fixes: (1/2) Codex + Copilot
+  flagged that the Sonar scan would break forked PRs (secrets are not
+  exposed to forks) — gated the step with
+  `if: ${{ secrets.SONAR_TOKEN != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) }}`;
+  (3) `sonar.typescript.tsconfigPath` switched from `tsconfig.base.json`
+  to the per-package configs `packages/core/tsconfig.json,packages/web/tsconfig.json`
+  so SonarCloud sees the package-specific `lib` (e.g. `DOM` in web);
+  (4) SHA-pinned the remaining actions in `ci.yml`
+  (`actions/checkout`, `pnpm/action-setup`, `actions/setup-node`) to
+  match the convention used in every other workflow, and added
+  `fetch-depth: 0` on checkout so SonarCloud has full SCM history
+  for blame data; (5) removed `**/*.test.ts` from `sonar.exclusions`
+  because it cancelled `sonar.test.inclusions` (tests must be
+  classified as tests, not excluded); (6) grammar fix in the
+  PROJECT_LOG entry (`feed` → `fed`).
 - **Why:** Closes issue
   [#31](https://github.com/benoit-bremaud/feedback-widget/issues/31)
   (`prio:P1`, `area:ci` + `area:testing`). SonarCloud was running in
