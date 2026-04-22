@@ -167,8 +167,8 @@ New entries are appended to the bottom as events occur.
   the git-URL methods as fallbacks. Consumers install with a
   committable `.npmrc` (`${GITHUB_TOKEN}` resolved from env) and a
   PAT scoped `read:packages` only.
-- **Why:** The whole point of the standalone project — `pnpm add
-@benoit-bremaud/feedback-widget` in any consumer (Impropedia
+- **Why:** The whole point of the standalone project —
+  `pnpm add @benoit-bremaud/feedback-widget` in any consumer (Impropedia
   first, others later) without git-URL boilerplate and without ever
   embedding a PAT in a URL. Stays on the private-first policy
   (GitHub Packages private registry) while unlocking the real npm

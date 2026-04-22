@@ -11,6 +11,6 @@ export default {
   endOfLine: 'lf',
   // Preserve author-chosen line breaks in Markdown so prose-wrap does not
   // split inline code spans across lines, which breaks bullet-list
-  // continuation indentation (see PR #37 Copilot review).
+  // continuation indentation.
   proseWrap: 'preserve',
 }
