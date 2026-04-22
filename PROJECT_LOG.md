@@ -224,3 +224,61 @@ New entries are appended to the bottom as events occur.
   conformance and security audits are complete.
 - **Ref:** tag [`v0.1.1-rc2`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.1.1-rc2),
   workflow run [`24785834759`](https://github.com/benoit-bremaud/feedback-widget/actions/runs/24785834759)
+
+### PR #27 merged — CONTRIBUTING.md with full conventions and DoD
+
+- **What:** Added the repo-root `CONTRIBUTING.md` in tutorial tone
+  (≈590 lines after review fixes): workflow overview, Conventional
+  Commits for issues and commits, triptych label rules
+  (`type:*` + `area:*` + `prio:*`), branch naming
+  (`<type>/T-<issue-number>-<kebab>`), mandatory PR sidebar including
+  explicit milestone + project + automated reviewer, PR description
+  template, Definition of Done with explicit merge gate, Vitest
+  testing requirements (happy + sad + edge per behavioural change),
+  secret-handling and rotation rules, AI-attribution policy
+  (attribution/credit banned, policy-doc exemption carved out),
+  private-first public-release checklist, `CHANGELOG.md` vs
+  `PROJECT_LOG.md` distinction, and release workflow cross-linked to
+  `.github/publish.md`. Reviewed by Codex (1 comment) and Copilot
+  (two passes, 6 comments total) — all 7 addressed inline: milestone
+  no longer claims auto-inherit from `Closes #xx`, branch-protection
+  wording clarified for the owner bypass, scope-granularity note
+  added for narrower qualifiers like `ci(publish)`, AI-attribution
+  section rewritten around attribution/credit with explicit
+  exemptions, release tag command aligned with the canonical
+  lightweight form in `.github/publish.md`, `.env.example` rephrased
+  as future-conditional, and `AGENTS.md` removed from the exemption
+  list until such a file actually exists.
+- **Why:** Closes issue
+  [#5](https://github.com/benoit-bremaud/feedback-widget/issues/5)
+  (`prio:P0`) and unblocks the rest of the governance backlog —
+  `#7` issue templates, `#8` PR template, and `#10` tag protection
+  all depend on the conventions pinned down here.
+- **Ref:** PR [#27](https://github.com/benoit-bremaud/feedback-widget/pull/27),
+  merge commit [`00aad68`](https://github.com/benoit-bremaud/feedback-widget/commit/00aad68)
+
+### PR #28 — tag protection policy for `v*` release tags
+
+- **What:** Added `.github/tag-protection.md` as the canonical,
+  committed reference for the `v*` tag protection ruleset: rule
+  scope (`refs/tags/v*`), rules enforced (creation + update +
+  deletion all blocked), enforcement `active`, bypass for
+  `RepositoryRole: Admin` (`actor_id: 5`) mode `always` mirroring
+  the owner escape-hatch pattern used on `main`. The doc ships the
+  apply/update `gh api` flow (one-time POST bootstrap create, then
+  idempotent PUT against the ruleset ID once it exists), verification
+  commands (list + fetch by ID + existing-tag integrity check +
+  non-admin rejection tests deferred until a second collaborator
+  exists), and remove command. `CONTRIBUTING.md` §Release workflow
+  gained a one-paragraph pointer and a new entry in the Cross-links
+  footer. The live ruleset is applied by the owner out-of-band after
+  merge, matching the branch-protection pattern — the config lives
+  in git, the apply step is a reviewable command.
+- **Why:** Closes issue
+  [#10](https://github.com/benoit-bremaud/feedback-widget/issues/10)
+  (`prio:P1`, `area:governance`). Prevents accidental creation,
+  force-overwrite, or deletion of release tags by any non-admin
+  collaborator, and hardens the tag-driven publish pipeline against
+  version-number collision on GitHub Packages.
+- **Ref:** PR [#28](https://github.com/benoit-bremaud/feedback-widget/pull/28),
+  merge commit: *to be updated post-merge*

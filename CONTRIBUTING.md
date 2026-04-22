@@ -569,6 +569,12 @@ Releases are **tag-driven**. The canonical reference is
 **Never tag a commit that is not on `main`.** The publish workflow
 enforces this — do not try to work around the check.
 
+**Tag protection.** Release tags matching `v*` are protected via a
+GitHub ruleset: creation, update, and deletion are blocked for
+non-admin collaborators. The owner keeps a bypass to cut routine
+releases. Policy and apply/verify commands live in
+[.github/tag-protection.md](./.github/tag-protection.md).
+
 **Failed publishes.** If a publish workflow fails partway, document
 the failure in `CHANGELOG.md` (reconcile the version entry to say
 explicitly nothing shipped) and move to the next rc. The failed tag
@@ -583,6 +589,8 @@ stays as an audit marker; the version stays reserved.
 - [CHANGELOG.md](./CHANGELOG.md) — published versions
 - [.github/branch-protection.md](./.github/branch-protection.md) — branch
   protection policy on `main`
+- [.github/tag-protection.md](./.github/tag-protection.md) — tag
+  protection policy for `v*` release tags
 - [.github/publish.md](./.github/publish.md) — release and publish workflow,
   consumer `.npmrc` setup, PAT rotation
 
