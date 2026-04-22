@@ -441,4 +441,46 @@ New entries are appended to the bottom as events occur.
   closer to complete on every new issue. Blank issues are disabled
   so the format cannot be bypassed.
 - **Ref:** PR [#35](https://github.com/benoit-bremaud/feedback-widget/pull/35),
+  merge commit [`af1d946`](https://github.com/benoit-bremaud/feedback-widget/commit/af1d946)
+
+### PR — wire LCOV coverage into CI and feed SonarCloud
+
+- **What:** Added a `coverage` block to both `packages/core/vitest.config.ts`
+  and `packages/web/vitest.config.ts` (provider `v8`, reporters `text`
+  and `lcov`, includes `src/**/*.ts`, excludes `*.test.ts` / `dist/**` /
+  `*.d.ts`). Created `sonar-project.properties` at the repo root with
+  the monorepo layout: `sonar.sources` and `sonar.tests` both point at
+  `packages/{core,web}/src` with `test.inclusions=**/*.test.ts` to
+  disambiguate; `sonar.javascript.lcov.reportPaths` enumerates the two
+  per-package `lcov.info` outputs; `sonar.typescript.tsconfigPath`
+  points at `tsconfig.base.json`; `packages/web/src/index.ts` is
+  excluded from coverage requirements as the public barrel. Updated
+  `.github/workflows/ci.yml` to run `pnpm test:coverage` instead of
+  `pnpm test`, upload the LCOV files as a `coverage-lcov` workflow
+  artifact (`actions/upload-artifact@v4`, SHA-pinned), and run the
+  SonarCloud scan (`SonarSource/sonarqube-scan-action@v4`, SHA-pinned)
+  with `SONAR_TOKEN` from repo secrets. Rewrote `CONTRIBUTING.md`
+  §Coverage to reflect the new CI-enforced flow (LCOV emitted, artifact
+  uploaded, feed to SonarCloud, `SONAR_TOKEN` secret required).
+  Verified locally — `pnpm test:coverage` produces
+  `packages/core/coverage/lcov.info` (2.6 KB) and
+  `packages/web/coverage/lcov.info` (14 KB), and prints the coverage
+  summary: core at 96% statements, web at 19% statements (low because
+  `widget.ts`, `WebComponentView.ts`, and `IntersectionViewportDetector.ts`
+  have no direct unit tests; a follow-up issue will cover the
+  view-layer tests).
+- **Why:** Closes issue
+  [#31](https://github.com/benoit-bremaud/feedback-widget/issues/31)
+  (`prio:P1`, `area:ci` + `area:testing`). SonarCloud was running in
+  Automatic Analysis mode, which ignores LCOV — every PR Quality Gate
+  showed a blank coverage percentage and the UI surfaced a setup
+  banner. Wiring LCOV + CI-based analysis unblocks the coverage
+  metric on every PR and establishes the baseline that issue #12
+  (coverage thresholds) needs before it can enforce anything.
+- **Note:** Three SonarCloud UI actions remain as the owner-side
+  one-time setup (documented in the PR body): switch the project from
+  Automatic Analysis to CI-based analysis, set the New Code
+  definition to reference branch `main`, and confirm the
+  `SONAR_TOKEN` repo secret exists.
+- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
   merge commit: *to be updated post-merge*

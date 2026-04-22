@@ -405,12 +405,23 @@ behaviour do not need *new* tests but must not break existing ones.
 
 ### Coverage
 
-Coverage is measured with `@vitest/coverage-v8`:
+Coverage is measured with `@vitest/coverage-v8`. Each `vitest.config.ts`
+emits `lcov` and `text` reporters, so coverage reports land as
+`packages/core/coverage/lcov.info` and `packages/web/coverage/lcov.info`.
+
+Run locally from the repo root:
 
 ```bash
-pnpm --filter @benoit-bremaud/feedback-widget-core test -- --coverage
-pnpm --filter @benoit-bremaud/feedback-widget test -- --coverage
+pnpm test:coverage
 ```
+
+CI runs `pnpm test:coverage` on every push and PR, uploads the LCOV
+files as a workflow artifact, and feeds them to SonarCloud via
+`SonarSource/sonarqube-scan-action` — the SonarCloud Quality Gate
+check on every PR then reports a real coverage percentage instead
+of blank. The SonarCloud project is configured for CI-based analysis
+(not Automatic Analysis) so LCOV data is read directly; the scan
+step relies on the `SONAR_TOKEN` repository secret.
 
 Coverage thresholds are not yet enforced in CI (tracked in
 [issue #12](https://github.com/benoit-bremaud/feedback-widget/issues/12)).
