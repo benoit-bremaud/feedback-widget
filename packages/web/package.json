@@ -4,6 +4,18 @@
   "description": "Web (browser / Web Component) implementation of the feedback widget. For dev/QA in-app bug reporting.",
   "author": "Benoît Bremaud",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benoit-bremaud/feedback-widget.git",
+    "directory": "packages/web"
+  },
+  "homepage": "https://github.com/benoit-bremaud/feedback-widget#readme",
+  "bugs": {
+    "url": "https://github.com/benoit-bremaud/feedback-widget/issues"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

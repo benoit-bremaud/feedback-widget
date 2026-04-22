@@ -61,9 +61,39 @@ flowchart LR
 
 ## Installation
 
-Node 20+ and pnpm (or npm) required. Since the package is not
-published to npm, install from git. Two auth flavours are documented:
-git over HTTPS with a Personal Access Token, or git over SSH.
+Node 20+ and pnpm (or npm) required. Three installation methods are
+documented, in order of preference: **GitHub Packages** (recommended),
+git + HTTPS + PAT, and git + SSH.
+
+### Recommended — GitHub Packages
+
+The packages are published to the GitHub Packages private registry
+(`https://npm.pkg.github.com`). Consumers authenticate with a PAT
+that has the `read:packages` scope.
+
+1. Create a GitHub PAT with `read:packages` (classic) or a fine-grained
+   token with `Packages: Read` on this repo.
+2. In your consumer project, add `.npmrc` (safe to commit — the token
+   is resolved from env, never written into the file):
+
+   ```ini
+   @benoit-bremaud:registry=https://npm.pkg.github.com
+   //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+   ```
+
+3. Export the PAT and install:
+
+   ```sh
+   export GITHUB_TOKEN="<your-PAT-with-read:packages>"
+   pnpm add @benoit-bremaud/feedback-widget
+   ```
+
+The consumer-side `.npmrc`, the PAT rotation policy, and the full CI
+auth pattern are documented in
+[`.github/publish.md`](.github/publish.md).
+
+The remaining two methods are for environments where GitHub Packages
+is not reachable or where you need to pin to a non-tagged commit.
 
 ### Option A — git + HTTPS + PAT
 

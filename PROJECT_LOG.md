@@ -151,4 +151,30 @@ New entries are appended to the bottom as events occur.
   [#3](https://github.com/benoit-bremaud/feedback-widget/issues/3)
   (`prio:P0`).
 - **Ref:** PR [#21](https://github.com/benoit-bremaud/feedback-widget/pull/21),
+  merge commit [`d87cea0`](https://github.com/benoit-bremaud/feedback-widget/commit/d87cea0)
+
+### PR #23 — publish to GitHub Packages on tag
+
+- **What:** Added `.github/workflows/publish.yml` (tag-driven, triggers
+  on `push.tags: ['v*']`), the canonical policy doc
+  `.github/publish.md`, and wired `publishConfig.registry =
+  https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
+  fields into both packages' `package.json`. All third-party actions
+  are SHA-pinned (`actions/checkout@v4`, `pnpm/action-setup@v4`,
+  `actions/setup-node@v4`). Updated `README.md` Installation section
+  to promote GitHub Packages as the recommended path while keeping
+  the git-URL methods as fallbacks. Consumers install with a
+  committable `.npmrc` (`${GITHUB_TOKEN}` resolved from env) and a
+  PAT scoped `read:packages` only.
+- **Why:** The whole point of the standalone project — `pnpm add
+  @benoit-bremaud/feedback-widget` in any consumer (Impropedia
+  first, others later) without git-URL boilerplate and without ever
+  embedding a PAT in a URL. Stays on the private-first policy
+  (GitHub Packages private registry) while unlocking the real npm
+  DX. Closes issue
+  [#22](https://github.com/benoit-bremaud/feedback-widget/issues/22)
+  (`prio:P1`, `security`). Complements the broader release-workflow
+  doc tracked in issue
+  [#13](https://github.com/benoit-bremaud/feedback-widget/issues/13).
+- **Ref:** PR [#23](https://github.com/benoit-bremaud/feedback-widget/pull/23),
   merge commit: *to be updated post-merge*
