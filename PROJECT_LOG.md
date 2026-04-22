@@ -157,8 +157,9 @@ New entries are appended to the bottom as events occur.
 
 - **What:** Added `.github/workflows/publish.yml` (tag-driven, triggers
   on `push.tags: ['v*']`), the canonical policy doc
-  `.github/publish.md`, and wired `publishConfig.registry =
-https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
+  `.github/publish.md`, and wired
+  `publishConfig.registry = https://npm.pkg.github.com` plus
+  `repository`/`homepage`/`bugs`
   fields into both packages' `package.json`. All third-party actions
   are SHA-pinned (`actions/checkout@v4`, `pnpm/action-setup@v4`,
   `actions/setup-node@v4`). Updated `README.md` Installation section
@@ -281,8 +282,8 @@ https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
   PROJECT_LOG entry now distinguishes one-time POST bootstrap from
   idempotent PUT; (3) Should Have — `RULESET_ID` extraction adds
   defensive count-and-validate step (fails fast on empty or
-  duplicate match). Ruleset activated post-merge via `POST
-/rulesets` — live ID `15413164`, enforcement `active`, owner
+  duplicate match). Ruleset activated post-merge via
+  `POST /rulesets` — live ID `15413164`, enforcement `active`, owner
   (current user) `can_bypass: always`. Existing tags `v0.1.0`,
   `v0.1.1-rc1`, `v0.1.1-rc2` all intact.
 - **Why:** Closes issue
@@ -535,7 +536,7 @@ https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
   baseline the repo needed before the codebase grows further —
   every future PR gets caught on `any` usage or a default export
   at PR-open time rather than at review time. Verified locally:
-  `pnpm lint` returns zero errors / zero warnings, `pnpm
-format:check` is clean, all 40 tests still pass.
+  `pnpm lint` returns zero errors / zero warnings,
+  `pnpm format:check` is clean, all 40 tests still pass.
 - **Ref:** PR [#37](https://github.com/benoit-bremaud/feedback-widget/pull/37),
   merge commit: _to be updated post-merge_

@@ -501,8 +501,9 @@ This repo does not commit editor configuration beyond `.editorconfig`.
 To get auto-format on save:
 
 - **VS Code** — install the Prettier and ESLint extensions; set
-  `editor.formatOnSave: true` and `editor.defaultFormatter:
-"esbenp.prettier-vscode"` in your user settings (not the workspace).
+  `editor.formatOnSave: true` and
+  `editor.defaultFormatter: "esbenp.prettier-vscode"` in your user
+  settings (not the workspace).
 - **JetBrains** — enable `Prettier` and `ESLint` under Languages &
   Frameworks → JavaScript; set the actions to run on save.
 
