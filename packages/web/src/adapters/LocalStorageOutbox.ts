@@ -92,7 +92,24 @@ function defaultGenerateId(): string {
   if (cryptoRef && typeof cryptoRef.randomUUID === 'function') {
     return cryptoRef.randomUUID()
   }
-  return `fw-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  // Fallback for environments that expose `crypto` but not the newer
+  // `randomUUID` (older WebViews, Node < 14.17). `getRandomValues` ships
+  // cryptographically secure bytes everywhere `crypto` is available, so
+  // no PRNG (Math.random) is ever used — the SonarCloud Weak-Cryptography
+  // Hotspot on the previous implementation is resolved by design.
+  if (cryptoRef && typeof cryptoRef.getRandomValues === 'function') {
+    const bytes = new Uint8Array(6)
+    cryptoRef.getRandomValues(bytes)
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(
+      '',
+    )
+    return `fw-${Date.now().toString(36)}-${hex}`
+  }
+  // No Crypto API at all — unsupported target. Throw rather than fall
+  // back to `Math.random()` (weak PRNG, not cryptographically secure).
+  throw new Error(
+    'feedback-widget: no Crypto API available (crypto.randomUUID or crypto.getRandomValues required).',
+  )
 }
 
 function isOutboxEntry(value: unknown): value is OutboxEntry {

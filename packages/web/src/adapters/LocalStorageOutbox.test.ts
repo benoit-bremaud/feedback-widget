@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FeedbackPayload } from '@benoit-bremaud/feedback-widget-core'
 import { createLocalStorageOutbox } from './LocalStorageOutbox'
 
@@ -154,5 +154,99 @@ describe('adapters/LocalStorageOutbox', () => {
     // 2 sent entries removed, 1 concurrent enqueue preserved.
     expect(await outbox.size()).toBe(1)
     expect(send).toHaveBeenCalledTimes(2)
+  })
+
+  describe('defaultGenerateId — fallback branches', () => {
+    // These tests drive the non-injected path (generateId: undefined) so
+    // the outbox reaches defaultGenerateId, then stubs globalThis.crypto
+    // to exercise each branch.
+    const makeOutboxWithDefaultId = () =>
+      createLocalStorageOutbox({
+        storage,
+        key: 'outbox',
+        now: () => currentTime,
+        // no generateId → use defaultGenerateId
+      })
+
+    const originalCrypto = globalThis.crypto
+
+    beforeEach(() => {
+      storage = makeStorage()
+    })
+
+    afterEach(() => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: originalCrypto,
+        configurable: true,
+        writable: true,
+      })
+    })
+
+    it('uses crypto.randomUUID when available (happy path)', async () => {
+      const fakeUuid = '11111111-2222-3333-4444-555555555555'
+      Object.defineProperty(globalThis, 'crypto', {
+        value: { randomUUID: () => fakeUuid },
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await outbox.enqueue(payload)
+
+      const raw = storage.getItem('outbox') ?? '[]'
+      const entries = JSON.parse(raw) as Array<{ id: string }>
+      expect(entries).toHaveLength(1)
+      expect(entries[0]?.id).toBe(fakeUuid)
+    })
+
+    it('falls back to crypto.getRandomValues when randomUUID is missing (edge path)', async () => {
+      const writtenBytes: number[] = []
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {
+          // No randomUUID, only getRandomValues.
+          getRandomValues: (buf: Uint8Array) => {
+            for (let i = 0; i < buf.length; i++) {
+              buf[i] = (i + 1) * 16 + i // stable, non-zero bytes
+              writtenBytes.push(buf[i]!)
+            }
+            return buf
+          },
+        },
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await outbox.enqueue(payload)
+
+      const raw = storage.getItem('outbox') ?? '[]'
+      const entries = JSON.parse(raw) as Array<{ id: string }>
+      expect(entries).toHaveLength(1)
+      // ID matches `fw-<time-base36>-<12 hex chars>`
+      expect(entries[0]?.id).toMatch(/^fw-[0-9a-z]+-[0-9a-f]{12}$/)
+      expect(writtenBytes.length).toBe(6)
+    })
+
+    it('throws when neither randomUUID nor getRandomValues is available (sad path)', async () => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {},
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await expect(outbox.enqueue(payload)).rejects.toThrow(/Crypto API/)
+    })
+
+    it('throws when crypto is entirely undefined (sad path)', async () => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: undefined,
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await expect(outbox.enqueue(payload)).rejects.toThrow(/Crypto API/)
+    })
   })
 })
