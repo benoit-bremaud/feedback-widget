@@ -399,4 +399,46 @@ New entries are appended to the bottom as events occur.
   template is the runtime enforcement of that policy at PR-open
   time.
 - **Ref:** PR [#34](https://github.com/benoit-bremaud/feedback-widget/pull/34),
+  merge commit [`dbaca34`](https://github.com/benoit-bremaud/feedback-widget/commit/dbaca34)
+
+### PR — add issue templates (bug, feature, docs, task)
+
+- **What:** Added five YAML issue forms under
+  `.github/ISSUE_TEMPLATE/`: `config.yml` (disables blank issues and
+  points to `CONTRIBUTING.md` + `README.md`), `bug_report.yml`
+  (auto-label `type:bug`, title `fix(<area>): <desc>`, fields
+  Description / Steps to reproduce / Expected / Actual / Area /
+  Priority / Version-commit / Evidence), `feature_request.yml`
+  (auto-label `type:feature`, title `feat(<area>): <desc>`, fields
+  User story / Goal / Scope IN-OUT / Acceptance criteria / Area /
+  Priority / Notes), `docs_request.yml` (auto-label `type:docs`,
+  title `docs(<area>): <desc>`, fields Goal / Scope / Acceptance /
+  Area / Priority / Notes), `task.yml` (auto-label `type:task`,
+  title `chore(<area>): <desc>`, fields Goal / Scope / Acceptance /
+  Area / Priority / Notes). Each form ships the repo's full Area
+  dropdown (`core` / `web` / `ci` / `react-native` / `governance` /
+  `testing` / `docs` / `release`) and the full Priority dropdown
+  (`prio:P0` through `prio:P3`, default P2). Every template closes
+  with a two-item pre-submission checklist: confirm no duplicate,
+  and a sidebar-reminder that the author must set assignee, label
+  triptych, project, and milestone after opening the issue. Codex
+  review flagged that `bug_report.yml` uses bug-specific fields
+  (Description / Steps to reproduce / Expected / Actual / …) rather
+  than the Goal / Scope / DoD / Notes structure that `CONTRIBUTING.md`
+  §Issue body — mandatory sections declares mandatory for every
+  issue — a direct policy conflict once blank issues are disabled.
+  Resolved by scoping the Goal-/Scope-/DoD-/Notes rule in
+  `CONTRIBUTING.md` to `feat` / `docs` / `task` issues and adding an
+  explicit clause stating that bug reports use the bug-report
+  template's field layout instead. A bug is a report of what broke,
+  not a proposal of work, so the work-proposal structure does not
+  fit naturally — policy now matches reality.
+- **Why:** Closes issue
+  [#7](https://github.com/benoit-bremaud/feedback-widget/issues/7)
+  (`prio:P1`, `area:governance`). Machine-enforces the Goal / Scope
+  IN-OUT / Acceptance / Notes body format for work-proposal issues,
+  and pre-applies the `type:*` label so the triptych is one click
+  closer to complete on every new issue. Blank issues are disabled
+  so the format cannot be bypassed.
+- **Ref:** PR [#35](https://github.com/benoit-bremaud/feedback-widget/pull/35),
   merge commit: *to be updated post-merge*

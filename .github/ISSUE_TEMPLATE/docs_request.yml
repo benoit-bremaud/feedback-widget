@@ -1,0 +1,83 @@
+name: Documentation
+description: Add, update, or fix documentation (README, CONTRIBUTING, policies, API reference)
+title: "docs(<area>): <short description>"
+labels: ["type:docs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for documentation-only work — README changes, CONTRIBUTING updates, policy docs, API references, PROJECT_LOG narrative, CHANGELOG reconciliation, and similar content that does not change runtime behaviour.
+
+        Before filing, please search for [existing issues](https://github.com/benoit-bremaud/feedback-widget/issues) to avoid duplicates.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: One paragraph — what documentation change this issue delivers and who benefits.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Explicit IN / OUT to keep the doc change focused.
+      placeholder: "**IN:**\n- …\n\n**OUT:**\n- …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria (DoD)
+      description: Testable, checkable items that confirm the doc change is complete.
+      placeholder: "- [ ] …\n- [ ] …"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: The documentation surface affected.
+      options:
+        - "area:docs"
+        - "area:governance"
+        - "area:release"
+        - "area:core"
+        - "area:web"
+        - "area:ci"
+        - "area:react-native"
+        - "area:testing"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "prio:P0 — Foundation, blocks everything"
+        - "prio:P1 — High"
+        - "prio:P2 — Medium"
+        - "prio:P3 — Low / nice to have"
+      default: 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes & Links
+      description: References, prior PRs, external docs, parent epic.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have searched for existing issues and this is not a duplicate.
+          required: true
+        - label: After submitting I will set the sidebar metadata — assignee, label triptych (`type:*` + `area:*` + `prio:*`), project `feedback-widget`, and the matching milestone.
+          required: true

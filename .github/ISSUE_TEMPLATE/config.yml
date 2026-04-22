@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing guide
+    url: https://github.com/benoit-bremaud/feedback-widget/blob/main/CONTRIBUTING.md
+    about: Read the contribution conventions (branch, commit, PR, labels, DoD) before opening an issue.
+  - name: Project README
+    url: https://github.com/benoit-bremaud/feedback-widget/blob/main/README.md
+    about: Browse the user-facing quickstart, install, API, and integration examples.

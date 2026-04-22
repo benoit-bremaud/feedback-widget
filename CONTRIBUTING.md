@@ -149,6 +149,9 @@ Leave the milestone blank only if:
 
 ### Issue body — mandatory sections
 
+**For `feat` / `docs` / `task` issues** (every issue that proposes new
+work), the body must follow this structure:
+
 ```markdown
 ## Goal
 
@@ -173,6 +176,23 @@ Leave the milestone blank only if:
 starts. The DoD checklist turns "done" from a judgement call into a
 verifiable checkbox list — reviewers (and automated checks) can use it
 literally.
+
+**Required vs optional sections.** `Goal`, `Scope (IN/OUT)`, and
+`Acceptance criteria (DoD)` are **required** on every `feat` / `docs` /
+`task` issue — the issue forms under `.github/ISSUE_TEMPLATE/` enforce
+this by marking those fields `validations: required: true`.
+`Notes & Links` is **optional** — it captures references, parent
+epics, and related PRs when they exist, but forcing authors to type
+`N/A` for issues without external context would be busywork without
+value.
+
+**Bug reports use a distinct format** — a bug is a report of what
+broke, not a proposal of work, so the Goal / Scope / DoD / Notes
+structure does not fit naturally. The
+[`.github/ISSUE_TEMPLATE/bug_report.yml`](./.github/ISSUE_TEMPLATE/bug_report.yml)
+form defines the canonical shape: Description, Steps to reproduce,
+Expected behavior, Actual behavior, Area, Priority, Version/commit,
+Evidence. Use that template for every `type:bug` issue.
 
 ---
 

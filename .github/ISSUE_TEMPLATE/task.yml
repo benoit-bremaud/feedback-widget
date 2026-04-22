@@ -1,0 +1,83 @@
+name: Task / Chore
+description: A concrete technical task, refactor, infra change, tooling, or process improvement
+title: "chore(<area>): <short description>"
+labels: ["type:task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for tasks, chores, refactors, infra changes, and tooling improvements. For bugs use **Bug Report**. For new features use **Feature Request**. For documentation-only changes use **Documentation**.
+
+        Before filing, please search for [existing issues](https://github.com/benoit-bremaud/feedback-widget/issues) to avoid duplicates.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: One paragraph — what needs to be done and why.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Explicit IN / OUT boundaries to prevent scope creep.
+      placeholder: "**IN:**\n- …\n\n**OUT:**\n- …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria (DoD)
+      description: Testable, checkable items that gate merge.
+      placeholder: "- [ ] …\n- [ ] …"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - "area:core"
+        - "area:web"
+        - "area:ci"
+        - "area:react-native"
+        - "area:governance"
+        - "area:testing"
+        - "area:docs"
+        - "area:release"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: P0 blocks everything; use sparingly.
+      options:
+        - "prio:P0 — Foundation, blocks everything"
+        - "prio:P1 — High"
+        - "prio:P2 — Medium"
+        - "prio:P3 — Low / nice to have"
+      default: 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes & Links
+      description: References, related PRs, parent epic.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have searched for existing issues and this is not a duplicate.
+          required: true
+        - label: After submitting I will set the sidebar metadata — assignee, label triptych (`type:*` + `area:*` + `prio:*`), project `feedback-widget`, and the matching milestone.
+          required: true
