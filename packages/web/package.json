@@ -1,6 +1,6 @@
 {
   "name": "@benoit-bremaud/feedback-widget",
-  "version": "0.1.1-rc1",
+  "version": "0.1.1-rc2",
   "description": "Web (browser / Web Component) implementation of the feedback widget. For dev/QA in-app bug reporting.",
   "author": "Benoît Bremaud",
   "license": "UNLICENSED",
