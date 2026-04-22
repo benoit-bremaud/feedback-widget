@@ -265,8 +265,8 @@ New entries are appended to the bottom as events occur.
   deletion all blocked), enforcement `active`, bypass for
   `RepositoryRole: Admin` (`actor_id: 5`) mode `always` mirroring
   the owner escape-hatch pattern used on `main`. The doc ships the
-  idempotent apply/update `gh api` command (POST for first-time
-  create, PUT against the ruleset ID once it exists), verification
+  apply/update `gh api` flow (one-time POST bootstrap create, then
+  idempotent PUT against the ruleset ID once it exists), verification
   commands (list + fetch by ID + existing-tag integrity check +
   non-admin rejection tests deferred until a second collaborator
   exists), and remove command. `CONTRIBUTING.md` §Release workflow

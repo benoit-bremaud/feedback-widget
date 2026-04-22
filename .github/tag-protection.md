@@ -44,11 +44,20 @@ still to only touch `v*` tags through the documented release process
 
 ## Apply / update
 
-Run this command (idempotent — overwrites the current ruleset with
-what is declared here, assuming the ruleset ID is fetched first):
+Two distinct commands, two distinct semantics:
+
+- **First-time create** — `POST /rulesets`. **Not idempotent.** Run this
+  exactly once, when no ruleset with the name `Protect v* release tags`
+  exists yet. Re-running it later creates a *second* ruleset with the
+  same name, which is not what we want.
+- **Subsequent updates** — `PUT /rulesets/{id}`. **Idempotent.**
+  Overwrites the current config with what is declared here. Use this
+  for every change after the initial bootstrap.
+
+The correct flow is: POST once at setup, PUT for every later change.
 
 ```bash
-# Create the ruleset (first-time setup, when no ruleset exists yet)
+# --- First-time create (run once, only when no ruleset exists yet) ---
 gh api repos/benoit-bremaud/feedback-widget/rulesets \
   -X POST --input - <<'EOF'
 {
@@ -76,10 +85,20 @@ gh api repos/benoit-bremaud/feedback-widget/rulesets \
 }
 EOF
 
-# Update the ruleset (once it exists — substitute RULESET_ID from the
-# list command below, or capture it on create with --jq '.id')
-RULESET_ID=$(gh api repos/benoit-bremaud/feedback-widget/rulesets \
+# --- Subsequent updates (safe to re-run: idempotent PUT) ---
+# Resolve RULESET_ID defensively: fail fast if the selection is empty
+# (no matching ruleset — the create step was skipped) or ambiguous
+# (duplicate names — someone ran the create step more than once).
+RULESET_IDS=$(gh api repos/benoit-bremaud/feedback-widget/rulesets \
   --jq '.[] | select(.name == "Protect v* release tags") | .id')
+RULESET_COUNT=$(printf '%s\n' "$RULESET_IDS" | sed '/^$/d' | wc -l | tr -d ' ')
+if [ "$RULESET_COUNT" -ne 1 ]; then
+  printf 'Expected exactly 1 ruleset named %s, found %s.\n' \
+    '"Protect v* release tags"' "$RULESET_COUNT" >&2
+  exit 1
+fi
+RULESET_ID=$(printf '%s\n' "$RULESET_IDS" | sed '/^$/d')
+
 gh api repos/benoit-bremaud/feedback-widget/rulesets/$RULESET_ID \
   -X PUT --input - <<'EOF'
 {
@@ -145,13 +164,23 @@ git tag v-protection-test HEAD
 git push origin v-protection-test          # expected: rejected for non-admins
 git tag -d v-protection-test               # cleanup local
 
-# Update rejection test (non-admin — future): move an existing tag.
-git tag -f v0.1.0 HEAD                      # reassign v0.1.0 locally
-git push --force origin v0.1.0              # expected: rejected for non-admins
+# WARNING: never run the destructive update/delete checks below as an
+# admin/owner. Admin/owner credentials bypass the ruleset, so force-move
+# or delete operations would actually rewrite or remove the target tag
+# on the remote instead of proving the policy is active.
+#
+# Prerequisite: ask an owner to cut a disposable protected tag once, for
+# example `v-protection-test-existing`, pointing at any commit. The
+# update/delete tests then operate on that throwaway tag — never on real
+# release tags like v0.1.0.
+
+# Update rejection test (non-admin — future): move the disposable test tag.
+git tag -f v-protection-test-existing HEAD  # reassign disposable tag locally
+git push --force origin v-protection-test-existing   # expected: rejected for non-admins
 git fetch --tags --force origin             # cleanup local (re-align with origin)
 
-# Delete rejection test (non-admin — future): delete an existing tag.
-git push origin --delete v0.1.0             # expected: rejected for non-admins
+# Delete rejection test (non-admin — future): delete the disposable test tag.
+git push origin --delete v-protection-test-existing  # expected: rejected for non-admins
 ```
 
 ## Remove (if ever needed)
