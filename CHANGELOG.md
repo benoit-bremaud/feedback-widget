@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1-rc1] - 2026-04-22
+
+First release candidate published to GitHub Packages
+(`https://npm.pkg.github.com`). This is an RC, so the default
+install path (`pnpm add @benoit-bremaud/feedback-widget`) still
+resolves to the git-URL-only `0.1.0` baseline. Consumers who want
+the RC must opt in with `pnpm add @benoit-bremaud/feedback-widget@rc`.
+
+### Added
+
+- Tag-driven publish workflow
+  ([`.github/workflows/publish.yml`](.github/workflows/publish.yml))
+  triggered on any `v*` tag. Derives the npm `--tag` from the tag
+  name: stable (`vX.Y.Z`) → `latest`, prerelease (`vX.Y.Z-*`) →
+  `rc`. Gates publishes on the tagged commit being an ancestor of
+  `origin/main`.
+- Canonical publish policy doc
+  ([`.github/publish.md`](.github/publish.md)) covering the release
+  flow, consumer `.npmrc` template, PAT scopes, CI auth pattern,
+  90-day rotation, and end-to-end verification recipe.
+- `publishConfig.registry = https://npm.pkg.github.com` plus
+  `repository` / `homepage` / `bugs` metadata on both
+  `packages/core/package.json` and `packages/web/package.json`.
+
 ### Changed
 
 - `HttpTransport` now aborts each fetch attempt after a configurable
@@ -15,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from being stuck in the `sending` step when the backend never responds.
 - `WidgetConfig` gains an optional `transportTimeoutMs` (defaults to
   10 000 ms). The composition root wires it into `createHttpTransport`.
+- `README.md` rewritten as a comprehensive integration guide (status
+  banner, badges, quickstart, mermaid UX flow, three install methods
+  with safe CI auth patterns, 12-field `WidgetConfig` table, API
+  reference, production-disable pattern, VitePress example, roadmap).
 
 ## [0.1.0] - 2026-04-20
 
