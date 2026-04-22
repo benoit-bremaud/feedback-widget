@@ -587,7 +587,7 @@ New entries are appended to the bottom as events occur.
   blocking a stable tag). Releasing now unblocks the consumer-side
   roadmap (Phase B — n8n pipeline, Phase C — first real integration
   in Impropedia) that the widget was built for.
-- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+- **Ref:** PR [#39](https://github.com/benoit-bremaud/feedback-widget/pull/39),
   merge commit: _to be updated post-merge_
 - **Follow-up:** After merge, tag `v0.2.0` from `main` and push —
   `publish.yml` fires, both packages land on GitHub Packages under
