@@ -370,5 +370,5 @@ New entries are appended to the bottom as events occur.
   aligned with the actual repo state (existing tags, CHANGELOG
   format) and removes the mid-sentence truncation + ambiguous bump
   notation flagged by Copilot.
-- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+- **Ref:** PR [#33](https://github.com/benoit-bremaud/feedback-widget/pull/33),
   merge commit: *to be updated post-merge*
