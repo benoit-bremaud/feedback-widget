@@ -454,9 +454,11 @@ governance docs. Everywhere else, the following are banned:
 **Exemptions (documentation only, no credit implied).** The following are
 allowed because they describe the workflow without attributing work:
 
-- The governance documents themselves (`CONTRIBUTING.md`, `AGENTS.md`,
-  `branch-protection.md`, `publish.md`) may name AI tooling when
-  defining rules or documenting workflow steps.
+- The governance documents themselves (`CONTRIBUTING.md`,
+  `.github/branch-protection.md`, `.github/publish.md`) may name AI
+  tooling when defining rules or documenting workflow steps. If an
+  `AGENTS.md` or equivalent multi-agent guidance file is added later,
+  it is covered by this exemption.
 - GitHub technical identifiers — the bot username
   `copilot-pull-request-reviewer` is a collaborator handle, not credit.
 - `PROJECT_LOG.md` entries describing review cycles may name the
