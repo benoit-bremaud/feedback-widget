@@ -371,4 +371,32 @@ New entries are appended to the bottom as events occur.
   format) and removes the mid-sentence truncation + ambiguous bump
   notation flagged by Copilot.
 - **Ref:** PR [#33](https://github.com/benoit-bremaud/feedback-widget/pull/33),
+  merge commit [`453e92a`](https://github.com/benoit-bremaud/feedback-widget/commit/453e92a)
+
+### PR — add PR description template at `.github/pull_request_template.md`
+
+- **What:** Created `.github/pull_request_template.md` so GitHub
+  auto-loads a consistent structure on every new PR opened against
+  this repo. The template mirrors the `CONTRIBUTING.md` §Pull
+  Request description template (Summary with per-Area sub-blocks,
+  optional Tests table for `core` + `web`, Checklist, `Closes #N`),
+  with HTML comments at the top and inside each section to guide the
+  author (e.g. \"Docs-only PRs may drop the entire Tests section\").
+  The Checklist adds two items not previously listed in
+  `CONTRIBUTING.md` but mandated by repo policy: \"No secrets
+  committed (Gitleaks clean)\" and \"No AI attribution anywhere in
+  this PR\". A final checklist item reminds the author to populate
+  the full GitHub sidebar (assignees, reviewers, label triptych,
+  project, milestone) since the API steps are documented but easy
+  to forget.
+- **Why:** Closes issue
+  [#8](https://github.com/benoit-bremaud/feedback-widget/issues/8)
+  (`prio:P1`, `area:governance`). Removes the reliance on the
+  author remembering the `CONTRIBUTING.md` format by hand —
+  GitHub now pre-fills the correct structure on every new PR.
+  The duplication between `CONTRIBUTING.md` and this template is
+  intentional: `CONTRIBUTING.md` is the policy reference, the
+  template is the runtime enforcement of that policy at PR-open
+  time.
+- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
   merge commit: *to be updated post-merge*
