@@ -1,4 +1,4 @@
 export interface RateLimiter {
-  canSubmit(): boolean;
-  recordSubmission(): void;
+  canSubmit(): boolean
+  recordSubmission(): void
 }

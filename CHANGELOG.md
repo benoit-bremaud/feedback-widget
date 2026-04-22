@@ -32,7 +32,7 @@ tag `v0.1.1-rc1` is kept as the audit-trail marker of the failed
 attempt. Consumers should use `0.1.1-rc2` or later once it is
 actually published.
 
-The changes that this RC *would have* published were the following
+The changes that this RC _would have_ published were the following
 (they ship as part of `0.1.1-rc2`):
 
 ### Added

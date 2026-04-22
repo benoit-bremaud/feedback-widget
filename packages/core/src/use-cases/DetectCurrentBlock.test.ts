@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest'
 import {
   extractExcerpt,
   pickBestCandidate,
   scoreCandidate,
-} from './DetectCurrentBlock';
+} from './DetectCurrentBlock'
 
-const viewport = { top: 0, bottom: 800, height: 800 };
+const viewport = { top: 0, bottom: 800, height: 800 }
 
 describe('use-cases/DetectCurrentBlock', () => {
   it('returns null when no candidates', () => {
-    expect(pickBestCandidate([], viewport)).toBeNull();
-  });
+    expect(pickBestCandidate([], viewport)).toBeNull()
+  })
 
   it('ignores candidates fully outside the viewport', () => {
     const best = pickBestCandidate(
@@ -19,9 +19,9 @@ describe('use-cases/DetectCurrentBlock', () => {
         { id: 'b', top: 900, bottom: 1200, height: 300 },
       ],
       viewport,
-    );
-    expect(best).toBeNull();
-  });
+    )
+    expect(best).toBeNull()
+  })
 
   it('picks the candidate with highest visible ratio', () => {
     const best = pickBestCandidate(
@@ -30,9 +30,9 @@ describe('use-cases/DetectCurrentBlock', () => {
         { id: 'full', top: 100, bottom: 300, height: 200 },
       ],
       viewport,
-    );
-    expect(best?.id).toBe('full');
-  });
+    )
+    expect(best?.id).toBe('full')
+  })
 
   it('breaks ties by preferring the block closer to viewport center', () => {
     const best = pickBestCandidate(
@@ -41,23 +41,23 @@ describe('use-cases/DetectCurrentBlock', () => {
         { id: 'middle', top: 300, bottom: 500, height: 200 },
       ],
       viewport,
-    );
-    expect(best?.id).toBe('middle');
-  });
+    )
+    expect(best?.id).toBe('middle')
+  })
 
   it('scoreCandidate computes visible ratio between 0 and 1', () => {
     const score = scoreCandidate(
       { id: 'x', top: -100, bottom: 100, height: 200 },
       viewport,
-    );
-    expect(score.visibleRatio).toBeCloseTo(0.5);
-  });
+    )
+    expect(score.visibleRatio).toBeCloseTo(0.5)
+  })
 
   it('extractExcerpt normalises whitespace and truncates with ellipsis', () => {
-    expect(extractExcerpt('  hello\n\nworld   ')).toBe('hello world');
-    const long = 'a'.repeat(200);
-    const excerpt = extractExcerpt(long, 50);
-    expect(excerpt.length).toBe(51);
-    expect(excerpt.endsWith('…')).toBe(true);
-  });
-});
+    expect(extractExcerpt('  hello\n\nworld   ')).toBe('hello world')
+    const long = 'a'.repeat(200)
+    const excerpt = extractExcerpt(long, 50)
+    expect(excerpt.length).toBe(51)
+    expect(excerpt.endsWith('…')).toBe(true)
+  })
+})

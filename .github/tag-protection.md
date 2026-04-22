@@ -36,7 +36,7 @@ still to only touch `v*` tags through the documented release process
 
 - Non-`v` tags (`milestone-2026-04`, for example) — unprotected.
 - Existing tags are unaffected retroactively: the ruleset gates
-  *future* create/update/delete actions on matching refs, it does
+  _future_ create/update/delete actions on matching refs, it does
   not retroactively enforce anything on tags that already exist.
 - The content or signature of a commit that a tag points to — that
   is covered by branch protection on `main` and by the
@@ -48,7 +48,7 @@ Two distinct commands, two distinct semantics:
 
 - **First-time create** — `POST /rulesets`. **Not idempotent.** Run this
   exactly once, when no ruleset with the name `Protect v* release tags`
-  exists yet. Re-running it later creates a *second* ruleset with the
+  exists yet. Re-running it later creates a _second_ ruleset with the
   same name, which is not what we want.
 - **Subsequent updates** — `PUT /rulesets/{id}`. **Idempotent.**
   Overwrites the current config with what is declared here. Use this

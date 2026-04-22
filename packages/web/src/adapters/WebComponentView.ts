@@ -1,6 +1,10 @@
-import type { Category } from '@benoit-bremaud/feedback-widget-core';
-import { CATEGORIES } from '@benoit-bremaud/feedback-widget-core';
-import type { UserAction, View, WidgetState } from '@benoit-bremaud/feedback-widget-core';
+import type { Category } from '@benoit-bremaud/feedback-widget-core'
+import { CATEGORIES } from '@benoit-bremaud/feedback-widget-core'
+import type {
+  UserAction,
+  View,
+  WidgetState,
+} from '@benoit-bremaud/feedback-widget-core'
 
 const CATEGORY_LABELS: Record<Category, { icon: string; label: string }> = {
   bug: { icon: '🐛', label: 'Bug' },
@@ -9,30 +13,33 @@ const CATEGORY_LABELS: Record<Category, { icon: string; label: string }> = {
   ambiguous: { icon: '🤔', label: 'Formulation ambiguë' },
   suggestion: { icon: '💡', label: 'Suggestion' },
   other: { icon: '➕', label: 'Autre' },
-};
+}
 
 export interface WidgetViewOptions {
-  maxMessageLength: number;
-  categories: readonly Category[];
-  position: 'bottom-right' | 'bottom-left' | 'bottom-center';
+  maxMessageLength: number
+  categories: readonly Category[]
+  position: 'bottom-right' | 'bottom-left' | 'bottom-center'
 }
 
 const DEFAULT_VIEW_OPTIONS: WidgetViewOptions = {
   maxMessageLength: 500,
   categories: CATEGORIES,
   position: 'bottom-right',
-};
+}
 
 export interface FeedbackWidgetElement extends HTMLElement {
-  setActionHandler(cb: (action: UserAction) => void): void;
-  setOptions(options: Partial<WidgetViewOptions>): void;
-  updateState(state: WidgetState): void;
-  isHoneypotFilled(): boolean;
+  setActionHandler(cb: (action: UserAction) => void): void
+  setOptions(options: Partial<WidgetViewOptions>): void
+  updateState(state: WidgetState): void
+  isHoneypotFilled(): boolean
 }
 
 export function defineFeedbackWidgetElement(): CustomElementConstructor {
-  class FeedbackWidgetElementImpl extends HTMLElement implements FeedbackWidgetElement {
-    private actionHandler: ((action: UserAction) => void) | null = null;
+  class FeedbackWidgetElementImpl
+    extends HTMLElement
+    implements FeedbackWidgetElement
+  {
+    private actionHandler: ((action: UserAction) => void) | null = null
     private state: WidgetState = {
       step: 'closed',
       target: null,
@@ -40,21 +47,24 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       userMessage: '',
       reporterName: '',
       errorMessage: null,
-    };
-    private options: WidgetViewOptions = DEFAULT_VIEW_OPTIONS;
-    private previousStep: WidgetState['step'] = 'closed';
-    private lastFocusedBeforeOpen: HTMLElement | null = null;
-    private boundKeyDown: ((ev: KeyboardEvent) => void) | null = null;
+    }
+    private options: WidgetViewOptions = DEFAULT_VIEW_OPTIONS
+    private previousStep: WidgetState['step'] = 'closed'
+    private lastFocusedBeforeOpen: HTMLElement | null = null
+    private boundKeyDown: ((ev: KeyboardEvent) => void) | null = null
 
     connectedCallback(): void {
       if (!this.shadowRoot) {
-        this.attachShadow({ mode: 'open' });
+        this.attachShadow({ mode: 'open' })
       }
       if (this.shadowRoot && !this.boundKeyDown) {
-        this.boundKeyDown = (ev: KeyboardEvent) => this.handleKeyDown(ev);
-        this.shadowRoot.addEventListener('keydown', this.boundKeyDown as EventListener);
+        this.boundKeyDown = (ev: KeyboardEvent) => this.handleKeyDown(ev)
+        this.shadowRoot.addEventListener(
+          'keydown',
+          this.boundKeyDown as EventListener,
+        )
       }
-      this.renderInternal();
+      this.renderInternal()
     }
 
     setOptions(options: Partial<WidgetViewOptions> = {}): void {
@@ -65,56 +75,56 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       // categories array and crash renderTypeStep.
       // Note: this does NOT reset to DEFAULT_VIEW_OPTIONS — to reset a
       // key, the caller must explicitly pass the desired default value.
-      const defined: Partial<WidgetViewOptions> = {};
+      const defined: Partial<WidgetViewOptions> = {}
       for (const [key, value] of Object.entries(options)) {
         if (value !== undefined) {
-          (defined as Record<string, unknown>)[key] = value;
+          ;(defined as Record<string, unknown>)[key] = value
         }
       }
-      this.options = { ...this.options, ...defined };
-      this.setAttribute('data-position', this.options.position);
-      this.renderInternal();
+      this.options = { ...this.options, ...defined }
+      this.setAttribute('data-position', this.options.position)
+      this.renderInternal()
     }
 
     setActionHandler(cb: (action: UserAction) => void): void {
-      this.actionHandler = cb;
+      this.actionHandler = cb
     }
 
     updateState(state: WidgetState): void {
-      this.state = state;
-      this.renderInternal();
+      this.state = state
+      this.renderInternal()
     }
 
     private emit(action: UserAction): void {
-      this.actionHandler?.(action);
+      this.actionHandler?.(action)
     }
 
     private renderInternal(): void {
-      if (!this.shadowRoot) return;
+      if (!this.shadowRoot) return
       // The trigger is only rendered when the widget is closed. Hiding it
       // while any other step is active prevents accidental re-open (which
       // would leave pointing mode enabled with an orphan document-level
       // capture listener).
-      const showTrigger = this.state.step === 'closed';
+      const showTrigger = this.state.step === 'closed'
       this.shadowRoot.innerHTML = `
         <style>${STYLES}</style>
         ${showTrigger ? this.renderButton() : ''}
         ${this.renderChrome()}
-      `;
-      this.bindEvents();
-      this.manageFocusOnStepChange();
+      `
+      this.bindEvents()
+      this.manageFocusOnStepChange()
     }
 
     private renderChrome(): string {
-      if (this.state.step === 'closed') return '';
+      if (this.state.step === 'closed') return ''
       // In pointing mode the page must remain clickable, so we skip the
       // full modal (with its backdrop) and show a compact floating bar
       // with only the « Annuler » button. This prevents the backdrop
       // from intercepting clicks on content blocks.
       if (this.state.step === 'pointing') {
-        return this.renderPointingBar();
+        return this.renderPointingBar()
       }
-      return this.renderModal();
+      return this.renderModal()
     }
 
     private renderPointingBar(): string {
@@ -123,99 +133,102 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
           <p class="fw-pointing-bar-text" id="fw-title">Tape sur le passage que tu veux signaler.</p>
           <button type="button" class="fw-btn fw-btn-ghost fw-btn-compact" data-action="cancel-pointing">Annuler</button>
         </div>
-      `;
+      `
     }
 
-  private renderButton(): string {
-    return `
+    private renderButton(): string {
+      return `
       <button class="fw-trigger" type="button" aria-label="Signaler un problème sur cette page" data-action="open">
         <span aria-hidden="true">🚩</span>
         <span class="fw-trigger-label">Signaler</span>
       </button>
-    `;
-  }
+    `
+    }
 
-  private renderModal(): string {
-    return `
+    private renderModal(): string {
+      return `
       <div class="fw-backdrop" data-action="close"></div>
       <div class="fw-modal" role="dialog" aria-modal="true" aria-labelledby="fw-title">
         <button class="fw-close" type="button" aria-label="Fermer" data-action="close">×</button>
         ${this.renderStep()}
       </div>
-    `;
-  }
-
-  private renderStep(): string {
-    // Note: 'pointing' is not handled here. renderChrome() short-circuits
-    // to renderPointingBar() before reaching the modal renderer.
-    switch (this.state.step) {
-      case 'target-confirm':
-        return this.renderTargetConfirmStep();
-      case 'type':
-        return this.renderTypeStep();
-      case 'precision':
-        return this.renderPrecisionStep();
-      case 'sending':
-        return this.renderSendingStep();
-      case 'confirmed':
-        return this.renderConfirmedStep();
-      case 'error':
-        return this.renderErrorStep();
-      default:
-        return '';
+    `
     }
-  }
 
-  private renderTargetConfirmStep(): string {
-    const hasTarget = this.state.target !== null;
-    const excerpt = this.state.target?.excerpt ?? '';
-    const headingText = this.state.target?.headingText ?? '';
+    private renderStep(): string {
+      // Note: 'pointing' is not handled here. renderChrome() short-circuits
+      // to renderPointingBar() before reaching the modal renderer.
+      switch (this.state.step) {
+        case 'target-confirm':
+          return this.renderTargetConfirmStep()
+        case 'type':
+          return this.renderTypeStep()
+        case 'precision':
+          return this.renderPrecisionStep()
+        case 'sending':
+          return this.renderSendingStep()
+        case 'confirmed':
+          return this.renderConfirmedStep()
+        case 'error':
+          return this.renderErrorStep()
+        default:
+          return ''
+      }
+    }
 
-    return `
+    private renderTargetConfirmStep(): string {
+      const hasTarget = this.state.target !== null
+      const excerpt = this.state.target?.excerpt ?? ''
+      const headingText = this.state.target?.headingText ?? ''
+
+      return `
       <h2 id="fw-title" class="fw-title">C'est bien ce passage&nbsp;?</h2>
-      ${hasTarget
-        ? `<div class="fw-target-preview">
+      ${
+        hasTarget
+          ? `<div class="fw-target-preview">
              ${headingText ? `<p class="fw-target-heading">§ ${escapeHtml(headingText)}</p>` : ''}
              <p class="fw-target-excerpt">« ${escapeHtml(excerpt)} »</p>
            </div>`
-        : `<p class="fw-subtitle">Aucun passage précis détecté — tu peux quand même continuer ou choisir un bloc.</p>`
+          : `<p class="fw-subtitle">Aucun passage précis détecté — tu peux quand même continuer ou choisir un bloc.</p>`
       }
       <div class="fw-actions">
         <button type="button" class="fw-btn fw-btn-ghost" data-action="reject-target">Choisir un autre</button>
         <button type="button" class="fw-btn fw-btn-primary" data-action="confirm-target">Oui, continuer</button>
       </div>
-    `;
-  }
+    `
+    }
 
-  private renderTypeStep(): string {
-    const buttons = this.options.categories.map((cat) => {
-      const meta = CATEGORY_LABELS[cat];
-      if (!meta) return '';
-      return `
+    private renderTypeStep(): string {
+      const buttons = this.options.categories
+        .map((cat) => {
+          const meta = CATEGORY_LABELS[cat]
+          if (!meta) return ''
+          return `
         <button type="button" class="fw-category" data-category="${cat}">
           <span class="fw-category-icon" aria-hidden="true">${meta.icon}</span>
           <span class="fw-category-label">${meta.label}</span>
         </button>
-      `;
-    }).join('');
+      `
+        })
+        .join('')
 
-    return `
+      return `
       <h2 id="fw-title" class="fw-title">Qu'est-ce qui ne va pas sur cette page&nbsp;?</h2>
       <p class="fw-subtitle">Choisis le type de problème.</p>
       <div class="fw-categories" role="group" aria-label="Type de problème">
         ${buttons}
       </div>
-    `;
-  }
+    `
+    }
 
-  private renderPrecisionStep(): string {
-    const cat = this.state.selectedCategory;
-    const label = cat ? CATEGORY_LABELS[cat]?.label ?? '' : '';
-    const messageRequired = cat === 'other';
-    const placeholder = messageRequired
-      ? 'Décris ce que tu as vu (obligatoire)'
-      : 'Précise (optionnel)';
-    return `
+    private renderPrecisionStep(): string {
+      const cat = this.state.selectedCategory
+      const label = cat ? (CATEGORY_LABELS[cat]?.label ?? '') : ''
+      const messageRequired = cat === 'other'
+      const placeholder = messageRequired
+        ? 'Décris ce que tu as vu (obligatoire)'
+        : 'Précise (optionnel)'
+      return `
       <h2 id="fw-title" class="fw-title">${label}</h2>
       <p class="fw-subtitle">Ajoute une précision si tu peux, et ton prénom si tu veux.</p>
       <form class="fw-form" data-action="submit-form" novalidate>
@@ -248,163 +261,184 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         </div>
         <p class="fw-privacy">Les retours sont envoyés anonymement. Le prénom n'est utilisé que pour identifier ton feedback.</p>
       </form>
-    `;
-  }
+    `
+    }
 
-  private renderSendingStep(): string {
-    return `
+    private renderSendingStep(): string {
+      return `
       <h2 id="fw-title" class="fw-title">Envoi en cours…</h2>
       <div class="fw-spinner" aria-hidden="true"></div>
-    `;
-  }
+    `
+    }
 
-  private renderConfirmedStep(): string {
-    return `
+    private renderConfirmedStep(): string {
+      return `
       <h2 id="fw-title" class="fw-title">Merci&nbsp;! 🙏</h2>
       <p class="fw-subtitle">Ton retour a bien été envoyé.</p>
       <div class="fw-actions fw-actions-center">
         <button type="button" class="fw-btn fw-btn-ghost" data-action="close">Fermer</button>
         <button type="button" class="fw-btn fw-btn-primary" data-action="reset">Signaler autre chose</button>
       </div>
-    `;
-  }
+    `
+    }
 
-  private renderErrorStep(): string {
-    return `
+    private renderErrorStep(): string {
+      return `
       <h2 id="fw-title" class="fw-title">Oups…</h2>
       <p class="fw-subtitle">${escapeHtml(this.state.errorMessage ?? 'Une erreur est survenue.')}</p>
       <div class="fw-actions fw-actions-center">
         <button type="button" class="fw-btn fw-btn-ghost" data-action="close">Fermer</button>
         <button type="button" class="fw-btn fw-btn-primary" data-action="submit">Réessayer</button>
       </div>
-    `;
-  }
+    `
+    }
 
-  private bindEvents(): void {
-    if (!this.shadowRoot) return;
+    private bindEvents(): void {
+      if (!this.shadowRoot) return
 
-    this.shadowRoot.querySelectorAll<HTMLElement>('[data-action]').forEach((el) => {
-      const action = el.dataset.action;
-      if (action === 'open') {
-        el.addEventListener('click', () => this.emit({ kind: 'open' }));
-      } else if (action === 'close') {
-        el.addEventListener('click', () => this.emit({ kind: 'close' }));
-      } else if (action === 'reset') {
-        el.addEventListener('click', () => this.emit({ kind: 'reset' }));
-      } else if (action === 'submit') {
-        el.addEventListener('click', () => this.emit({ kind: 'submit' }));
-      } else if (action === 'confirm-target') {
-        el.addEventListener('click', () => this.emit({ kind: 'confirm-target' }));
-      } else if (action === 'reject-target') {
-        el.addEventListener('click', () => this.emit({ kind: 'reject-target' }));
-      } else if (action === 'cancel-pointing') {
-        el.addEventListener('click', () => this.emit({ kind: 'cancel-pointing' }));
+      this.shadowRoot
+        .querySelectorAll<HTMLElement>('[data-action]')
+        .forEach((el) => {
+          const action = el.dataset.action
+          if (action === 'open') {
+            el.addEventListener('click', () => this.emit({ kind: 'open' }))
+          } else if (action === 'close') {
+            el.addEventListener('click', () => this.emit({ kind: 'close' }))
+          } else if (action === 'reset') {
+            el.addEventListener('click', () => this.emit({ kind: 'reset' }))
+          } else if (action === 'submit') {
+            el.addEventListener('click', () => this.emit({ kind: 'submit' }))
+          } else if (action === 'confirm-target') {
+            el.addEventListener('click', () =>
+              this.emit({ kind: 'confirm-target' }),
+            )
+          } else if (action === 'reject-target') {
+            el.addEventListener('click', () =>
+              this.emit({ kind: 'reject-target' }),
+            )
+          } else if (action === 'cancel-pointing') {
+            el.addEventListener('click', () =>
+              this.emit({ kind: 'cancel-pointing' }),
+            )
+          }
+        })
+
+      this.shadowRoot
+        .querySelectorAll<HTMLElement>('[data-category]')
+        .forEach((el) => {
+          const cat = el.dataset.category as Category | undefined
+          if (!cat) return
+          el.addEventListener('click', () =>
+            this.emit({ kind: 'select-category', category: cat }),
+          )
+        })
+
+      const form = this.shadowRoot.querySelector<HTMLFormElement>(
+        'form[data-action="submit-form"]',
+      )
+      if (form) {
+        form.addEventListener('submit', (ev) => {
+          ev.preventDefault()
+          this.emit({ kind: 'submit' })
+        })
       }
-    });
 
-    this.shadowRoot.querySelectorAll<HTMLElement>('[data-category]').forEach((el) => {
-      const cat = el.dataset.category as Category | undefined;
-      if (!cat) return;
-      el.addEventListener('click', () => this.emit({ kind: 'select-category', category: cat }));
-    });
+      const textarea = this.shadowRoot.querySelector<HTMLTextAreaElement>(
+        'textarea[name="message"]',
+      )
+      if (textarea) {
+        textarea.addEventListener('input', () => {
+          this.emit({ kind: 'update-message', value: textarea.value })
+        })
+      }
 
-    const form = this.shadowRoot.querySelector<HTMLFormElement>('form[data-action="submit-form"]');
-    if (form) {
-      form.addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        this.emit({ kind: 'submit' });
-      });
-    }
-
-    const textarea = this.shadowRoot.querySelector<HTMLTextAreaElement>('textarea[name="message"]');
-    if (textarea) {
-      textarea.addEventListener('input', () => {
-        this.emit({ kind: 'update-message', value: textarea.value });
-      });
-    }
-
-    const reporter = this.shadowRoot.querySelector<HTMLInputElement>('input[name="reporter"]');
-    if (reporter) {
-      reporter.addEventListener('input', () => {
-        this.emit({ kind: 'update-reporter', value: reporter.value });
-      });
-    }
-
+      const reporter = this.shadowRoot.querySelector<HTMLInputElement>(
+        'input[name="reporter"]',
+      )
+      if (reporter) {
+        reporter.addEventListener('input', () => {
+          this.emit({ kind: 'update-reporter', value: reporter.value })
+        })
+      }
     }
 
     private handleKeyDown(ev: KeyboardEvent): void {
       if (ev.key === 'Escape') {
-        ev.preventDefault();
-        this.emit({ kind: 'close' });
-        return;
+        ev.preventDefault()
+        this.emit({ kind: 'close' })
+        return
       }
       if (ev.key === 'Tab' && this.state.step !== 'closed') {
-        this.trapFocus(ev);
+        this.trapFocus(ev)
       }
     }
 
     private trapFocus(ev: KeyboardEvent): void {
-      if (!this.shadowRoot) return;
+      if (!this.shadowRoot) return
       const focusable = Array.from(
         this.shadowRoot.querySelectorAll<HTMLElement>(
           'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
         ),
-      ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) return;
-      const active = this.shadowRoot.activeElement as HTMLElement | null;
-      const activeIsRoot = (active as unknown) === this.shadowRoot;
+      ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1)
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!first || !last) return
+      const active = this.shadowRoot.activeElement as HTMLElement | null
+      const activeIsRoot = (active as unknown) === this.shadowRoot
       if (ev.shiftKey && (active === first || activeIsRoot)) {
-        ev.preventDefault();
-        last.focus();
+        ev.preventDefault()
+        last.focus()
       } else if (!ev.shiftKey && active === last) {
-        ev.preventDefault();
-        first.focus();
+        ev.preventDefault()
+        first.focus()
       }
     }
 
     private manageFocusOnStepChange(): void {
-      if (!this.shadowRoot) return;
-      const stepChanged = this.state.step !== this.previousStep;
-      const justOpened = this.previousStep === 'closed' && this.state.step !== 'closed';
-      const justClosed = this.previousStep !== 'closed' && this.state.step === 'closed';
+      if (!this.shadowRoot) return
+      const stepChanged = this.state.step !== this.previousStep
+      const justOpened =
+        this.previousStep === 'closed' && this.state.step !== 'closed'
+      const justClosed =
+        this.previousStep !== 'closed' && this.state.step === 'closed'
 
       if (justOpened) {
-        this.lastFocusedBeforeOpen = (document.activeElement as HTMLElement | null) ?? null;
+        this.lastFocusedBeforeOpen =
+          (document.activeElement as HTMLElement | null) ?? null
       }
 
       if (stepChanged && this.state.step !== 'closed') {
         queueMicrotask(() => {
           const first = this.shadowRoot?.querySelector<HTMLElement>(
             'textarea, input:not(.fw-honeypot), button:not(.fw-close)',
-          );
-          first?.focus();
-        });
+          )
+          first?.focus()
+        })
       }
 
       if (justClosed && this.lastFocusedBeforeOpen) {
-        const toRestore = this.lastFocusedBeforeOpen;
-        queueMicrotask(() => toRestore.focus());
-        this.lastFocusedBeforeOpen = null;
+        const toRestore = this.lastFocusedBeforeOpen
+        queueMicrotask(() => toRestore.focus())
+        this.lastFocusedBeforeOpen = null
       }
 
-      this.previousStep = this.state.step;
+      this.previousStep = this.state.step
     }
 
     isHoneypotFilled(): boolean {
-      if (!this.shadowRoot) return false;
-      const honeypot = this.shadowRoot.querySelector<HTMLInputElement>('input.fw-honeypot');
-      return honeypot !== null && honeypot.value.trim().length > 0;
+      if (!this.shadowRoot) return false
+      const honeypot =
+        this.shadowRoot.querySelector<HTMLInputElement>('input.fw-honeypot')
+      return honeypot !== null && honeypot.value.trim().length > 0
     }
   }
 
-  return FeedbackWidgetElementImpl;
+  return FeedbackWidgetElementImpl
 }
 
 export function createWebComponentView(element: FeedbackWidgetElement): View {
-  let handler: ((action: UserAction) => void) | null = null;
+  let handler: ((action: UserAction) => void) | null = null
   let lastState: WidgetState = {
     step: 'closed',
     target: null,
@@ -412,17 +446,17 @@ export function createWebComponentView(element: FeedbackWidgetElement): View {
     userMessage: '',
     reporterName: '',
     errorMessage: null,
-  };
+  }
 
-  element.setActionHandler((action) => handler?.(action));
+  element.setActionHandler((action) => handler?.(action))
 
   return {
     render(state: WidgetState): void {
-      lastState = state;
-      element.updateState(state);
+      lastState = state
+      element.updateState(state)
     },
     onUserAction(cb: (action: UserAction) => void): void {
-      handler = cb;
+      handler = cb
     },
     showConfirmation(): void {
       const next: WidgetState = {
@@ -432,20 +466,20 @@ export function createWebComponentView(element: FeedbackWidgetElement): View {
         userMessage: '',
         reporterName: '',
         errorMessage: null,
-      };
-      lastState = next;
-      element.updateState(next);
+      }
+      lastState = next
+      element.updateState(next)
     },
     showMailtoFallback(mailtoUrl: string, message: string): void {
       const next: WidgetState = {
         ...lastState,
         step: 'error',
         errorMessage: `${message} — tu peux aussi nous écrire par mail : ${mailtoUrl}`,
-      };
-      lastState = next;
-      element.updateState(next);
+      }
+      lastState = next
+      element.updateState(next)
     },
-  };
+  }
 }
 
 function escapeHtml(input: string): string {
@@ -454,7 +488,7 @@ function escapeHtml(input: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/'/g, '&#39;')
 }
 
 const STYLES = `
@@ -764,4 +798,4 @@ const STYLES = `
     .fw-trigger { transition: none; }
     .fw-spinner { animation-duration: 2000ms; }
   }
-`;
+`

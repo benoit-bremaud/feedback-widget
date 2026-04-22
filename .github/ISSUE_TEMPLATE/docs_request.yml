@@ -1,7 +1,7 @@
 name: Documentation
 description: Add, update, or fix documentation (README, CONTRIBUTING, policies, API reference)
-title: "docs(<area>): <short description>"
-labels: ["type:docs"]
+title: 'docs(<area>): <short description>'
+labels: ['type:docs']
 body:
   - type: markdown
     attributes:
@@ -42,14 +42,14 @@ body:
       label: Area
       description: The documentation surface affected.
       options:
-        - "area:docs"
-        - "area:governance"
-        - "area:release"
-        - "area:core"
-        - "area:web"
-        - "area:ci"
-        - "area:react-native"
-        - "area:testing"
+        - 'area:docs'
+        - 'area:governance'
+        - 'area:release'
+        - 'area:core'
+        - 'area:web'
+        - 'area:ci'
+        - 'area:react-native'
+        - 'area:testing'
     validations:
       required: true
 
@@ -58,10 +58,10 @@ body:
     attributes:
       label: Priority
       options:
-        - "prio:P0 — Foundation, blocks everything"
-        - "prio:P1 — High"
-        - "prio:P2 — Medium"
-        - "prio:P3 — Low / nice to have"
+        - 'prio:P0 — Foundation, blocks everything'
+        - 'prio:P1 — High'
+        - 'prio:P2 — Medium'
+        - 'prio:P3 — Low / nice to have'
       default: 2
     validations:
       required: true

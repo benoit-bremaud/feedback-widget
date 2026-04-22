@@ -1,23 +1,23 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { FeedbackPayload } from '@benoit-bremaud/feedback-widget-core';
-import { createLocalStorageOutbox } from './LocalStorageOutbox';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FeedbackPayload } from '@benoit-bremaud/feedback-widget-core'
+import { createLocalStorageOutbox } from './LocalStorageOutbox'
 
 function makeStorage(): Storage {
-  const map = new Map<string, string>();
+  const map = new Map<string, string>()
   return {
     get length() {
-      return map.size;
+      return map.size
     },
     clear: () => map.clear(),
     getItem: (k) => map.get(k) ?? null,
     setItem: (k, v) => {
-      map.set(k, v);
+      map.set(k, v)
     },
     removeItem: (k) => {
-      map.delete(k);
+      map.delete(k)
     },
     key: (i) => Array.from(map.keys())[i] ?? null,
-  };
+  }
 }
 
 const payload: FeedbackPayload = {
@@ -41,118 +41,212 @@ const payload: FeedbackPayload = {
     },
   },
   content: { category: 'bug', userMessage: null },
-};
+}
 
 describe('adapters/LocalStorageOutbox', () => {
-  let storage: Storage;
-  let currentTime: number;
+  let storage: Storage
+  let currentTime: number
 
   beforeEach(() => {
-    storage = makeStorage();
-    currentTime = 1_000_000;
-  });
+    storage = makeStorage()
+    currentTime = 1_000_000
+  })
 
   const makeOutbox = () =>
     createLocalStorageOutbox({
       storage,
       key: 'outbox',
       now: () => currentTime,
-    });
+    })
 
   it('enqueues and reports size', async () => {
-    const outbox = makeOutbox();
-    expect(await outbox.size()).toBe(0);
-    await outbox.enqueue(payload);
-    await outbox.enqueue(payload);
-    expect(await outbox.size()).toBe(2);
-  });
+    const outbox = makeOutbox()
+    expect(await outbox.size()).toBe(0)
+    await outbox.enqueue(payload)
+    await outbox.enqueue(payload)
+    expect(await outbox.size()).toBe(2)
+  })
 
   it('drain removes entries on successful send and keeps failures', async () => {
-    const outbox = makeOutbox();
-    await outbox.enqueue(payload);
-    await outbox.enqueue(payload);
-    await outbox.enqueue(payload);
+    const outbox = makeOutbox()
+    await outbox.enqueue(payload)
+    await outbox.enqueue(payload)
+    await outbox.enqueue(payload)
 
     const send = vi
       .fn<(p: FeedbackPayload) => Promise<boolean>>()
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true);
+      .mockResolvedValueOnce(true)
 
-    await outbox.drain(send);
+    await outbox.drain(send)
 
-    expect(send).toHaveBeenCalledTimes(3);
-    expect(await outbox.size()).toBe(1);
-  });
+    expect(send).toHaveBeenCalledTimes(3)
+    expect(await outbox.size()).toBe(1)
+  })
 
   it('drain keeps entries when send throws', async () => {
-    const outbox = makeOutbox();
-    await outbox.enqueue(payload);
+    const outbox = makeOutbox()
+    await outbox.enqueue(payload)
 
     const send = vi.fn(async () => {
-      throw new Error('network down');
-    });
+      throw new Error('network down')
+    })
 
-    await outbox.drain(send);
+    await outbox.drain(send)
 
-    expect(await outbox.size()).toBe(1);
-  });
+    expect(await outbox.size()).toBe(1)
+  })
 
   it('purgeExpired drops entries older than maxAge', async () => {
-    const outbox = makeOutbox();
-    await outbox.enqueue(payload);
-    currentTime += 60_000;
-    await outbox.enqueue(payload);
+    const outbox = makeOutbox()
+    await outbox.enqueue(payload)
+    currentTime += 60_000
+    await outbox.enqueue(payload)
 
-    currentTime += 10_000;
-    await outbox.purgeExpired(30_000);
+    currentTime += 10_000
+    await outbox.purgeExpired(30_000)
 
-    expect(await outbox.size()).toBe(1);
-  });
+    expect(await outbox.size()).toBe(1)
+  })
 
   it('recovers from corrupted storage', async () => {
-    storage.setItem('outbox', 'not-json');
-    const outbox = makeOutbox();
-    expect(await outbox.size()).toBe(0);
-    await outbox.enqueue(payload);
-    expect(await outbox.size()).toBe(1);
-  });
+    storage.setItem('outbox', 'not-json')
+    const outbox = makeOutbox()
+    expect(await outbox.size()).toBe(0)
+    await outbox.enqueue(payload)
+    expect(await outbox.size()).toBe(1)
+  })
 
   it('ignores malformed entries in stored array', async () => {
-    storage.setItem('outbox', JSON.stringify([{ notAnEntry: true }, 42]));
-    const outbox = makeOutbox();
-    expect(await outbox.size()).toBe(0);
-  });
+    storage.setItem('outbox', JSON.stringify([{ notAnEntry: true }, 42]))
+    const outbox = makeOutbox()
+    expect(await outbox.size()).toBe(0)
+  })
 
   it('preserves entries enqueued concurrently during drain (no race loss)', async () => {
     // C6 regression: drain reads snapshot, awaits sends, then writes back.
     // A concurrent enqueue during those awaits must not be dropped.
-    let counter = 0;
+    let counter = 0
     const outbox = createLocalStorageOutbox({
       storage,
       key: 'outbox',
       now: () => currentTime,
       generateId: () => `id-${++counter}`,
-    });
+    })
 
-    await outbox.enqueue(payload);
-    await outbox.enqueue(payload);
-    expect(await outbox.size()).toBe(2);
+    await outbox.enqueue(payload)
+    await outbox.enqueue(payload)
+    expect(await outbox.size()).toBe(2)
 
     const send = vi.fn(async () => {
       // Simulate a concurrent enqueue that happens while the drain is
       // mid-flight. With the old implementation this entry would be lost
       // because drain() rewrote storage from a stale snapshot.
       if (counter === 2) {
-        await outbox.enqueue(payload);
+        await outbox.enqueue(payload)
       }
-      return true;
-    });
+      return true
+    })
 
-    await outbox.drain(send);
+    await outbox.drain(send)
 
     // 2 sent entries removed, 1 concurrent enqueue preserved.
-    expect(await outbox.size()).toBe(1);
-    expect(send).toHaveBeenCalledTimes(2);
-  });
-});
+    expect(await outbox.size()).toBe(1)
+    expect(send).toHaveBeenCalledTimes(2)
+  })
+
+  describe('defaultGenerateId — fallback branches', () => {
+    // These tests drive the non-injected path (generateId: undefined) so
+    // the outbox reaches defaultGenerateId, then stubs globalThis.crypto
+    // to exercise each branch.
+    const makeOutboxWithDefaultId = () =>
+      createLocalStorageOutbox({
+        storage,
+        key: 'outbox',
+        now: () => currentTime,
+        // no generateId → use defaultGenerateId
+      })
+
+    const originalCrypto = globalThis.crypto
+
+    beforeEach(() => {
+      storage = makeStorage()
+    })
+
+    afterEach(() => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: originalCrypto,
+        configurable: true,
+        writable: true,
+      })
+    })
+
+    it('uses crypto.randomUUID when available (happy path)', async () => {
+      const fakeUuid = '11111111-2222-3333-4444-555555555555'
+      Object.defineProperty(globalThis, 'crypto', {
+        value: { randomUUID: () => fakeUuid },
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await outbox.enqueue(payload)
+
+      const raw = storage.getItem('outbox') ?? '[]'
+      const entries = JSON.parse(raw) as Array<{ id: string }>
+      expect(entries).toHaveLength(1)
+      expect(entries[0]?.id).toBe(fakeUuid)
+    })
+
+    it('falls back to crypto.getRandomValues when randomUUID is missing (edge path)', async () => {
+      const writtenBytes: number[] = []
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {
+          // No randomUUID, only getRandomValues.
+          getRandomValues: (buf: Uint8Array) => {
+            for (let i = 0; i < buf.length; i++) {
+              buf[i] = (i + 1) * 16 + i // stable, non-zero bytes
+              writtenBytes.push(buf[i]!)
+            }
+            return buf
+          },
+        },
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await outbox.enqueue(payload)
+
+      const raw = storage.getItem('outbox') ?? '[]'
+      const entries = JSON.parse(raw) as Array<{ id: string }>
+      expect(entries).toHaveLength(1)
+      // ID matches `fw-<time-base36>-<12 hex chars>`
+      expect(entries[0]?.id).toMatch(/^fw-[0-9a-z]+-[0-9a-f]{12}$/)
+      expect(writtenBytes.length).toBe(6)
+    })
+
+    it('throws when neither randomUUID nor getRandomValues is available (sad path)', async () => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: {},
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await expect(outbox.enqueue(payload)).rejects.toThrow(/Crypto API/)
+    })
+
+    it('throws when crypto is entirely undefined (sad path)', async () => {
+      Object.defineProperty(globalThis, 'crypto', {
+        value: undefined,
+        configurable: true,
+        writable: true,
+      })
+
+      const outbox = makeOutboxWithDefaultId()
+      await expect(outbox.enqueue(payload)).rejects.toThrow(/Crypto API/)
+    })
+  })
+})
