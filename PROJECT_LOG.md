@@ -318,7 +318,7 @@ New entries are appended to the bottom as events occur.
 - **Ref:** chosen 2026-04-22 during the PR #28 tag-protection work,
   no dedicated PR for the global update (owner config file).
 
-### PR #29 — propagate full tag conventions into CONTRIBUTING.md
+### PR #30 — propagate full tag conventions into CONTRIBUTING.md
 
 - **What:** Added a new §Tag conventions section in
   `CONTRIBUTING.md` mirroring the seven pillars of the global
@@ -343,5 +343,5 @@ New entries are appended to the bottom as events occur.
   discharges the bundle cadence for PR #28 by finalising its
   merge-commit SHA (`acd9938`) and recording the ruleset
   activation.
-- **Ref:** PR [#29](https://github.com/benoit-bremaud/feedback-widget/pull/29),
+- **Ref:** PR [#30](https://github.com/benoit-bremaud/feedback-widget/pull/30),
   merge commit: *to be updated post-merge*
