@@ -430,5 +430,5 @@ New entries are appended to the bottom as events occur.
   the `type:*` label so the triptych is one click closer to
   complete on every new issue. Blank issues are disabled so the
   format cannot be bypassed.
-- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+- **Ref:** PR [#35](https://github.com/benoit-bremaud/feedback-widget/pull/35),
   merge commit: *to be updated post-merge*
