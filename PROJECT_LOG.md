@@ -350,7 +350,7 @@ New entries are appended to the bottom as events occur.
 
 - **What:** Applied Copilot's five inline review comments on PR #30
   (merged before fixes could land). (1) Lifecycle bullet "no other
-  collaborator can" completed to enumerate create / move-update /
+  collaborator can" completed to enumerate create / move/update /
   delete and attribute the restriction to the ruleset. (2) Prerelease
   format aligned to the undotted `rcN` counter used by the existing
   `v0.1.1-rc1` and `v0.1.1-rc2` tags (`rc.N` / `beta.N` / `alpha.N`
