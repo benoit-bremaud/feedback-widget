@@ -453,8 +453,10 @@ New entries are appended to the bottom as events occur.
   `packages/{core,web}/src` with `test.inclusions=**/*.test.ts` to
   disambiguate; `sonar.javascript.lcov.reportPaths` enumerates the two
   per-package `lcov.info` outputs; `sonar.typescript.tsconfigPath`
-  points at `tsconfig.base.json`; `packages/web/src/index.ts` is
-  excluded from coverage requirements as the public barrel. Updated
+  points at `packages/core/tsconfig.json,packages/web/tsconfig.json`
+  (per-package, so SonarCloud sees package-specific `lib` settings);
+  `packages/web/src/index.ts` is excluded from coverage requirements
+  as the public barrel. Updated
   `.github/workflows/ci.yml` to run `pnpm test:coverage` instead of
   `pnpm test`, upload the LCOV files as a `coverage-lcov` workflow
   artifact (`actions/upload-artifact@v4`, SHA-pinned), and run the

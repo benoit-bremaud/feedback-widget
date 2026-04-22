@@ -415,13 +415,24 @@ Run locally from the repo root:
 pnpm test:coverage
 ```
 
-CI runs `pnpm test:coverage` on every push and PR, uploads the LCOV
-files as a workflow artifact, and feeds them to SonarCloud via
-`SonarSource/sonarqube-scan-action` — the SonarCloud Quality Gate
-check on every PR then reports a real coverage percentage instead
-of blank. The SonarCloud project is configured for CI-based analysis
-(not Automatic Analysis) so LCOV data is read directly; the scan
-step relies on the `SONAR_TOKEN` repository secret.
+CI runs `pnpm test:coverage` on every push and PR and uploads the
+LCOV files as a `coverage-lcov` workflow artifact. On internal PRs
+and on pushes to `main`, it also feeds those reports to SonarCloud
+via `SonarSource/sonarqube-scan-action` so the SonarCloud Quality
+Gate check reports a real coverage percentage. The SonarCloud
+project is configured for CI-based analysis (not Automatic
+Analysis) so LCOV data is read directly; the scan step relies on
+the `SONAR_TOKEN` repository secret.
+
+**Forked PRs do not run the SonarCloud scan** — GitHub does not
+expose repository secrets to workflows triggered from forks, so the
+scan would fail with an authentication error. The workflow step is
+guarded with `if: github.event.pull_request.head.repo.fork != true`
+and simply skips on fork PRs, keeping the rest of CI (build,
+typecheck, tests, LCOV artifact upload) green for external
+contributors. Quality Gate decoration then only appears when the PR
+is rerun in a trusted context (e.g. by a maintainer pushing the
+branch to the upstream repo).
 
 Coverage thresholds are not yet enforced in CI (tracked in
 [issue #12](https://github.com/benoit-bremaud/feedback-widget/issues/12)).
