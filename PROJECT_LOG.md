@@ -186,7 +186,7 @@ New entries are appended to the bottom as events occur.
 - **What:** Bumped both packages to `0.1.1-rc1` and tagged `v0.1.1-rc1`
   to trigger the first GitHub Packages publish. The workflow crashed
   at the `Typecheck` step because it ran before `Build`, leaving
-  workspace `.d.ts` files unresolvable across packages. No package
+  workspace `.d.ts` files unresolvable across packages. Neither package
   was published. The tag was kept as an audit marker and the version
   is considered reserved/unusable.
 - **Why:** First real-world exercise of `publish.yml` end-to-end —
@@ -196,14 +196,14 @@ New entries are appended to the bottom as events occur.
   merge commit [`35d0680`](https://github.com/benoit-bremaud/feedback-widget/commit/35d0680),
   tag [`v0.1.1-rc1`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.1.1-rc1)
 
-### PR #25 — rc2 publish-workflow fix + successful publish
+### PR #25 — rc2 publish-workflow fix + version bump
 
 - **What:** Reordered `publish.yml` so `Build` runs before `Typecheck`
   (mirroring the fix applied in `ci.yml` via PR #2). Bumped both
   packages to `0.1.1-rc2` and reconciled the `[0.1.1-rc1]`
   `CHANGELOG.md` entry to state explicitly that nothing was published
   under that tag. Copilot review flagged the CHANGELOG contradiction
-  (Should Have) — addressed inline in commit `68f82cf`.
+  (Should Have) — addressed inline in commit [`68f82cf`](https://github.com/benoit-bremaud/feedback-widget/commit/68f82cf).
 - **Why:** Unblock the first GitHub Packages publish and keep the
   public release history truthful about the rc1 failure.
 - **Ref:** PR [#25](https://github.com/benoit-bremaud/feedback-widget/pull/25),
