@@ -400,3 +400,35 @@ New entries are appended to the bottom as events occur.
   time.
 - **Ref:** PR [#34](https://github.com/benoit-bremaud/feedback-widget/pull/34),
   merge commit: *to be updated post-merge*
+
+### PR — add issue templates (bug, feature, docs, task)
+
+- **What:** Added five YAML issue forms under
+  `.github/ISSUE_TEMPLATE/`: `config.yml` (disables blank issues and
+  points to `CONTRIBUTING.md` + `README.md`), `bug_report.yml`
+  (auto-label `type:bug`, title `fix(<area>): <desc>`, fields
+  Description / Steps to reproduce / Expected / Actual / Area /
+  Priority / Version-commit / Evidence), `feature_request.yml`
+  (auto-label `type:feature`, title `feat(<area>): <desc>`, fields
+  User story / Goal / Scope IN-OUT / Acceptance criteria / Area /
+  Priority / Notes), `docs_request.yml` (auto-label `type:docs`,
+  title `docs(<area>): <desc>`, fields Goal / Scope / Acceptance /
+  Area / Priority / Notes), `task.yml` (auto-label `type:task`,
+  title `chore(<area>): <desc>`, fields Goal / Scope / Acceptance /
+  Area / Priority / Notes). Each form ships the repo's full Area
+  dropdown (`core` / `web` / `ci` / `react-native` / `governance` /
+  `testing` / `docs` / `release`) and the full Priority dropdown
+  (`prio:P0` through `prio:P3`, default P2). Every template closes
+  with a two-item pre-submission checklist: confirm no duplicate,
+  and a sidebar-reminder that the author must set assignee, label
+  triptych, project, and milestone after opening the issue.
+- **Why:** Closes issue
+  [#7](https://github.com/benoit-bremaud/feedback-widget/issues/7)
+  (`prio:P1`, `area:governance`). Machine-enforces the Goal / Scope
+  IN-OUT / Acceptance / Notes body format already documented in
+  `CONTRIBUTING.md` §Issue body — mandatory sections, and pre-applies
+  the `type:*` label so the triptych is one click closer to
+  complete on every new issue. Blank issues are disabled so the
+  format cannot be bypassed.
+- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+  merge commit: *to be updated post-merge*
