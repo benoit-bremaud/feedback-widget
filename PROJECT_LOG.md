@@ -257,7 +257,7 @@ New entries are appended to the bottom as events occur.
 - **Ref:** PR [#27](https://github.com/benoit-bremaud/feedback-widget/pull/27),
   merge commit [`00aad68`](https://github.com/benoit-bremaud/feedback-widget/commit/00aad68)
 
-### PR #28 — tag protection policy for `v*` release tags
+### PR #28 merged — tag protection policy for `v*` release tags
 
 - **What:** Added `.github/tag-protection.md` as the canonical,
   committed reference for the `v*` tag protection ruleset: rule
@@ -266,14 +266,25 @@ New entries are appended to the bottom as events occur.
   `RepositoryRole: Admin` (`actor_id: 5`) mode `always` mirroring
   the owner escape-hatch pattern used on `main`. The doc ships the
   apply/update `gh api` flow (one-time POST bootstrap create, then
-  idempotent PUT against the ruleset ID once it exists), verification
-  commands (list + fetch by ID + existing-tag integrity check +
-  non-admin rejection tests deferred until a second collaborator
-  exists), and remove command. `CONTRIBUTING.md` §Release workflow
-  gained a one-paragraph pointer and a new entry in the Cross-links
-  footer. The live ruleset is applied by the owner out-of-band after
-  merge, matching the branch-protection pattern — the config lives
-  in git, the apply step is a reviewable command.
+  idempotent PUT against the ruleset ID once it exists — explicitly
+  split after review to avoid the non-idempotent POST being run
+  twice), verification commands (list + fetch by ID + existing-tag
+  integrity check + non-admin rejection tests on a disposable
+  `v-protection-test-existing` tag, never on real release tags),
+  and remove command. `CONTRIBUTING.md` §Release workflow gained a
+  one-paragraph pointer and a new entry in the Cross-links footer.
+  Copilot review posted 4 inline comments — all addressed in
+  commit `7a1e722`: (1) Must Have — destructive verification
+  commands no longer target `v0.1.0`, they use a disposable test
+  tag with an explicit WARNING about admin bypass; (2/4) Should
+  Have — "idempotent" wording in both `tag-protection.md` and the
+  PROJECT_LOG entry now distinguishes one-time POST bootstrap from
+  idempotent PUT; (3) Should Have — `RULESET_ID` extraction adds
+  defensive count-and-validate step (fails fast on empty or
+  duplicate match). Ruleset activated post-merge via `POST
+  /rulesets` — live ID `15413164`, enforcement `active`, owner
+  (current user) `can_bypass: always`. Existing tags `v0.1.0`,
+  `v0.1.1-rc1`, `v0.1.1-rc2` all intact.
 - **Why:** Closes issue
   [#10](https://github.com/benoit-bremaud/feedback-widget/issues/10)
   (`prio:P1`, `area:governance`). Prevents accidental creation,
@@ -281,4 +292,56 @@ New entries are appended to the bottom as events occur.
   collaborator, and hardens the tag-driven publish pipeline against
   version-number collision on GitHub Packages.
 - **Ref:** PR [#28](https://github.com/benoit-bremaud/feedback-widget/pull/28),
+  merge commit [`acd9938`](https://github.com/benoit-bremaud/feedback-widget/commit/acd9938),
+  ruleset ID `15413164`
+
+### Tag conventions adopted across projects
+
+- **What:** Codified a cross-project tag-conventions policy in
+  `~/.claude/CLAUDE.md` (new §Tag Conventions — All Projects) with
+  seven pillars: strict-semver naming with `v` prefix, owner-only
+  CLI-only lifecycle cut from `main`, mandatory ruleset protection
+  mirroring `main` branch protection, progressive signing (optional
+  on private repos, mandatory before any repo goes public), release
+  notes authored from `CHANGELOG.md` with the GitHub auto-list
+  allowed as a complement below, monorepo lockstep versioning
+  (workspace packages bump together under a single tag), and a
+  failed-publish rule that keeps the failed tag as an audit marker
+  and bumps to the next version (never reuses the number).
+- **Why:** Every project in the ecosystem already relies on tags to
+  drive publication; without a shared rule set, each repo drifts
+  independently and audit trails diverge. The global section is
+  read by Claude on every project so the convention travels with
+  the contributor, not with the repo. Propagation to individual
+  `CONTRIBUTING.md` files keeps the rule enforceable without
+  depending on external context.
+- **Ref:** chosen 2026-04-22 during the PR #28 tag-protection work,
+  no dedicated PR for the global update (owner config file).
+
+### PR #30 — propagate full tag conventions into CONTRIBUTING.md
+
+- **What:** Added a new §Tag conventions section in
+  `CONTRIBUTING.md` mirroring the seven pillars of the global
+  policy (naming, lifecycle, protection, signing, release notes,
+  monorepo lockstep, failed publishes). The section acts as a
+  quick-reference policy doc complementary to the step-by-step
+  §Release workflow above and to the committed policy in
+  `.github/tag-protection.md`. Signing stance documented as
+  progressive — optional today on the private repo (`Unverified`
+  accepted), mandatory before going public (configure
+  `user.signingkey` + use `git tag -s`). Release-notes rule made
+  explicit: the GitHub release description pulls its primary body
+  from the matching `[vX.Y.Z]` section of `CHANGELOG.md`, with
+  GitHub's auto-generated PR list allowed as a complement below.
+  Cross-links footer gained an annotation on the tag-protection
+  entry pointing to the new section.
+- **Why:** Closes issue
+  [#29](https://github.com/benoit-bremaud/feedback-widget/issues/29)
+  (`prio:P2`, `area:governance` + `area:release`). A new
+  contributor reading only `CONTRIBUTING.md` now has the complete
+  tag policy without needing to load external context. Also
+  discharges the bundle cadence for PR #28 by finalising its
+  merge-commit SHA (`acd9938`) and recording the ruleset
+  activation.
+- **Ref:** PR [#30](https://github.com/benoit-bremaud/feedback-widget/pull/30),
   merge commit: *to be updated post-merge*

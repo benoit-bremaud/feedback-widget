@@ -582,6 +582,84 @@ stays as an audit marker; the version stays reserved.
 
 ---
 
+## Tag conventions
+
+Quick-reference policy for `v*` release tags. Complementary to the
+step-by-step §Release workflow above and to the repo-level protection
+policy in [.github/tag-protection.md](./.github/tag-protection.md).
+Mirrors the cross-project tag conventions every project in this
+ecosystem shares.
+
+### Naming — strict semver, `v` prefix
+
+- **Stable**: `vMAJOR.MINOR.PATCH` — always prefixed `v`
+- **Prereleases**: `vX.Y.Z-rc.N`, `vX.Y.Z-beta.N`, `vX.Y.Z-alpha.N`
+- **Never reuse a number** — a failed publish keeps its tag as an audit
+  marker; bump to the next rc/version (see §Failed publishes below)
+
+### Lifecycle — who / where / how
+
+- Cut from `main` only, after a release PR has merged (`CHANGELOG.md`
+  moved to a versioned section, package versions bumped)
+- Owner-only — the admin bypass on the tag-protection ruleset is the
+  only path to creating `v*` tags; no other collaborator can
+- CLI-only: `git tag vX.Y.Z && git push origin vX.Y.Z`. Never create
+  a release tag through the GitHub web UI (the commands must stay
+  reproducible and scriptable)
+- Lightweight or annotated — the publish workflow reads the tag name,
+  not the tag type; both are accepted
+
+### Protection — ruleset active
+
+Repository ruleset scoped to `refs/tags/v*`:
+
+- Rules: `creation`, `update`, `deletion` — all blocked
+- Bypass: `RepositoryRole: Admin` (`actor_id: 5`), mode `always` —
+  mirrors the `enforce_admins: false` escape-hatch pattern used on
+  `main`
+- Canonical policy, apply/update commands, and verification commands:
+  [.github/tag-protection.md](./.github/tag-protection.md)
+
+### Signing — progressive (optional today → mandatory before public)
+
+- **Today (private repo)**: signing is **optional**. GitHub displays
+  `Unverified` next to each tag. Accept it.
+- **Before the repo goes public**: tags must be signed. Configure a
+  GPG or SSH signing key once (`user.signingkey` in `git config`),
+  then use `git tag -s vX.Y.Z` instead of `git tag`. GitHub will
+  display `Verified`.
+- Signing becomes a hard item on the §Public release checklist the
+  day the repo visibility changes — no repo goes public with
+  unsigned release tags going forward.
+
+### Release notes — `CHANGELOG.md` first, GitHub auto-list as complement
+
+- The primary body of the GitHub release description is the matching
+  `[vX.Y.Z]` section of `CHANGELOG.md` — deterministic, human-written,
+  consistent with the audit trail
+- GitHub's auto-generated PR list is allowed **below** the CHANGELOG
+  content as complementary context
+- Never let GitHub auto-generate alone — the CHANGELOG stays the
+  canonical consumer-facing narrative
+
+### Monorepo — lockstep versioning
+
+- `packages/core` and `packages/web` bump versions in lockstep under a
+  single tag — one tag = one release for both packages
+- Cross-package versions must stay identical forever; any drift is a
+  bug and blocks publish
+
+### Failed publishes
+
+- Keep the failed tag as an audit marker — **never delete it**
+- Reconcile the failed `[vX.Y.Z-rcN]` entry in `CHANGELOG.md` to state
+  explicitly that nothing shipped under that tag (see the
+  `[0.1.1-rc1]` section for the template)
+- Bump to the next version (typically `vX.Y.Z-rc.N+1`) — never reuse
+  the failed number
+
+---
+
 ## Cross-links
 
 - [README.md](./README.md) — user-facing quickstart, install, API, integration
@@ -590,7 +668,10 @@ stays as an audit marker; the version stays reserved.
 - [.github/branch-protection.md](./.github/branch-protection.md) — branch
   protection policy on `main`
 - [.github/tag-protection.md](./.github/tag-protection.md) — tag
-  protection policy for `v*` release tags
+  protection policy for `v*` release tags (apply/update/verify
+  commands); see also §Tag conventions above for the broader policy
+  covering naming, lifecycle, signing, release notes, and monorepo
+  lockstep
 - [.github/publish.md](./.github/publish.md) — release and publish workflow,
   consumer `.npmrc` setup, PAT rotation
 
