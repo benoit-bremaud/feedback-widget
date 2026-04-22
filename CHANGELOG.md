@@ -10,10 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1-rc1] - 2026-04-22
 
 First release candidate published to GitHub Packages
-(`https://npm.pkg.github.com`). This is an RC — `pnpm add
-@benoit-bremaud/feedback-widget` continues to resolve to the
-(git-URL-only) `0.1.0` baseline; consumers who want the RC must opt
-in with `pnpm add @benoit-bremaud/feedback-widget@rc`.
+(`https://npm.pkg.github.com`). This is an RC, so the default
+install path (`pnpm add @benoit-bremaud/feedback-widget`) still
+resolves to the git-URL-only `0.1.0` baseline. Consumers who want
+the RC must opt in with `pnpm add @benoit-bremaud/feedback-widget@rc`.
 
 ### Added
 
