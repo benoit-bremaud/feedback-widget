@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1-rc2] - 2026-04-22
+
+Retry of `0.1.1-rc1` after the first publish workflow failed at the
+Typecheck step (the `packages/web` typecheck needs
+`@benoit-bremaud/feedback-widget-core`'s `.d.ts`, so Build must
+run first). Nothing was published to GitHub Packages in the
+`rc1` attempt, so the version slot remains reserved but unused.
+
+### Fixed
+
+- `.github/workflows/publish.yml` now runs `Build` before
+  `Typecheck`, matching the ordering already fixed in `ci.yml`
+  (PR #2). Prevents TS2307 on the workspace import from
+  `packages/web`.
+
 ## [0.1.1-rc1] - 2026-04-22
 
 First release candidate published to GitHub Packages
