@@ -177,4 +177,50 @@ New entries are appended to the bottom as events occur.
   doc tracked in issue
   [#13](https://github.com/benoit-bremaud/feedback-widget/issues/13).
 - **Ref:** PR [#23](https://github.com/benoit-bremaud/feedback-widget/pull/23),
-  merge commit: *to be updated post-merge*
+  merge commit [`3c8c70f`](https://github.com/benoit-bremaud/feedback-widget/commit/3c8c70f)
+
+## 2026-04-22
+
+### PR #24 — v0.1.1-rc1 release attempt (failed publish)
+
+- **What:** Bumped both packages to `0.1.1-rc1` and tagged `v0.1.1-rc1`
+  to trigger the first GitHub Packages publish. The workflow crashed
+  at the `Typecheck` step because it ran before `Build`, leaving
+  workspace `.d.ts` files unresolvable across packages. No package
+  was published. The tag was kept as an audit marker and the version
+  is considered reserved/unusable.
+- **Why:** First real-world exercise of `publish.yml` end-to-end —
+  revealed the step-order bug that CI never caught because `ci.yml`
+  already ran `build` before `typecheck`.
+- **Ref:** PR [#24](https://github.com/benoit-bremaud/feedback-widget/pull/24),
+  merge commit [`35d0680`](https://github.com/benoit-bremaud/feedback-widget/commit/35d0680),
+  tag [`v0.1.1-rc1`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.1.1-rc1)
+
+### PR #25 — rc2 publish-workflow fix + successful publish
+
+- **What:** Reordered `publish.yml` so `Build` runs before `Typecheck`
+  (mirroring the fix applied in `ci.yml` via PR #2). Bumped both
+  packages to `0.1.1-rc2` and reconciled the `[0.1.1-rc1]`
+  `CHANGELOG.md` entry to state explicitly that nothing was published
+  under that tag. Copilot review flagged the CHANGELOG contradiction
+  (Should Have) — addressed inline in commit `68f82cf`.
+- **Why:** Unblock the first GitHub Packages publish and keep the
+  public release history truthful about the rc1 failure.
+- **Ref:** PR [#25](https://github.com/benoit-bremaud/feedback-widget/pull/25),
+  merge commit [`b0f4331`](https://github.com/benoit-bremaud/feedback-widget/commit/b0f4331)
+
+### v0.1.1-rc2 published to GitHub Packages
+
+- **What:** Tagged `v0.1.1-rc2` on `b0f4331` and pushed. The
+  `publish.yml` workflow completed in 27s (build → typecheck →
+  determine dist-tag → publish). Both `@benoit-bremaud/feedback-widget-core`
+  and `@benoit-bremaud/feedback-widget` are now on
+  `https://npm.pkg.github.com` under dist-tag `rc`. The repo and
+  packages remain private — only collaborators with a PAT scoped
+  `read:packages` can install.
+- **Why:** First successful end-to-end release of the standalone
+  widget. Validates the tag-driven publish pipeline and the
+  main-ancestor guard. Stays on the private-first policy until
+  conformance and security audits are complete.
+- **Ref:** tag [`v0.1.1-rc2`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.1.1-rc2),
+  workflow run [`24785834759`](https://github.com/benoit-bremaud/feedback-widget/actions/runs/24785834759)
