@@ -537,5 +537,5 @@ https://npm.pkg.github.com` plus `repository`/`homepage`/`bugs`
   at PR-open time rather than at review time. Verified locally:
   `pnpm lint` returns zero errors / zero warnings, `pnpm
 format:check` is clean, all 40 tests still pass.
-- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+- **Ref:** PR [#37](https://github.com/benoit-bremaud/feedback-widget/pull/37),
   merge commit: _to be updated post-merge_
