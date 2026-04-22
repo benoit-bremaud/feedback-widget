@@ -1,0 +1,73 @@
+name: Publish to GitHub Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Build and publish packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          # Full history needed for the main-ancestor check below.
+          fetch-depth: 0
+
+      - name: Verify tagged commit is on main
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag ${GITHUB_REF#refs/tags/} points to commit ${GITHUB_SHA}, which is not an ancestor of origin/main. Refusing to publish — tags must come from main."
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF#refs/tags/} (${GITHUB_SHA}) is on main; proceeding with publish."
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
+        with:
+          version: 10
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 20
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@benoit-bremaud'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Determine npm dist-tag
+        id: disttag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Stable releases (vX.Y.Z) go to the `latest` dist-tag.
+          # Prereleases (vX.Y.Z-rc1, -beta.2, -alpha, etc.) go to `rc`,
+          # so `pnpm add @benoit-bremaud/feedback-widget` never installs
+          # a prerelease by default — consumers must opt in with
+          # `pnpm add @benoit-bremaud/feedback-widget@rc`.
+          if [[ "$TAG" == *-* ]]; then
+            echo "tag=rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Resolved dist-tag for $TAG: $(grep ^tag "$GITHUB_OUTPUT" | cut -d= -f2)"
+
+      - name: Publish packages
+        run: pnpm -r publish --no-git-checks --access restricted --tag ${{ steps.disttag.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

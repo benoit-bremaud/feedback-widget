@@ -4,6 +4,18 @@
   "description": "Pure-logic core for the feedback widget — domain, ports, use-cases, config. Runs in any JS runtime.",
   "author": "Benoît Bremaud",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benoit-bremaud/feedback-widget.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/benoit-bremaud/feedback-widget/tree/main/packages/core",
+  "bugs": {
+    "url": "https://github.com/benoit-bremaud/feedback-widget/issues"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
