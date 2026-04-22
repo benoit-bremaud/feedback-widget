@@ -482,5 +482,5 @@ New entries are appended to the bottom as events occur.
   Automatic Analysis to CI-based analysis, set the New Code
   definition to reference branch `main`, and confirm the
   `SONAR_TOKEN` repo secret exists.
-- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
+- **Ref:** PR [#36](https://github.com/benoit-bremaud/feedback-widget/pull/36),
   merge commit: *to be updated post-merge*
