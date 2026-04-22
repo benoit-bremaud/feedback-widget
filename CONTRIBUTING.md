@@ -29,7 +29,8 @@ Read it once end-to-end. After that, use it as a reference.
 11. [Public release checklist](#public-release-checklist)
 12. [Changelog and project log](#changelog-and-project-log)
 13. [Release workflow](#release-workflow)
-14. [Cross-links](#cross-links)
+14. [Tag conventions](#tag-conventions)
+15. [Cross-links](#cross-links)
 
 ---
 
@@ -593,7 +594,9 @@ ecosystem shares.
 ### Naming — strict semver, `v` prefix
 
 - **Stable**: `vMAJOR.MINOR.PATCH` — always prefixed `v`
-- **Prereleases**: `vX.Y.Z-rc.N`, `vX.Y.Z-beta.N`, `vX.Y.Z-alpha.N`
+- **Prereleases**: `vX.Y.Z-rcN`, `vX.Y.Z-betaN`, `vX.Y.Z-alphaN` —
+  undotted counter matching the existing `v0.1.1-rc1` and
+  `v0.1.1-rc2` tags in this repo
 - **Never reuse a number** — a failed publish keeps its tag as an audit
   marker; bump to the next rc/version (see §Failed publishes below)
 
@@ -602,7 +605,8 @@ ecosystem shares.
 - Cut from `main` only, after a release PR has merged (`CHANGELOG.md`
   moved to a versioned section, package versions bumped)
 - Owner-only — the admin bypass on the tag-protection ruleset is the
-  only path to creating `v*` tags; no other collaborator can
+  only path to create, move/update, or delete `v*` tags; the ruleset
+  enforces that restriction on every other collaborator
 - CLI-only: `git tag vX.Y.Z && git push origin vX.Y.Z`. Never create
   a release tag through the GitHub web UI (the commands must stay
   reproducible and scriptable)
@@ -635,8 +639,10 @@ Repository ruleset scoped to `refs/tags/v*`:
 ### Release notes — `CHANGELOG.md` first, GitHub auto-list as complement
 
 - The primary body of the GitHub release description is the matching
-  `[vX.Y.Z]` section of `CHANGELOG.md` — deterministic, human-written,
-  consistent with the audit trail
+  `[X.Y.Z]` section of `CHANGELOG.md` — deterministic, human-written,
+  consistent with the audit trail. (`CHANGELOG.md` headings follow
+  the Keep a Changelog convention without the `v` prefix; the tag
+  itself keeps the `v`.)
 - GitHub's auto-generated PR list is allowed **below** the CHANGELOG
   content as complementary context
 - Never let GitHub auto-generate alone — the CHANGELOG stays the
@@ -652,11 +658,11 @@ Repository ruleset scoped to `refs/tags/v*`:
 ### Failed publishes
 
 - Keep the failed tag as an audit marker — **never delete it**
-- Reconcile the failed `[vX.Y.Z-rcN]` entry in `CHANGELOG.md` to state
+- Reconcile the failed `[X.Y.Z-rcN]` entry in `CHANGELOG.md` to state
   explicitly that nothing shipped under that tag (see the
   `[0.1.1-rc1]` section for the template)
-- Bump to the next version (typically `vX.Y.Z-rc.N+1`) — never reuse
-  the failed number
+- Bump to the next rc number (e.g. from `v0.1.1-rc1` go to
+  `v0.1.1-rc2`) — never reuse the failed number
 
 ---
 

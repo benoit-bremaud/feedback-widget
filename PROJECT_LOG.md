@@ -344,4 +344,31 @@ New entries are appended to the bottom as events occur.
   merge-commit SHA (`acd9938`) and recording the ruleset
   activation.
 - **Ref:** PR [#30](https://github.com/benoit-bremaud/feedback-widget/pull/30),
+  merge commit [`0024e71`](https://github.com/benoit-bremaud/feedback-widget/commit/0024e71)
+
+### PR follow-up — Copilot corrections on tag conventions
+
+- **What:** Applied Copilot's five inline review comments on PR #30
+  (merged before fixes could land). (1) Lifecycle bullet "no other
+  collaborator can" completed to enumerate create / move-update /
+  delete and attribute the restriction to the ruleset. (2) Prerelease
+  format aligned to the undotted `rcN` counter used by the existing
+  `v0.1.1-rc1` and `v0.1.1-rc2` tags (`rc.N` / `beta.N` / `alpha.N`
+  replaced by `rcN` / `betaN` / `alphaN`). (3) `CHANGELOG.md` heading
+  reference changed from `[vX.Y.Z]` to `[X.Y.Z]` to match the Keep a
+  Changelog convention the CHANGELOG already uses (no `v` prefix on
+  section headers). (4) Failed-publishes bullet gained a concrete
+  bump example (`v0.1.1-rc1` → `v0.1.1-rc2`) in place of the
+  ambiguous `rc.N+1` notation. (5) Table of contents gained a new
+  entry `14. Tag conventions` between `Release workflow` and
+  `Cross-links`. `~/.claude/CLAUDE.md` §Tag Conventions — All
+  Projects also updated to the undotted form so the global policy
+  stays consistent with repo practice.
+- **Why:** Closes issue
+  [#32](https://github.com/benoit-bremaud/feedback-widget/issues/32)
+  (`prio:P2`). Keeps the §Tag conventions policy in `CONTRIBUTING.md`
+  aligned with the actual repo state (existing tags, CHANGELOG
+  format) and removes the mid-sentence truncation + ambiguous bump
+  notation flagged by Copilot.
+- **Ref:** PR [#TBD](https://github.com/benoit-bremaud/feedback-widget/pull),
   merge commit: *to be updated post-merge*
