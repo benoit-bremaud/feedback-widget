@@ -680,5 +680,5 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **Follow-up:** Install the Renovate GitHub App on the repo
   (one-click at [github.com/apps/renovate](https://github.com/apps/renovate));
   the first grouped PR appears the following Monday.
-- **Ref:** PR _to be filled at open-time_,
+- **Ref:** PR [#41](https://github.com/benoit-bremaud/feedback-widget/pull/41),
   merge commit _to be updated post-merge_
