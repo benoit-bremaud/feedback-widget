@@ -695,9 +695,10 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   (Claude/Mistral/Ollama, Linear/Jira, Discord/Slack/Email/Webhook,
   Postgres). Includes an ASCII dataflow diagram and the error-
   handling strategy (widget outbox retries on the user side; n8n
-  retry-on-error with 2/30s on each adapter node). `projects-yaml-
-schema.md` defines the contract the `ConfigSource` port returns:
-  YAML committed at `pipelines/projects.yaml`, fetched by n8n via
+  retry-on-error with 2/30s on each adapter node).
+  `projects-yaml-schema.md` defines the contract the `ConfigSource`
+  port returns: YAML committed at `pipelines/projects.yaml`, fetched
+  by n8n via
   raw URL + fine-grained PAT, validated against a draft-07 JSON
   schema at commit time and at fetch time. Ships a starter example
   for the three POC projects (brasse-bouillon, Impropedia,

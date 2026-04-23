@@ -28,7 +28,7 @@ orchestration itself.
 
 ## Overview
 
-```
+```text
 ┌───────────────────────────────────────────────────────────────────┐
 │ Widget  (browser, widget v0.3.0)                                  │
 │  user click → category → sub-category → free text → submit        │
@@ -62,7 +62,7 @@ orchestration itself.
 │   └──────┬───────┘                                                │
 │          ▼                                                        │
 │   ┌──────────────┐  port: IssueTracker                            │
-│   │ IssueTracker │  adapter (MVP): GitHubIssues                   │
+│   │ IssueTracker │  adapter (MVP): GitHubIssueTracker             │
 │   │  .create()   │  returns { issueUrl, issueNodeId }             │
 │   └──────┬───────┘                                                │
 │          ▼                                                        │
@@ -78,11 +78,18 @@ adapter is a configuration change, not a code change.
 
 ## Payload contract
 
-The widget POSTs a single JSON body. Schema lives in
-`packages/core/src/ports/FeedbackPayload.ts` (v0.3.0) — reproduced here
-so the pipeline doc stays readable standalone.
+The widget POSTs a single JSON body. The current source-of-truth type
+lives in [`packages/core/src/domain/Feedback.ts`](../../packages/core/src/domain/Feedback.ts)
+and uses a nested shape (`{ schemaVersion, meta, identity, context,
+content }`). The block below is the **proposed v0.3.0 flat contract**
+that this design targets — adopting it is part of Sprint 4 (widget
+v0.3.0 — sub-category taxonomy + auto-capture, issue #-to-be-opened).
+Until that ships, consumers read the current nested shape; the n8n
+pipeline will map v0.2.0 payloads to this target shape at the
+`Validate` node during the transition.
 
 ```ts
+// Proposed v0.3.0 contract — to land in packages/core/src/ports/FeedbackPayload.ts
 type FeedbackPayload = {
   // user-provided (required)
   projectId: string // e.g. "brasse-bouillon"
@@ -187,7 +194,8 @@ interface NotificationChannel {
 - **MVP adapter — `TelegramChannel`** — uses the
   [Bot API `sendMessage`](https://core.telegram.org/bots/api#sendmessage)
   with an inline keyboard carrying one "Open issue" button. The
-  `channel.id` from YAML is the chat id (can be negative for groups).
+  `channel.chatId` from YAML is the chat id (can be negative for
+  groups).
 - **Future adapters** — `DiscordChannel` (webhook), `SlackChannel`
   (webhook), `EmailChannel` (SMTP), `WebhookChannel` (generic).
 
@@ -220,8 +228,9 @@ node configuration once answered:
 6. GitHub PAT availability (scopes `repo` + `project`)
 7. Existing reverse proxy
 
-See [`project_phase_b_debrief_state.md`](../../.claude/projects/-home-vev-Documents-02-personal-feedback-widget/memory/project_phase_b_debrief_state.md)
-(local Claude memory) for the full status.
+The full Phase B debrief status (including these seven questions) is
+currently tracked outside this repository and will be captured in an
+in-repo issue or design note once the infra audit is complete.
 
 ## Out of scope
 

@@ -116,10 +116,12 @@ sub-category is **breaking** and requires a widget major bump.
 
 ## Example
 
-Committed starter file for the three POC sites (brasse-bouillon,
-Impropedia, audit-nvnc). `labelsBySubCategory` only lists the entries
-where sub-category granularity actually maps to a distinct label
-today — the rest fall back to the top-level label alone.
+Illustrative starter example for the three POC sites (brasse-bouillon,
+Impropedia, audit-nvnc). This shows what the future
+`pipelines/projects.yaml` could look like and is not yet committed.
+`labelsBySubCategory` only lists the entries where sub-category
+granularity actually maps to a distinct label today — the rest fall
+back to the top-level label alone.
 
 ```yaml
 version: 1
@@ -187,17 +189,22 @@ projects:
 
 ## Validation
 
-- **At commit time** — a CI job runs an ajv check against the JSON
-  Schema embedded below on every push touching
-  `pipelines/projects.yaml`. Fails the build on:
-  - duplicate `id`
-  - missing top-level category in `labelsByCategory`
-  - sub-category not present in the canonical taxonomy
-  - `channel.kind` not in the allowed enum
-- **At fetch time (n8n)** — `YamlFromGitHub.get()` validates the
-  parsed payload against the same schema before returning. A broken
-  file causes a 500 at the webhook; the widget retries via its
-  outbox.
+- **At commit time** — a CI job validates `pipelines/projects.yaml`
+  on every push that touches it. Two layers:
+  1. **Standard draft-07 check (Ajv)** against the schema below —
+     catches missing required fields, wrong types, missing top-level
+     category in `labelsByCategory`, unknown sub-category key in
+     `labelsBySubCategory`, and `channel.kind` outside the allowed
+     enum (via `propertyNames` + `oneOf`).
+  2. **Uniqueness check (custom script)** — a short Node script
+     asserts `projects[*].id` values are unique. JSON Schema
+     draft-07 cannot express "unique value of a specific property
+     across array items"; we enforce it in code rather than rely on
+     the Ajv-extension `uniqueItemProperties` keyword, which is not
+     part of draft-07.
+- **At fetch time (n8n)** — `YamlFromGitHub.get()` runs the same
+  two checks before returning. A broken file causes a 500 at the
+  webhook; the widget retries via its outbox.
 
 ### JSON Schema (draft-07)
 
@@ -213,7 +220,7 @@ Skeleton for the CI check. Will ship as
     "version": { "const": 1 },
     "projects": {
       "type": "array",
-      "uniqueItemProperties": ["id"],
+      "$comment": "Uniqueness of projects[*].id is enforced by a separate CI script because JSON Schema draft-07 cannot express uniqueness of a specific property across array items.",
       "items": {
         "type": "object",
         "required": [
@@ -252,6 +259,35 @@ Skeleton for the CI check. Will ship as
           },
           "labelsBySubCategory": {
             "type": "object",
+            "propertyNames": {
+              "enum": [
+                "crash",
+                "broken-feature",
+                "visual-glitch",
+                "wrong-output",
+                "regression",
+                "prose",
+                "code-sample",
+                "heading",
+                "link-text",
+                "alt-text",
+                "js-console",
+                "http-404",
+                "http-5xx",
+                "broken-link",
+                "missing-asset",
+                "wording",
+                "navigation",
+                "terminology",
+                "example-unclear",
+                "missing-context",
+                "new-feature",
+                "improvement",
+                "new-example",
+                "content-refactor",
+                "accessibility"
+              ]
+            },
             "additionalProperties": {
               "type": "array",
               "items": { "type": "string" }
