@@ -564,9 +564,23 @@ single source of truth, local tooling is your choice.
 
 - Dependency changes are reviewed via GitHub's Dependency Review workflow
   (gated on public visibility + GHAS).
-- No manual `npm audit` policy yet — will land with
-  [issue #14](https://github.com/benoit-bremaud/feedback-widget/issues/14)
-  (Renovate/Dependabot).
+- Renovate runs on this repo (configured by `renovate.json` at the root).
+  It opens one grouped PR per week (Monday before 6am Europe/Paris) for
+  all `minor` + `patch` updates, and one PR per `major` update. Every PR
+  auto-applies the `type:task` + `area:ci` labels, assigns
+  `benoit-bremaud`, and follows the `chore(deps):` commit convention.
+  Security updates flagged by GitHub vulnerability alerts bypass the
+  schedule and carry a `prio:P1` label.
+- **Auto-merge is disabled** — every Renovate PR requires manual review
+  and the same merge gate as any other PR (CI green, automated review
+  posted, explicit owner approval). This matches the global "never merge
+  autonomously" rule.
+- The Renovate dependency dashboard (auto-created issue) is the canonical
+  view of pending updates; use it to throttle noise or trigger specific
+  packages ahead of schedule.
+- Renovate itself is a GitHub App and must be installed once on the repo
+  via [github.com/apps/renovate](https://github.com/apps/renovate) —
+  config lives in git, install state lives on GitHub; both are required.
 
 ---
 
