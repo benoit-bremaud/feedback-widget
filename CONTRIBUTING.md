@@ -434,9 +434,34 @@ contributors. Quality Gate decoration then only appears when the PR
 is rerun in a trusted context (e.g. by a maintainer pushing the
 branch to the upstream repo).
 
-Coverage thresholds are not yet enforced in CI (tracked in
-[issue #12](https://github.com/benoit-bremaud/feedback-widget/issues/12)).
-When they land, failing below the threshold blocks merge.
+#### Enforced thresholds
+
+Each `vitest.config.ts` declares minimum coverage thresholds under
+`test.coverage.thresholds`. `pnpm test:coverage` exits non-zero if
+any metric falls below its threshold, which fails CI.
+
+| Package         | Statements | Branches | Functions | Lines |
+| --------------- | ---------- | -------- | --------- | ----- |
+| `packages/core` | 90         | 85       | 80        | 90    |
+| `packages/web`  | 80         | 70       | 80        | 80    |
+
+Thresholds are set a few points below the current baseline to catch
+real regressions without flapping on small refactors. Baselines at
+the time of wiring (2026-04-24): core 96 / 95.1 / 86.7 / 95.7, web
+85.1 / 72.9 / 83.8 / 88.5.
+
+#### Bump policy
+
+Ratchet thresholds upward whenever new tests raise a baseline by
+more than 3 points on any metric. Do the bump in the same PR that
+introduced the tests so the threshold stays anchored to the real
+baseline. Never lower a threshold to "make a PR pass" — write the
+missing test instead.
+
+`packages/web/src/index.ts` (barrel re-export) is excluded from
+coverage measurement because it is exercised indirectly through the
+public API tests, so direct unit coverage would double-count. This
+mirrors the existing `sonar.coverage.exclusions` entry.
 
 ---
 
