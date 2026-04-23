@@ -648,4 +648,37 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   categories + auto-capture) where adding untested code paths would
   otherwise slip through unnoticed.
 - **Ref:** PR [#40](https://github.com/benoit-bremaud/feedback-widget/pull/40),
+  merge commit [`d684ccb`](https://github.com/benoit-bremaud/feedback-widget/commit/d684ccb)
+
+### PR — configure Renovate for weekly dependency updates
+
+- **What:** Added `renovate.json` at the repo root. Renovate runs on
+  Monday before 6am Europe/Paris and opens a single grouped PR for all
+  `minor` + `patch` updates plus one PR per `major` update. Extends
+  `config:recommended` + `:semanticCommits` (produces `chore(deps):`
+  commits) + `:dependencyDashboard` (auto-created tracking issue) +
+  `helpers:pinGitHubActionDigests` (SHA-pins Actions updates, matching
+  the repo convention). Every Renovate PR auto-applies
+  `type:task` + `area:ci`, assigns `benoit-bremaud`, and routes through
+  the same merge gate as any other PR. Vulnerability alerts bypass the
+  weekly schedule and carry `prio:P1`. **Auto-merge is disabled** —
+  explicit choice to keep every dependency change under manual review,
+  matching the `never merge autonomously` rule in the global Claude
+  configuration. Updated `CONTRIBUTING.md` §Dependency security with
+  the cadence, labels, auto-merge stance, dashboard behaviour, and the
+  one-time Renovate GitHub App install step.
+- **Why:** Closes issue
+  [#14](https://github.com/benoit-bremaud/feedback-widget/issues/14)
+  (`prio:P2`, `area:ci`, v0.2.1 milestone). With coverage thresholds
+  locked in (#12) and v0.3.0 work about to land, stale transitive
+  dependencies (`typescript-eslint`, `vitest`, `happy-dom`, SHA-pinned
+  Actions) become a friction multiplier — the weekly grouped PR keeps
+  them fresh without burying the reviewer in noise. Renovate is
+  preferred over Dependabot because the grouped-PR config is
+  finer-grained and it natively supports GitHub Actions SHA digest
+  pinning, which the repo relies on across every workflow.
+- **Follow-up:** Install the Renovate GitHub App on the repo
+  (one-click at [github.com/apps/renovate](https://github.com/apps/renovate));
+  the first grouped PR appears the following Monday.
+- **Ref:** PR _to be filled at open-time_,
   merge commit _to be updated post-merge_
