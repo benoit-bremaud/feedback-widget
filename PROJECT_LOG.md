@@ -588,7 +588,64 @@ New entries are appended to the bottom as events occur.
   roadmap (Phase B — n8n pipeline, Phase C — first real integration
   in Impropedia) that the widget was built for.
 - **Ref:** PR [#39](https://github.com/benoit-bremaud/feedback-widget/pull/39),
-  merge commit: _to be updated post-merge_
+  merge commit [`b3d1db1`](https://github.com/benoit-bremaud/feedback-widget/commit/b3d1db1)
 - **Follow-up:** After merge, tag `v0.2.0` from `main` and push —
   `publish.yml` fires, both packages land on GitHub Packages under
   the `latest` dist-tag for the first time.
+
+## 2026-04-24
+
+### Backlog reorganisation — v0.2.0 closed, v0.2.1 + v0.3.0 opened
+
+- **What:** Closed the `v0.2.0 — Foundations` milestone after PR #39
+  shipped (32 closed / 0 open) and closed the parent epic issue #1
+  with a wrap-up summary. Opened two successor milestones: `v0.2.1 —
+Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
+— Multi-project pipeline` (#3, due 2026-05-15) for the n8n
+  consumer pipeline + widget v0.3.0 sub-category taxonomy +
+  auto-capture work. Re-assigned the six open issues carried over
+  from v0.2.0: #12 (coverage thresholds), #13 (release workflow
+  doc), #14 (Renovate), and #17 (MEMORY.md) → v0.2.1; #15 (v0.3.0+
+  roadmap doc), #16 (n8n pipeline doc) → v0.3.0. Created a dedicated
+  GitHub Project v2 for `audit-nvnc` (#54, node ID
+  `PVT_kwHOB8rwIc4BVe-g`) to track feedback routed by the pipeline
+  once the widget integration lands, aligning with the existing
+  `feedback-widget` (#52) and `Impropedia` (#47) project boards.
+- **Why:** The foundations phase ended with v0.2.0 shipping; the
+  remaining P2/P3 items are either hygiene (v0.2.1) or directly tied
+  to the new pipeline work (v0.3.0), so collapsing them into the now-
+  closed foundations milestone would have muddled the narrative.
+  Phase B (defined in `project_vision.md`) needs a dedicated track
+  with a deadline; the 3-week `v0.3.0` window reflects the expected
+  scope (widget release + n8n workflow + 3-site integration). The
+  audit-nvnc project board is needed before the widget can route
+  issues there.
+
+### PR — enforce coverage thresholds in vitest
+
+- **What:** Added `test.coverage.thresholds` to both
+  `packages/core/vitest.config.ts` and
+  `packages/web/vitest.config.ts`. Per-package thresholds sit a few
+  points below the current baseline, so today's code passes while
+  real regressions fail the build: core `90 / 85 / 80 / 90` (against
+  baseline `96 / 95.1 / 86.7 / 95.7`) and web `80 / 70 / 80 / 80`
+  (against `85.1 / 72.9 / 83.8 / 88.5`). Excluded
+  `packages/web/src/index.ts` (public-API barrel) from the web
+  measurement to avoid double-counting code already exercised
+  through the public-API tests — mirrors the existing
+  `sonar.coverage.exclusions` entry.
+  Rewrote the `Coverage` subsection of `CONTRIBUTING.md`: dropped
+  the "not yet enforced" paragraph, added an `Enforced thresholds`
+  table and a `Bump policy` stating that thresholds ratchet upward
+  when baselines rise by more than 3 points and never get lowered
+  to make a PR pass.
+- **Why:** Closes issue
+  [#12](https://github.com/benoit-bremaud/feedback-widget/issues/12)
+  (`prio:P2`, `area:testing`, v0.2.1 milestone). Coverage was wired
+  to CI + SonarCloud in PR #36 but the thresholds themselves were
+  left for this follow-up. Enforcing them now prevents silent
+  regressions during the v0.3.0 work (new widget code for sub-
+  categories + auto-capture) where adding untested code paths would
+  otherwise slip through unnoticed.
+- **Ref:** PR [#40](https://github.com/benoit-bremaud/feedback-widget/pull/40),
+  merge commit _to be updated post-merge_
