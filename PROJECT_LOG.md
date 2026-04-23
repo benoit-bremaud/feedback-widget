@@ -681,4 +681,43 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   (one-click at [github.com/apps/renovate](https://github.com/apps/renovate));
   the first grouped PR appears the following Monday.
 - **Ref:** PR [#41](https://github.com/benoit-bremaud/feedback-widget/pull/41),
+  merge commit [`6db588b`](https://github.com/benoit-bremaud/feedback-widget/commit/6db588b)
+
+### PR — n8n pipeline architecture + `projects.yaml` schema design docs
+
+- **What:** Added two design documents under `.github/design/`
+  before any code lands for Phase B. `n8n-pipeline.md` fixes the
+  end-to-end architecture: five abstract ports (`ConfigSource`,
+  `LLMGateway`, `IssueTracker`, `NotificationChannel`, plus the
+  widget-side payload contract), their MVP adapters
+  (`YamlFromGitHub`, `TemplateLLMGateway`, `GitHubIssueTracker`,
+  `TelegramChannel`), and the future adapters they make pluggable
+  (Claude/Mistral/Ollama, Linear/Jira, Discord/Slack/Email/Webhook,
+  Postgres). Includes an ASCII dataflow diagram and the error-
+  handling strategy (widget outbox retries on the user side; n8n
+  retry-on-error with 2/30s on each adapter node).
+  `projects-yaml-schema.md` defines the contract the `ConfigSource`
+  port returns: YAML committed at `pipelines/projects.yaml`, fetched
+  by n8n via
+  raw URL + fine-grained PAT, validated against a draft-07 JSON
+  schema at commit time and at fetch time. Ships a starter example
+  for the three POC projects (brasse-bouillon, Impropedia,
+  audit-nvnc) with label mappings per top-level category and per
+  sub-category, plus an evolution table distinguishing non-
+  breaking additions from breaking renames/removals.
+- **Why:** Closes issue
+  [#16](https://github.com/benoit-bremaud/feedback-widget/issues/16)
+  (`type:docs`, `area:governance`, `prio:P3`, v0.3.0 milestone) and
+  bundles the `projects.yaml` schema work (plan T1.5) in the same
+  PR since the two docs are tightly coupled — the YAML file is the
+  concrete input to the `ConfigSource` port, and divorcing them
+  would have scattered the contract across two discussions. Having
+  the ports + adapters + data contract pinned before any widget or
+  n8n code lands means the v0.3.0 sprint starts with agreed
+  interfaces, and any future LLM / tracker / channel swap lands as
+  a configuration change rather than a refactor. The only question
+  this doc can't answer is the concrete homelab infra (Q1-Q7 from
+  the Phase B debrief) — those values get wired into n8n
+  credentials once the user finishes auditing `n8n-kaggle-watcher`.
+- **Ref:** PR [#42](https://github.com/benoit-bremaud/feedback-widget/pull/42),
   merge commit _to be updated post-merge_
