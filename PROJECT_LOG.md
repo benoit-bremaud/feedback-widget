@@ -718,5 +718,5 @@ schema.md` defines the contract the `ConfigSource` port returns:
   this doc can't answer is the concrete homelab infra (Q1-Q7 from
   the Phase B debrief) — those values get wired into n8n
   credentials once the user finishes auditing `n8n-kaggle-watcher`.
-- **Ref:** PR _to be filled at open-time_,
+- **Ref:** PR [#42](https://github.com/benoit-bremaud/feedback-widget/pull/42),
   merge commit _to be updated post-merge_
