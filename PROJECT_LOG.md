@@ -629,10 +629,11 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   points below the current baseline, so today's code passes while
   real regressions fail the build: core `90 / 85 / 80 / 90` (against
   baseline `96 / 95.1 / 86.7 / 95.7`) and web `80 / 70 / 80 / 80`
-  (against `85.1 / 72.9 / 83.8 / 88.5`). Excluded `packages/web/src/
-index.ts` (public-API barrel) from the web measurement to avoid
-  double-counting code already exercised through the public-API
-  tests — mirrors the existing `sonar.coverage.exclusions` entry.
+  (against `85.1 / 72.9 / 83.8 / 88.5`). Excluded
+  `packages/web/src/index.ts` (public-API barrel) from the web
+  measurement to avoid double-counting code already exercised
+  through the public-API tests — mirrors the existing
+  `sonar.coverage.exclusions` entry.
   Rewrote the `Coverage` subsection of `CONTRIBUTING.md`: dropped
   the "not yet enforced" paragraph, added an `Enforced thresholds`
   table and a `Bump policy` stating that thresholds ratchet upward
@@ -646,5 +647,5 @@ index.ts` (public-API barrel) from the web measurement to avoid
   regressions during the v0.3.0 work (new widget code for sub-
   categories + auto-capture) where adding untested code paths would
   otherwise slip through unnoticed.
-- **Ref:** PR _to be filled at open-time_,
+- **Ref:** PR [#40](https://github.com/benoit-bremaud/feedback-widget/pull/40),
   merge commit _to be updated post-merge_
