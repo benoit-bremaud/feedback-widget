@@ -766,5 +766,5 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   the host site, mobile responsive, and the POST reaching the
   pipeline. After merge, tag `v0.3.0` → `publish.yml` ships both
   packages to GitHub Packages under `@latest`.
-- **Ref:** PR _to be filled at open-time_,
+- **Ref:** PR [#45](https://github.com/benoit-bremaud/feedback-widget/pull/45),
   merge commit _to be updated post-merge_
