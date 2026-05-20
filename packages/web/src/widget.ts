@@ -1,20 +1,21 @@
-import type { Category, Viewport } from '@benoit-bremaud/feedback-widget-core'
-import { requiresUserMessage } from '@benoit-bremaud/feedback-widget-core'
+import type {
+  TopLevelCategory,
+  FeedbackPayload,
+} from '@benoit-bremaud/feedback-widget-core'
+import { requiresSubCategory } from '@benoit-bremaud/feedback-widget-core'
 import type { WidgetState } from '@benoit-bremaud/feedback-widget-core'
 import type { ViewportDetector } from '@benoit-bremaud/feedback-widget-core'
 import { createHttpTransport, defaultBackoff } from './adapters/HttpTransport'
 import { createLocalStorageRateLimiter } from './adapters/LocalStorageRateLimiter'
 import { createLocalStorageOutbox } from './adapters/LocalStorageOutbox'
 import { createIntersectionViewportDetector } from './adapters/IntersectionViewportDetector'
+import { createBrowserContextCollector } from './adapters/BrowserContextCollector'
 import type { FeedbackWidgetElement } from './adapters/WebComponentView'
 import {
   createWebComponentView,
   defineFeedbackWidgetElement,
 } from './adapters/WebComponentView'
-import {
-  buildFeedbackPayload,
-  EMPTY_TARGET,
-} from '@benoit-bremaud/feedback-widget-core'
+import { buildFeedbackPayload } from '@benoit-bremaud/feedback-widget-core'
 import { submitFeedback } from '@benoit-bremaud/feedback-widget-core'
 import { drainOutbox } from '@benoit-bremaud/feedback-widget-core'
 import type { WidgetConfig } from '@benoit-bremaud/feedback-widget-core'
@@ -23,6 +24,8 @@ import { resolveConfig } from '@benoit-bremaud/feedback-widget-core'
 const TAG_NAME = 'feedback-widget'
 const STORAGE_KEY_PREFIX = 'impropedia.feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+const WIDGET_VERSION = '0.3.0'
+const MIN_MESSAGE_LENGTH = 10
 
 export interface FeedbackWidgetHandle {
   // Rescans observed blocks. Call this after a SPA navigation or any DOM
@@ -107,9 +110,23 @@ function attachController(
     win: window,
   })
 
+  const contextCollector = createBrowserContextCollector({
+    projectId: config.projectId,
+    widgetVersion: WIDGET_VERSION,
+    sessionId: newSessionId(),
+  })
+
   detector.startObserving()
 
-  void drainOutbox({ outbox, transport, maxAgeMs: OUTBOX_MAX_AGE_MS })
+  // Best-effort background retry of queued feedback. Swallowing is
+  // intentional (it must never break mount), but log so a persistent
+  // failure is at least visible in the console rather than a silent
+  // unhandled rejection.
+  void drainOutbox({ outbox, transport, maxAgeMs: OUTBOX_MAX_AGE_MS }).catch(
+    (err: unknown) => {
+      console.warn('feedback-widget: outbox drain failed', err)
+    },
+  )
 
   let state: WidgetState = initialState()
   let formOpenedAt = 0
@@ -154,6 +171,7 @@ function attachController(
           step: 'target-confirm',
           target: detector.getCurrentTarget(),
           selectedCategory: null,
+          selectedSubCategory: null,
           userMessage: '',
           reporterName: '',
           errorMessage: null,
@@ -193,12 +211,54 @@ function attachController(
         break
 
       case 'select-category':
+        // Progressive disclosure: a category with sub-categories opens
+        // the sub-category step; `other` (no sub-categories) jumps
+        // straight to the free-text precision step.
+        if (requiresSubCategory(action.category)) {
+          setState({
+            step: 'sub-category',
+            selectedCategory: action.category,
+            selectedSubCategory: null,
+            errorMessage: null,
+          })
+        } else {
+          setState({
+            step: 'precision',
+            selectedCategory: action.category,
+            selectedSubCategory: null,
+            errorMessage: null,
+          })
+        }
+        break
+
+      case 'select-sub-category':
         setState({
           step: 'precision',
-          selectedCategory: action.category,
+          selectedSubCategory: action.subCategory,
           errorMessage: null,
         })
         break
+
+      case 'back': {
+        // Contextual back: precision → sub-category (if the category has
+        // sub-categories) or → type; sub-category → type.
+        if (
+          state.step === 'precision' &&
+          state.selectedCategory !== null &&
+          requiresSubCategory(state.selectedCategory)
+        ) {
+          setState({ step: 'sub-category', errorMessage: null })
+        } else {
+          // Returning to the category picker: clear the stale
+          // sub-category so it can't outlive a category change.
+          setState({
+            step: 'type',
+            selectedSubCategory: null,
+            errorMessage: null,
+          })
+        }
+        break
+      }
 
       case 'update-message': {
         // Silent by default to preserve textarea focus while typing. But
@@ -231,34 +291,61 @@ function attachController(
     }
   })
 
-  const handleSubmit = async (): Promise<void> => {
+  // Validates the current state and builds the payload, or returns null
+  // after routing the user to the step that needs fixing. Extracted from
+  // handleSubmit so each function keeps a manageable branch count.
+  const preparePayload = (): FeedbackPayload | null => {
     const category = state.selectedCategory
     if (!category) {
       setState({ step: 'type' })
-      return
+      return null
+    }
+
+    // Non-`other` categories require a sub-category. If it is missing
+    // (e.g. the user skipped the step), send them back to pick one.
+    if (requiresSubCategory(category) && state.selectedSubCategory === null) {
+      setState({ step: 'sub-category', errorMessage: null })
+      return null
     }
 
     const message = state.userMessage.trim()
-    if (requiresUserMessage(category) && message.length < 10) {
+    if (message.length < MIN_MESSAGE_LENGTH) {
       setState({
         errorMessage: 'Merci de décrire le problème (10 caractères minimum).',
       })
-      return
+      return null
     }
 
+    // Building the payload can throw (buildFeedbackPayload enforces the
+    // category/sub-category invariant; the collector reads browser
+    // globals). Guard it so a failure surfaces as an error step instead
+    // of leaving the user stuck on a "sending" spinner with their
+    // message lost.
+    try {
+      const context = contextCollector.collect()
+      return buildFeedbackPayload({
+        ...context,
+        category,
+        subCategory: state.selectedSubCategory,
+        message,
+      })
+    } catch {
+      setState({
+        step: 'error',
+        errorMessage:
+          'Une erreur est survenue lors de la préparation de ton retour. Réessaie.',
+      })
+      return null
+    }
+  }
+
+  const handleSubmit = async (): Promise<void> => {
+    // Read the honeypot before any re-render destroys the input.
     const honeypotFilled = element.isHoneypotFilled()
-    const payload = buildFeedbackPayload({
-      projectId: config.projectId,
-      pageUrl: window.location.href,
-      pageTitle: document.title,
-      target: state.target ?? EMPTY_TARGET,
-      category,
-      userMessage: message.length > 0 ? message : null,
-      reporterName: state.reporterName.trim() || null,
-      viewport: currentViewport(),
-      userAgent: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-    })
+    const payload = preparePayload()
+    if (payload === null) {
+      return
+    }
 
     setState({ step: 'sending' })
 
@@ -301,17 +388,37 @@ function attachController(
       return
     }
 
-    // network or server: enqueue for later retry, then show mailto fallback if available.
-    await outbox.enqueue(payload)
+    // network or server: enqueue for later retry, then show mailto
+    // fallback if available. enqueue can throw (no Web Crypto for the
+    // entry id); if it does we must not promise an automatic re-send.
+    let enqueued = true
+    try {
+      await outbox.enqueue(payload)
+    } catch {
+      enqueued = false
+    }
 
     const mailto = buildMailto(config.mailtoFallback, payload)
     if (mailto) {
+      const base =
+        result.reason === 'network'
+          ? 'Pas de connexion réseau'
+          : 'Le service est momentanément indisponible'
       view.showMailtoFallback(
         mailto,
-        result.reason === 'network'
-          ? 'Pas de connexion réseau — ton retour sera renvoyé automatiquement plus tard.'
-          : 'Le service est momentanément indisponible — ton retour sera renvoyé automatiquement.',
+        enqueued
+          ? `${base} — ton retour sera renvoyé automatiquement plus tard.`
+          : `${base} — impossible de le mettre en file d’attente, utilise plutôt le mail ci-dessous.`,
       )
+      return
+    }
+
+    if (!enqueued) {
+      setState({
+        step: 'error',
+        errorMessage:
+          'Ton retour n’a pas pu être envoyé ni mis en file d’attente — réessaie quand la connexion sera rétablie.',
+      })
       return
     }
 
@@ -336,18 +443,36 @@ function initialState(): WidgetState {
     step: 'closed',
     target: null,
     selectedCategory: null,
+    selectedSubCategory: null,
     userMessage: '',
     reporterName: '',
     errorMessage: null,
   }
 }
 
-function currentViewport(): Viewport {
-  const width = window.innerWidth
-  const height = window.innerHeight
-  const device: Viewport['device'] =
-    width < 600 ? 'mobile' : width < 1024 ? 'tablet' : 'desktop'
-  return { width, height, device }
+// Anonymous, session-scoped id shared by every submission from this
+// widget instance. Prefers crypto.randomUUID, then getRandomValues.
+// Unlike LocalStorageOutbox.defaultGenerateId (which THROWS without
+// Web Crypto, because a weak outbox-entry id could collide and corrupt
+// the queue), a session id is non-security-sensitive grouping metadata,
+// so the no-crypto path degrades to a timestamp-only id rather than
+// throwing. Do not "fix" this divergence by adding a throw — it would
+// break sessions on runtimes without Web Crypto.
+function newSessionId(): string {
+  const cryptoRef: Crypto | undefined =
+    typeof globalThis !== 'undefined' ? globalThis.crypto : undefined
+  if (cryptoRef && typeof cryptoRef.randomUUID === 'function') {
+    return cryptoRef.randomUUID()
+  }
+  if (cryptoRef && typeof cryptoRef.getRandomValues === 'function') {
+    const bytes = new Uint8Array(8)
+    cryptoRef.getRandomValues(bytes)
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(
+      '',
+    )
+    return `fw-sess-${Date.now().toString(36)}-${hex}`
+  }
+  return `fw-sess-${Date.now().toString(36)}`
 }
 
 function buildMailto(base: string | null, payload: unknown): string | null {
@@ -361,4 +486,4 @@ function buildMailto(base: string | null, payload: unknown): string | null {
   return `mailto:${base}?subject=${subject}&body=${body}`
 }
 
-export type { WidgetConfig, Category }
+export type { WidgetConfig, TopLevelCategory }

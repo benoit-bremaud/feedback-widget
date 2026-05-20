@@ -720,4 +720,51 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   the Phase B debrief) — those values get wired into n8n
   credentials once the user finishes auditing `n8n-kaggle-watcher`.
 - **Ref:** PR [#42](https://github.com/benoit-bremaud/feedback-widget/pull/42),
+  merge commit [`98fcb12`](https://github.com/benoit-bremaud/feedback-widget/commit/98fcb12)
+
+## 2026-05-21
+
+### PR — widget v0.3.0: sub-category taxonomy + auto-capture
+
+- **What:** Implemented the two-level feedback taxonomy and automatic
+  browser-context capture across both packages (single coherent PR
+  after the 2-PR core/web split proved leaky — the discriminated
+  `category + subCategory` union forces the web side to supply a real
+  sub-category as soon as it builds a payload). **Core**: replaced the
+  nested `FeedbackPayload` with a flat shape; added `TopLevelCategory`
+  (renamed from `Category`), five per-category sub-category unions, the
+  `SubCategory` umbrella, the `CategorizedFeedback` discriminated
+  union, `BrowserContext`, the `ContextCollector` port, helpers
+  `requiresSubCategory` / `isValidSubCategory` /
+  `SUB_CATEGORIES_BY_CATEGORY`; rewrote `buildFeedbackPayload` to
+  validate the `other` ⟺ null-sub-category invariant. **Web**: new
+  `BrowserContextCollector` adapter (10 fields, defensively read), a
+  `sub-category` progressive-disclosure step in `WebComponentView`
+  with a contextual `back` action, and composition-root wiring that
+  collects context + builds the flat payload inside a guard.
+  **Resilience**: payload-build and `outbox.enqueue` throws are caught
+  so a failure surfaces as an error step (never a stuck spinner), and
+  the user is no longer falsely told their feedback was queued.
+  Lockstep version bump `0.2.0 → 0.3.0`, CHANGELOG `[0.3.0]` with the
+  breaking-change callout. 143 tests (41 core + 102 web), coverage
+  core 93/92/88/93 and web 84/73/84/87 — both above thresholds.
+- **Why:** Closes issue
+  [#44](https://github.com/benoit-bremaud/feedback-widget/issues/44)
+  (`type:feature`, `area:core`, `area:web`, `prio:P1`, v0.3.0
+  milestone). Delivers the Q9 taxonomy + auto-capture decided in the
+  Phase B debrief so the n8n pipeline (Sprint 5) can route and label
+  feedback with full granularity, and so brasse-bouillon can integrate
+  the richer widget (Strategy B — integrate after v0.3.0 ships). Two
+  review agents (type-design-analyzer, silent-failure-hunter) ran
+  pre-PR; their Must-Fix findings (unguarded throws, stale
+  sub-category on `back`, silent drain rejection, unvalidated DOM
+  cast) are all addressed in this PR.
+- **Follow-up:** Live-browser E2E (chrome-devtools) deferred to
+  Sprint 5 / J4, where the widget is integrated into the real
+  brasse-bouillon VitePress site against the real n8n endpoint — the
+  meaningful place to verify CSS / Shadow-DOM rendering, z-index over
+  the host site, mobile responsive, and the POST reaching the
+  pipeline. After merge, tag `v0.3.0` → `publish.yml` ships both
+  packages to GitHub Packages under `@latest`.
+- **Ref:** PR _to be filled at open-time_,
   merge commit _to be updated post-merge_

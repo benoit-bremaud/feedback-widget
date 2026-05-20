@@ -33,6 +33,7 @@ function initialState(): WidgetState {
     step: 'closed',
     target: null,
     selectedCategory: null,
+    selectedSubCategory: null,
     userMessage: '',
     reporterName: '',
     errorMessage: null,
@@ -232,6 +233,76 @@ describe('createWebComponentView — user actions', () => {
       kind: 'select-category',
       category: 'typo',
     })
+  })
+
+  it('renders the 5 sub-category buttons for the selected category', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+    view.render({
+      ...initialState(),
+      step: 'sub-category',
+      selectedCategory: 'bug',
+    })
+
+    const buttons = el.shadowRoot!.querySelectorAll('[data-sub-category]')
+    expect(buttons).toHaveLength(5)
+    expect(
+      el.shadowRoot!.querySelector('[data-sub-category="crash"]'),
+    ).not.toBeNull()
+  })
+
+  it('clicking a sub-category button emits `select-sub-category`', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+    const onAction = vi.fn()
+    view.onUserAction(onAction)
+    view.render({
+      ...initialState(),
+      step: 'sub-category',
+      selectedCategory: 'bug',
+    })
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '[data-sub-category="crash"]',
+    )?.click()
+
+    expect(onAction).toHaveBeenCalledWith({
+      kind: 'select-sub-category',
+      subCategory: 'crash',
+    })
+  })
+
+  it('clicking the sub-category back button emits `back`', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+    const onAction = vi.fn()
+    view.onUserAction(onAction)
+    view.render({
+      ...initialState(),
+      step: 'sub-category',
+      selectedCategory: 'bug',
+    })
+
+    el.shadowRoot!.querySelector<HTMLButtonElement>(
+      '[data-action="back"]',
+    )?.click()
+
+    expect(onAction).toHaveBeenCalledWith({ kind: 'back' })
+  })
+
+  it('shows a category › sub-category breadcrumb on the precision step', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+    view.render({
+      ...initialState(),
+      step: 'precision',
+      selectedCategory: 'bug',
+      selectedSubCategory: 'crash',
+    })
+
+    const title = el.shadowRoot!.querySelector('.fw-title')?.textContent ?? ''
+    expect(title).toContain('Bug')
+    expect(title).toContain('Plantage')
   })
 
   it('clicking confirm-target emits `confirm-target`', () => {

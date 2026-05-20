@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-21
+
+First release of the two-level feedback taxonomy and automatic
+context capture. The widget now asks for a top-level category, then a
+sub-category (progressive disclosure), and enriches every submission
+with ten browser-context fields so the downstream pipeline can route
+and label feedback with maximum granularity at minimum click cost.
+
+**Breaking change** — the `FeedbackPayload` shape changed from the
+nested `{ schemaVersion, meta, identity, context, content }` (v0.2.0)
+to a **flat** object: `{ projectId, url, referrer, userAgent,
+viewport: { w, h }, locale, timestamp, widgetVersion, scrollDepth,
+sessionId, category, subCategory, message }`. Consumers parsing the
+posted body must update to the flat shape. The `Category` type is
+renamed `TopLevelCategory`. `buildFeedbackPayload`'s input is now the
+flat `BuildPayloadInput`. The free-text `message` is now always
+required (10–2000 chars) rather than only for the `other` category.
+
+### Added
+
+- **Two-level taxonomy** — six top-level categories, each with five
+  sub-categories (25 total), locked by the Phase B debrief Q9. New
+  types `TopLevelCategory`, `BugSubCategory` / `TypoSubCategory` /
+  `ErrorSubCategory` / `AmbiguousSubCategory` / `SuggestionSubCategory`,
+  the `SubCategory` umbrella, the `CategorizedFeedback` discriminated
+  union, and the `SUB_CATEGORIES_BY_CATEGORY` lookup. Helpers
+  `requiresSubCategory` and `isValidSubCategory`.
+- **Auto-capture** — new `ContextCollector` port (core) and
+  `BrowserContextCollector` adapter (web) producing the ten
+  `BrowserContext` fields from `window` / `navigator` / `document`,
+  each read defensively so a missing global degrades the field rather
+  than blocking submission.
+- **Progressive-disclosure UX** — a `sub-category` step between the
+  category picker and the free-text precision step (skipped for
+  `other`), with a contextual `back` action. New `WidgetState`
+  fields `selectedSubCategory` and the `select-sub-category` / `back`
+  user actions.
+- **Tests** — `BrowserContextCollector.test.ts`, plus expanded
+  `widget.test.ts` (sub-category flow, `back` navigation, flat-payload
+  shape assertion) and `WebComponentView.test.ts` (sub-category render,
+  emission, breadcrumb). 143 tests total (41 core + 102 web).
+
+### Changed
+
+- **`FeedbackPayload`** flattened (see breaking change above); the
+  v0.2.0 `TargetBlock` remains a runtime artefact of the viewport
+  detector but is no longer part of the payload contract.
+- **`buildFeedbackPayload`** now validates the category/sub-category
+  invariant (`other` ⟺ null sub-category) and throws on violation —
+  treated as a programming error, guarded at the composition root so
+  a failure surfaces as an error step, never a stuck "sending" state.
+- **Submit resilience** — `outbox.enqueue` failures are caught and the
+  user is no longer told their feedback was queued when it was not.
+
+### Fixed
+
+- Returning to the category picker via `back` clears any stale
+  sub-category so it cannot outlive a category change.
+- Background `drainOutbox` failures are logged instead of surfacing as
+  a silent unhandled rejection.
+
 ## [0.2.0] - 2026-04-23
 
 First `latest` release. Closes the foundations phase started with
