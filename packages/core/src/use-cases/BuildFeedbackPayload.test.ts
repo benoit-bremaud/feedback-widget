@@ -1,46 +1,92 @@
 import { describe, it, expect } from 'vitest'
 import { buildFeedbackPayload, EMPTY_TARGET } from './BuildFeedbackPayload'
+import type { BrowserContext } from '../domain/Feedback'
 
 describe('use-cases/buildFeedbackPayload', () => {
-  const baseInput = {
-    projectId: 'impropedia',
-    pageUrl: 'https://example.test/page',
-    pageTitle: 'Page de test',
-    target: EMPTY_TARGET,
-    category: 'typo' as const,
-    userMessage: 'Il manque un s',
-    reporterName: 'Pauline',
-    viewport: { width: 412, height: 915, device: 'mobile' as const },
+  const baseContext: BrowserContext = {
+    projectId: 'brasse-bouillon',
+    url: 'https://example.test/page',
+    referrer: 'https://example.test/',
     userAgent: 'UA/1.0',
-    timestamp: '2026-04-12T12:00:00.000Z',
+    viewport: { w: 412, h: 915 },
+    locale: 'fr-FR',
+    timestamp: '2026-04-24T12:00:00.000Z',
+    widgetVersion: '0.3.0',
+    scrollDepth: 0.42,
+    sessionId: '01HK3M-AAAA-BBBB-CCCC-DDDDEEEEFFFF',
   }
 
-  it('builds a payload conforming to the 4-section schema', () => {
-    const payload = buildFeedbackPayload(baseInput)
-
-    expect(payload.schemaVersion).toBe('1.0')
-    expect(payload.meta.projectId).toBe('impropedia')
-    expect(payload.meta.timestamp).toBe('2026-04-12T12:00:00.000Z')
-    expect(payload.meta.viewport.device).toBe('mobile')
-    expect(payload.identity.reporterName).toBe('Pauline')
-    expect(payload.context.pageUrl).toBe('https://example.test/page')
-    expect(payload.context.target).toEqual(EMPTY_TARGET)
-    expect(payload.content.category).toBe('typo')
-    expect(payload.content.userMessage).toBe('Il manque un s')
-  })
-
-  it('preserves null values for optional fields', () => {
+  it('builds a flat payload merging context, category, and message', () => {
     const payload = buildFeedbackPayload({
-      ...baseInput,
-      userMessage: null,
-      reporterName: null,
+      ...baseContext,
+      category: 'typo',
+      subCategory: 'prose',
+      message: 'Missing an "s" on the index page',
     })
 
-    expect(payload.identity.reporterName).toBeNull()
-    expect(payload.content.userMessage).toBeNull()
+    expect(payload).toEqual({
+      ...baseContext,
+      category: 'typo',
+      subCategory: 'prose',
+      message: 'Missing an "s" on the index page',
+    })
   })
 
-  it('EMPTY_TARGET has all nullable fields set to null', () => {
+  it('preserves the discriminated category-subCategory pairing', () => {
+    const bug = buildFeedbackPayload({
+      ...baseContext,
+      category: 'bug',
+      subCategory: 'crash',
+      message: 'App crashes on load',
+    })
+    expect(bug.category).toBe('bug')
+    expect(bug.subCategory).toBe('crash')
+
+    const error = buildFeedbackPayload({
+      ...baseContext,
+      category: 'error',
+      subCategory: 'http-5xx',
+      message: 'Got a 500 on /api/foo',
+    })
+    expect(error.category).toBe('error')
+    expect(error.subCategory).toBe('http-5xx')
+  })
+
+  it('forces subCategory to null when category is "other"', () => {
+    const payload = buildFeedbackPayload({
+      ...baseContext,
+      category: 'other',
+      subCategory: null,
+      message: 'Generic comment that does not fit anywhere',
+    })
+
+    expect(payload.category).toBe('other')
+    expect(payload.subCategory).toBeNull()
+  })
+
+  it('preserves a null referrer (top-level navigation)', () => {
+    const payload = buildFeedbackPayload({
+      ...baseContext,
+      referrer: null,
+      category: 'suggestion',
+      subCategory: 'new-feature',
+      message: 'Add a dark mode',
+    })
+    expect(payload.referrer).toBeNull()
+  })
+
+  it('keeps the auto-capture viewport intact', () => {
+    const payload = buildFeedbackPayload({
+      ...baseContext,
+      viewport: { w: 1920, h: 1080 },
+      category: 'ambiguous',
+      subCategory: 'navigation',
+      message: 'I cannot find the docs',
+    })
+    expect(payload.viewport).toEqual({ w: 1920, h: 1080 })
+  })
+
+  it('exposes EMPTY_TARGET with all nullable fields set to null', () => {
     expect(EMPTY_TARGET).toEqual({
       headingId: null,
       headingText: null,

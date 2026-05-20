@@ -1,20 +1,28 @@
 // domain
 export type {
-  Category,
-  Device,
-  Viewport,
-  TargetBlock,
-  SchemaVersion,
+  TopLevelCategory,
+  BugSubCategory,
+  TypoSubCategory,
+  ErrorSubCategory,
+  AmbiguousSubCategory,
+  SuggestionSubCategory,
+  SubCategory,
+  CategorizedFeedback,
+  ViewportSize,
+  BrowserContext,
   FeedbackPayload,
+  TargetBlock,
 } from './domain/Feedback'
 export {
-  CURRENT_SCHEMA_VERSION,
-  CATEGORIES,
+  TOP_LEVEL_CATEGORIES,
+  SUB_CATEGORIES_BY_CATEGORY,
   isValidCategory,
-  requiresUserMessage,
+  isValidSubCategory,
+  requiresSubCategory,
 } from './domain/Feedback'
 
 // ports
+export type { ContextCollector } from './ports/ContextCollector'
 export type { OutboxQueue } from './ports/OutboxQueue'
 export type { RateLimiter } from './ports/RateLimiter'
 export type { Transport, TransportResult } from './ports/Transport'

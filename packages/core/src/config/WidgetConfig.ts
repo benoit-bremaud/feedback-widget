@@ -1,10 +1,10 @@
-import type { Category } from '../domain/Feedback'
+import type { TopLevelCategory } from '../domain/Feedback'
 
 export interface WidgetConfig {
   endpoint: string
   projectId: string
   token?: string
-  categories?: readonly Category[]
+  categories?: readonly TopLevelCategory[]
   maxMessageLength?: number
   rateLimitWindowMs?: number
   rateLimitMaxAttempts?: number
@@ -19,7 +19,7 @@ export interface ResolvedWidgetConfig extends Required<
   Omit<WidgetConfig, 'token' | 'categories' | 'mailtoFallback'>
 > {
   token: string | null
-  categories: readonly Category[] | null
+  categories: readonly TopLevelCategory[] | null
   mailtoFallback: string | null
 }
 

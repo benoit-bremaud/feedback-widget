@@ -5,26 +5,19 @@ import type { Transport } from '../ports/Transport'
 import { drainOutbox } from './DrainOutbox'
 
 const payload: FeedbackPayload = {
-  schemaVersion: '1.0',
-  meta: {
-    projectId: 'impropedia',
-    timestamp: '2026-04-12T12:00:00.000Z',
-    viewport: { width: 800, height: 600, device: 'desktop' },
-    userAgent: 'UA/1.0',
-  },
-  identity: { reporterName: null },
-  context: {
-    pageUrl: 'https://example.test/',
-    pageTitle: 'Test',
-    target: {
-      headingId: null,
-      headingText: null,
-      blockIndex: null,
-      blockTag: null,
-      excerpt: null,
-    },
-  },
-  content: { category: 'bug', userMessage: null },
+  projectId: 'impropedia',
+  url: 'https://example.test/',
+  referrer: null,
+  userAgent: 'UA/1.0',
+  viewport: { w: 800, h: 600 },
+  locale: 'en-US',
+  timestamp: '2026-04-24T12:00:00.000Z',
+  widgetVersion: '0.3.0',
+  scrollDepth: 0,
+  sessionId: '01HK3M-0000-0000-0000-000000000000',
+  category: 'bug',
+  subCategory: 'crash',
+  message: 'App crashes when opening the docs',
 }
 
 describe('use-cases/drainOutbox', () => {
