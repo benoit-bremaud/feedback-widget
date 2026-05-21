@@ -59,4 +59,4 @@ export type { TrackRateLimitResult } from './use-cases/TrackRateLimit'
 
 // config
 export type { WidgetConfig, ResolvedWidgetConfig } from './config/WidgetConfig'
-export { resolveConfig } from './config/WidgetConfig'
+export { resolveConfig, MIN_MESSAGE_LENGTH } from './config/WidgetConfig'

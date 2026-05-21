@@ -2,7 +2,10 @@ import type {
   TopLevelCategory,
   FeedbackPayload,
 } from '@benoit-bremaud/feedback-widget-core'
-import { requiresSubCategory } from '@benoit-bremaud/feedback-widget-core'
+import {
+  requiresSubCategory,
+  MIN_MESSAGE_LENGTH,
+} from '@benoit-bremaud/feedback-widget-core'
 import type { WidgetState } from '@benoit-bremaud/feedback-widget-core'
 import type { ViewportDetector } from '@benoit-bremaud/feedback-widget-core'
 import { createHttpTransport, defaultBackoff } from './adapters/HttpTransport'
@@ -25,7 +28,6 @@ const TAG_NAME = 'feedback-widget'
 const STORAGE_KEY_PREFIX = 'impropedia.feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const WIDGET_VERSION = '0.3.0'
-const MIN_MESSAGE_LENGTH = 10
 
 export interface FeedbackWidgetHandle {
   // Rescans observed blocks. Call this after a SPA navigation or any DOM
@@ -328,6 +330,7 @@ function attachController(
         category,
         subCategory: state.selectedSubCategory,
         message,
+        reporterName: state.reporterName.trim() || null,
       })
     } catch {
       setState({

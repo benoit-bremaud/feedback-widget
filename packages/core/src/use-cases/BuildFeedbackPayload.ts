@@ -16,6 +16,7 @@ export type BuildPayloadInput = BrowserContext & {
   category: TopLevelCategory
   subCategory: SubCategory | null
   message: string
+  reporterName: string | null
 }
 
 // Builds the canonical FeedbackPayload from its constituent parts and
@@ -48,6 +49,7 @@ export function buildFeedbackPayload(
     return {
       ...context,
       message: input.message,
+      reporterName: input.reporterName,
       category: 'other',
       subCategory: null,
     }
@@ -69,6 +71,7 @@ export function buildFeedbackPayload(
   return {
     ...context,
     message: input.message,
+    reporterName: input.reporterName,
     category: input.category,
     subCategory: input.subCategory,
   } as FeedbackPayload

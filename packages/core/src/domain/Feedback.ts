@@ -97,6 +97,10 @@ export interface BrowserContext {
 export type FeedbackPayload = BrowserContext &
   CategorizedFeedback & {
     message: string
+    // Optional self-identification. Anonymous (null) unless the user
+    // typed a name in the form. Carried through so the consumer
+    // pipeline can attribute the feedback if provided.
+    reporterName: string | null
   }
 
 // Runtime artefact representing the block the widget points at when

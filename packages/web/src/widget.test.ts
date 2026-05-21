@@ -511,6 +511,8 @@ describe('handleSubmit — result branches', () => {
     expect(payload.widgetVersion).toBe('0.3.0')
     expect(typeof payload.scrollDepth).toBe('number')
     expect(typeof payload.sessionId).toBe('string')
+    // reporterName is carried (null when the user typed no name)
+    expect('reporterName' in payload).toBe(true)
     // nested v0.2.0 keys must be gone
     expect('meta' in payload).toBe(false)
     expect('content' in payload).toBe(false)

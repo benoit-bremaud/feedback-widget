@@ -1,5 +1,11 @@
 import type { TopLevelCategory } from '../domain/Feedback'
 
+// Minimum length the free-text message must reach to be submittable.
+// Shared between the view (inline validation) and resolveConfig (which
+// clamps maxMessageLength so an integrator can never set a ceiling
+// below the floor and lock users out).
+export const MIN_MESSAGE_LENGTH = 10
+
 export interface WidgetConfig {
   endpoint: string
   projectId: string
@@ -43,7 +49,12 @@ export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
     projectId: input.projectId,
     token: input.token ?? null,
     categories: input.categories ?? null,
-    maxMessageLength: input.maxMessageLength ?? DEFAULTS.maxMessageLength,
+    // Clamp to MIN_MESSAGE_LENGTH so a misconfigured ceiling below the
+    // submit floor can't permanently block users behind the inline error.
+    maxMessageLength: Math.max(
+      MIN_MESSAGE_LENGTH,
+      input.maxMessageLength ?? DEFAULTS.maxMessageLength,
+    ),
     rateLimitWindowMs: input.rateLimitWindowMs ?? DEFAULTS.rateLimitWindowMs,
     rateLimitMaxAttempts:
       input.rateLimitMaxAttempts ?? DEFAULTS.rateLimitMaxAttempts,

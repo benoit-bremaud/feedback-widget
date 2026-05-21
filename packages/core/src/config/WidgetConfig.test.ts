@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveConfig } from './WidgetConfig'
+import { resolveConfig, MIN_MESSAGE_LENGTH } from './WidgetConfig'
 
 describe('config/resolveConfig', () => {
   it('applies sensible defaults when only required fields are provided', () => {
@@ -45,5 +45,25 @@ describe('config/resolveConfig', () => {
     expect(resolved.rateLimitMaxAttempts).toBe(10)
     expect(resolved.position).toBe('bottom-left')
     expect(resolved.mailtoFallback).toBe('hello@example.test')
+  })
+
+  it('clamps maxMessageLength up to the submit floor so users cannot be locked out', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'impropedia',
+      maxMessageLength: 3,
+    })
+
+    expect(resolved.maxMessageLength).toBe(MIN_MESSAGE_LENGTH)
+  })
+
+  it('keeps a maxMessageLength at or above the floor unchanged', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'impropedia',
+      maxMessageLength: 250,
+    })
+
+    expect(resolved.maxMessageLength).toBe(250)
   })
 })

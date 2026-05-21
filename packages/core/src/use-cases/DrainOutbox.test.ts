@@ -18,6 +18,7 @@ const payload: FeedbackPayload = {
   category: 'bug',
   subCategory: 'crash',
   message: 'App crashes when opening the docs',
+  reporterName: null,
 }
 
 describe('use-cases/drainOutbox', () => {

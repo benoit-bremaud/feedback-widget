@@ -16,12 +16,13 @@ describe('use-cases/buildFeedbackPayload', () => {
     sessionId: '01HK3M-AAAA-BBBB-CCCC-DDDDEEEEFFFF',
   }
 
-  it('builds a flat payload merging context, category, and message', () => {
+  it('builds a flat payload merging context, category, message, and reporter', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
       category: 'typo',
       subCategory: 'prose',
       message: 'Missing an "s" on the index page',
+      reporterName: 'Pauline',
     })
 
     expect(payload).toEqual({
@@ -29,7 +30,19 @@ describe('use-cases/buildFeedbackPayload', () => {
       category: 'typo',
       subCategory: 'prose',
       message: 'Missing an "s" on the index page',
+      reporterName: 'Pauline',
     })
+  })
+
+  it('carries a null reporterName for anonymous feedback', () => {
+    const payload = buildFeedbackPayload({
+      ...baseContext,
+      category: 'other',
+      subCategory: null,
+      message: 'Anonymous note about the page',
+      reporterName: null,
+    })
+    expect(payload.reporterName).toBeNull()
   })
 
   it('preserves the discriminated category-subCategory pairing', () => {
@@ -38,6 +51,7 @@ describe('use-cases/buildFeedbackPayload', () => {
       category: 'bug',
       subCategory: 'crash',
       message: 'App crashes on load',
+      reporterName: null,
     })
     expect(bug.category).toBe('bug')
     expect(bug.subCategory).toBe('crash')
@@ -47,6 +61,7 @@ describe('use-cases/buildFeedbackPayload', () => {
       category: 'error',
       subCategory: 'http-5xx',
       message: 'Got a 500 on /api/foo',
+      reporterName: null,
     })
     expect(error.category).toBe('error')
     expect(error.subCategory).toBe('http-5xx')
@@ -58,6 +73,7 @@ describe('use-cases/buildFeedbackPayload', () => {
       category: 'other',
       subCategory: null,
       message: 'Generic comment that does not fit anywhere',
+      reporterName: null,
     })
 
     expect(payload.category).toBe('other')
@@ -71,6 +87,7 @@ describe('use-cases/buildFeedbackPayload', () => {
       category: 'suggestion',
       subCategory: 'new-feature',
       message: 'Add a dark mode',
+      reporterName: null,
     })
     expect(payload.referrer).toBeNull()
   })
@@ -82,6 +99,7 @@ describe('use-cases/buildFeedbackPayload', () => {
       category: 'ambiguous',
       subCategory: 'navigation',
       message: 'I cannot find the docs',
+      reporterName: null,
     })
     expect(payload.viewport).toEqual({ w: 1920, h: 1080 })
   })

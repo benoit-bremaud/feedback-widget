@@ -18,6 +18,7 @@ const minimalPayload: FeedbackPayload = {
   category: 'typo',
   subCategory: 'prose',
   message: 'Missing closing tag in the docs',
+  reporterName: null,
 }
 
 function makeDeps(

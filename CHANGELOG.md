@@ -19,11 +19,13 @@ and label feedback with maximum granularity at minimum click cost.
 nested `{ schemaVersion, meta, identity, context, content }` (v0.2.0)
 to a **flat** object: `{ projectId, url, referrer, userAgent,
 viewport: { w, h }, locale, timestamp, widgetVersion, scrollDepth,
-sessionId, category, subCategory, message }`. Consumers parsing the
-posted body must update to the flat shape. The `Category` type is
-renamed `TopLevelCategory`. `buildFeedbackPayload`'s input is now the
-flat `BuildPayloadInput`. The free-text `message` is now always
-required (10–2000 chars) rather than only for the `other` category.
+sessionId, category, subCategory, message, reporterName }`. Consumers
+parsing the posted body must update to the flat shape. The `Category`
+type is renamed `TopLevelCategory`. `buildFeedbackPayload`'s input is
+now the flat `BuildPayloadInput`. The free-text `message` is now always
+required (10–2000 chars) rather than only for the `other` category. The
+optional `reporterName` is retained (was `identity.reporterName` in
+v0.2.0), now a top-level field.
 
 ### Added
 
