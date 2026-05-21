@@ -2,7 +2,6 @@ import type {
   BrowserContext,
   FeedbackPayload,
   SubCategory,
-  TargetBlock,
   TopLevelCategory,
 } from '../domain/Feedback'
 import { isValidSubCategory } from '../domain/Feedback'
@@ -75,15 +74,4 @@ export function buildFeedbackPayload(
     category: input.category,
     subCategory: input.subCategory,
   } as FeedbackPayload
-}
-
-// Convenience default for a TargetBlock with all nullable fields set
-// to null. Used by the web composition root when no block is
-// detected. Kept here for backward-compatible export.
-export const EMPTY_TARGET: TargetBlock = {
-  headingId: null,
-  headingText: null,
-  blockIndex: null,
-  blockTag: null,
-  excerpt: null,
 }

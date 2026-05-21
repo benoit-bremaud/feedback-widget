@@ -292,7 +292,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         .join('')
 
       return `
-      <h2 id="fw-title" class="fw-title">${catMeta.icon} ${catMeta.label}</h2>
+      <h2 id="fw-title" class="fw-title"><span aria-hidden="true">${catMeta.icon}</span> ${catMeta.label}</h2>
       <p class="fw-subtitle">Précise la nature du problème.</p>
       <div class="fw-categories" role="group" aria-label="Sous-catégorie">
         ${buttons}

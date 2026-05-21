@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { resolveConfig, MIN_MESSAGE_LENGTH } from './WidgetConfig'
+import {
+  resolveConfig,
+  MIN_MESSAGE_LENGTH,
+  MAX_MESSAGE_LENGTH,
+} from './WidgetConfig'
 
 describe('config/resolveConfig', () => {
   it('applies sensible defaults when only required fields are provided', () => {
@@ -57,7 +61,7 @@ describe('config/resolveConfig', () => {
     expect(resolved.maxMessageLength).toBe(MIN_MESSAGE_LENGTH)
   })
 
-  it('keeps a maxMessageLength at or above the floor unchanged', () => {
+  it('keeps a maxMessageLength within bounds unchanged', () => {
     const resolved = resolveConfig({
       endpoint: 'https://api.test/',
       projectId: 'impropedia',
@@ -65,5 +69,15 @@ describe('config/resolveConfig', () => {
     })
 
     expect(resolved.maxMessageLength).toBe(250)
+  })
+
+  it('clamps maxMessageLength down to the contract cap', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'impropedia',
+      maxMessageLength: 9999,
+    })
+
+    expect(resolved.maxMessageLength).toBe(MAX_MESSAGE_LENGTH)
   })
 })

@@ -30,10 +30,7 @@ export type { ViewportDetector } from './ports/ViewportDetector'
 export type { WidgetStep, WidgetState, UserAction, View } from './ports/View'
 
 // use-cases
-export {
-  buildFeedbackPayload,
-  EMPTY_TARGET,
-} from './use-cases/BuildFeedbackPayload'
+export { buildFeedbackPayload } from './use-cases/BuildFeedbackPayload'
 export type { BuildPayloadInput } from './use-cases/BuildFeedbackPayload'
 export {
   scoreCandidate,

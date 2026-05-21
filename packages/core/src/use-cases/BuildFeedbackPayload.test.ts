@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildFeedbackPayload, EMPTY_TARGET } from './BuildFeedbackPayload'
+import { buildFeedbackPayload } from './BuildFeedbackPayload'
 import type { BrowserContext } from '../domain/Feedback'
 
 describe('use-cases/buildFeedbackPayload', () => {
@@ -102,15 +102,5 @@ describe('use-cases/buildFeedbackPayload', () => {
       reporterName: null,
     })
     expect(payload.viewport).toEqual({ w: 1920, h: 1080 })
-  })
-
-  it('exposes EMPTY_TARGET with all nullable fields set to null', () => {
-    expect(EMPTY_TARGET).toEqual({
-      headingId: null,
-      headingText: null,
-      blockIndex: null,
-      blockTag: null,
-      excerpt: null,
-    })
   })
 })
