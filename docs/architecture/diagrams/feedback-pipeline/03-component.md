@@ -54,8 +54,9 @@ flowchart TB
 
 - **Single public surface = the Worker.** Everything else the Pi does is
   **outbound** (pull, Claude, Telegram, GitHub). The Pi exposes no
-  inbound port — imposed by the Tailscale-only homelab (decision #28,
-  no public domain).
+  inbound port — imposed by the Tailscale-only homelab (no public
+  domain; this is a `bb-homelab` repo infrastructure decision, distinct
+  from this pipeline's Q1–Q8 design decisions).
 - **Three repos**: the widget bundle is built in `feedback-widget`
   (private source, public compiled artifact); the Worker is a new
   dedicated repo (its own CI/tests per conventions); the `<script>`

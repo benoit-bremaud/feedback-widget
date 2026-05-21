@@ -12,9 +12,13 @@
 > Treat the n8n specifics here as historical; the port contracts and
 > the data model remain the reference.
 
-Status: **design draft**, not yet implemented. Tracks issue
+Status: **historical / partially superseded** (see banner above). The
+n8n orchestration was never implemented and has been replaced; the port
+contracts + data model below remain the reference for the current
+design. Originally opened against issue
 [#16](https://github.com/benoit-bremaud/feedback-widget/issues/16).
 Companion doc: [`projects-yaml-schema.md`](./projects-yaml-schema.md).
+Current architecture: [`docs/architecture/diagrams/feedback-pipeline/`](../../docs/architecture/diagrams/feedback-pipeline/).
 
 ## Goal
 

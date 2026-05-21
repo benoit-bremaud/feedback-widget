@@ -50,7 +50,7 @@ sequenceDiagram
     Pi->>DB: status: accepted (issueUrl)
   else Reformulate
     Pi->>GH: create issue → "Backlog" + needs-reformulation labels
-    Pi->>DB: status: reformulate (issueUrl)
+    Pi->>DB: status: reformulation_requested (issueUrl)
   else Refuse
     Pi->>DB: status: refused (no GitHub artifact)
   end
