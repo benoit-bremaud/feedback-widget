@@ -1,20 +1,28 @@
 // domain
 export type {
-  Category,
-  Device,
-  Viewport,
-  TargetBlock,
-  SchemaVersion,
+  TopLevelCategory,
+  BugSubCategory,
+  TypoSubCategory,
+  ErrorSubCategory,
+  AmbiguousSubCategory,
+  SuggestionSubCategory,
+  SubCategory,
+  CategorizedFeedback,
+  ViewportSize,
+  BrowserContext,
   FeedbackPayload,
+  TargetBlock,
 } from './domain/Feedback'
 export {
-  CURRENT_SCHEMA_VERSION,
-  CATEGORIES,
+  TOP_LEVEL_CATEGORIES,
+  SUB_CATEGORIES_BY_CATEGORY,
   isValidCategory,
-  requiresUserMessage,
+  isValidSubCategory,
+  requiresSubCategory,
 } from './domain/Feedback'
 
 // ports
+export type { ContextCollector } from './ports/ContextCollector'
 export type { OutboxQueue } from './ports/OutboxQueue'
 export type { RateLimiter } from './ports/RateLimiter'
 export type { Transport, TransportResult } from './ports/Transport'
@@ -22,10 +30,7 @@ export type { ViewportDetector } from './ports/ViewportDetector'
 export type { WidgetStep, WidgetState, UserAction, View } from './ports/View'
 
 // use-cases
-export {
-  buildFeedbackPayload,
-  EMPTY_TARGET,
-} from './use-cases/BuildFeedbackPayload'
+export { buildFeedbackPayload } from './use-cases/BuildFeedbackPayload'
 export type { BuildPayloadInput } from './use-cases/BuildFeedbackPayload'
 export {
   scoreCandidate,
@@ -51,4 +56,4 @@ export type { TrackRateLimitResult } from './use-cases/TrackRateLimit'
 
 // config
 export type { WidgetConfig, ResolvedWidgetConfig } from './config/WidgetConfig'
-export { resolveConfig } from './config/WidgetConfig'
+export { resolveConfig, MIN_MESSAGE_LENGTH } from './config/WidgetConfig'

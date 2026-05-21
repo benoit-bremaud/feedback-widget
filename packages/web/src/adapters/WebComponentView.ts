@@ -1,12 +1,22 @@
-import type { Category } from '@benoit-bremaud/feedback-widget-core'
-import { CATEGORIES } from '@benoit-bremaud/feedback-widget-core'
+import type {
+  TopLevelCategory,
+  SubCategory,
+} from '@benoit-bremaud/feedback-widget-core'
+import {
+  TOP_LEVEL_CATEGORIES,
+  SUB_CATEGORIES_BY_CATEGORY,
+  isValidSubCategory,
+} from '@benoit-bremaud/feedback-widget-core'
 import type {
   UserAction,
   View,
   WidgetState,
 } from '@benoit-bremaud/feedback-widget-core'
 
-const CATEGORY_LABELS: Record<Category, { icon: string; label: string }> = {
+const CATEGORY_LABELS: Record<
+  TopLevelCategory,
+  { icon: string; label: string }
+> = {
   bug: { icon: '🐛', label: 'Bug' },
   typo: { icon: '✏️', label: 'Faute de frappe' },
   error: { icon: '❌', label: 'Info erronée' },
@@ -15,15 +25,51 @@ const CATEGORY_LABELS: Record<Category, { icon: string; label: string }> = {
   other: { icon: '➕', label: 'Autre' },
 }
 
+const SUB_CATEGORY_LABELS: Record<
+  SubCategory,
+  { icon: string; label: string }
+> = {
+  // bug
+  crash: { icon: '💥', label: 'Plantage' },
+  'broken-feature': { icon: '🔧', label: 'Fonction cassée' },
+  'visual-glitch': { icon: '🎨', label: 'Bug visuel' },
+  'wrong-output': { icon: '📊', label: 'Résultat erroné' },
+  regression: { icon: '⏮️', label: 'Régression' },
+  // typo
+  prose: { icon: '📝', label: 'Texte' },
+  'code-sample': { icon: '💻', label: 'Exemple de code' },
+  heading: { icon: '🔠', label: 'Titre' },
+  'link-text': { icon: '🔗', label: 'Texte de lien' },
+  'alt-text': { icon: '🖼️', label: 'Texte alternatif' },
+  // error
+  'js-console': { icon: '🐞', label: 'Erreur console' },
+  'http-404': { icon: '🔍', label: 'Page introuvable (404)' },
+  'http-5xx': { icon: '🛑', label: 'Erreur serveur (5xx)' },
+  'broken-link': { icon: '🚧', label: 'Lien mort' },
+  'missing-asset': { icon: '📦', label: 'Ressource manquante' },
+  // ambiguous
+  wording: { icon: '💬', label: 'Formulation' },
+  navigation: { icon: '🧭', label: 'Navigation' },
+  terminology: { icon: '📖', label: 'Terminologie' },
+  'example-unclear': { icon: '❓', label: 'Exemple peu clair' },
+  'missing-context': { icon: '🧩', label: 'Contexte manquant' },
+  // suggestion
+  'new-feature': { icon: '✨', label: 'Nouvelle fonction' },
+  improvement: { icon: '📈', label: 'Amélioration' },
+  'new-example': { icon: '➕', label: 'Nouvel exemple' },
+  'content-refactor': { icon: '♻️', label: 'Refonte du contenu' },
+  accessibility: { icon: '♿', label: 'Accessibilité' },
+}
+
 export interface WidgetViewOptions {
   maxMessageLength: number
-  categories: readonly Category[]
+  categories: readonly TopLevelCategory[]
   position: 'bottom-right' | 'bottom-left' | 'bottom-center'
 }
 
 const DEFAULT_VIEW_OPTIONS: WidgetViewOptions = {
   maxMessageLength: 500,
-  categories: CATEGORIES,
+  categories: TOP_LEVEL_CATEGORIES,
   position: 'bottom-right',
 }
 
@@ -44,6 +90,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       step: 'closed',
       target: null,
       selectedCategory: null,
+      selectedSubCategory: null,
       userMessage: '',
       reporterName: '',
       errorMessage: null,
@@ -163,6 +210,8 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
           return this.renderTargetConfirmStep()
         case 'type':
           return this.renderTypeStep()
+        case 'sub-category':
+          return this.renderSubCategoryStep()
         case 'precision':
           return this.renderPrecisionStep()
         case 'sending':
@@ -221,25 +270,57 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
     `
     }
 
+    private renderSubCategoryStep(): string {
+      const cat = this.state.selectedCategory
+      if (cat === null || cat === 'other') {
+        // Defensive: 'other' has no sub-categories and should never reach
+        // this step. Fall back to the category picker.
+        return this.renderTypeStep()
+      }
+      const catMeta = CATEGORY_LABELS[cat]
+      const buttons = SUB_CATEGORIES_BY_CATEGORY[cat]
+        .map((sub) => {
+          const meta = SUB_CATEGORY_LABELS[sub]
+          if (!meta) return ''
+          return `
+        <button type="button" class="fw-category" data-sub-category="${sub}">
+          <span class="fw-category-icon" aria-hidden="true">${meta.icon}</span>
+          <span class="fw-category-label">${meta.label}</span>
+        </button>
+      `
+        })
+        .join('')
+
+      return `
+      <h2 id="fw-title" class="fw-title"><span aria-hidden="true">${catMeta.icon}</span> ${catMeta.label}</h2>
+      <p class="fw-subtitle">Précise la nature du problème.</p>
+      <div class="fw-categories" role="group" aria-label="Sous-catégorie">
+        ${buttons}
+      </div>
+      <div class="fw-actions">
+        <button type="button" class="fw-btn fw-btn-ghost" data-action="back">Retour</button>
+      </div>
+    `
+    }
+
     private renderPrecisionStep(): string {
       const cat = this.state.selectedCategory
-      const label = cat ? (CATEGORY_LABELS[cat]?.label ?? '') : ''
-      const messageRequired = cat === 'other'
-      const placeholder = messageRequired
-        ? 'Décris ce que tu as vu (obligatoire)'
-        : 'Précise (optionnel)'
+      const sub = this.state.selectedSubCategory
+      const catLabel = cat ? (CATEGORY_LABELS[cat]?.label ?? '') : ''
+      const subLabel = sub ? (SUB_CATEGORY_LABELS[sub]?.label ?? '') : ''
+      const breadcrumb = subLabel ? `${catLabel} › ${subLabel}` : catLabel
       return `
-      <h2 id="fw-title" class="fw-title">${label}</h2>
-      <p class="fw-subtitle">Ajoute une précision si tu peux, et ton prénom si tu veux.</p>
+      <h2 id="fw-title" class="fw-title">${escapeHtml(breadcrumb)}</h2>
+      <p class="fw-subtitle">Décris le problème (obligatoire), et ton prénom si tu veux.</p>
       <form class="fw-form" data-action="submit-form" novalidate>
         <label class="fw-label">
-          <span class="fw-label-text">Précision ${messageRequired ? '' : '(optionnel)'}</span>
+          <span class="fw-label-text">Description</span>
           <textarea
             class="fw-textarea"
             name="message"
             maxlength="${this.options.maxMessageLength}"
-            placeholder="${placeholder}"
-            ${messageRequired ? 'required' : ''}
+            placeholder="Décris ce que tu as vu (10 caractères minimum)"
+            required
           >${escapeHtml(this.state.userMessage)}</textarea>
         </label>
         ${this.state.errorMessage ? `<p class="fw-inline-error" role="alert">${escapeHtml(this.state.errorMessage)}</p>` : ''}
@@ -256,7 +337,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         </label>
         <input type="text" name="website" class="fw-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="fw-actions">
-          <button type="button" class="fw-btn fw-btn-ghost" data-action="reset">Retour</button>
+          <button type="button" class="fw-btn fw-btn-ghost" data-action="back">Retour</button>
           <button type="submit" class="fw-btn fw-btn-primary">Envoyer</button>
         </div>
         <p class="fw-privacy">Les retours sont envoyés anonymement. Le prénom n'est utilisé que pour identifier ton feedback.</p>
@@ -306,6 +387,8 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
             el.addEventListener('click', () => this.emit({ kind: 'close' }))
           } else if (action === 'reset') {
             el.addEventListener('click', () => this.emit({ kind: 'reset' }))
+          } else if (action === 'back') {
+            el.addEventListener('click', () => this.emit({ kind: 'back' }))
           } else if (action === 'submit') {
             el.addEventListener('click', () => this.emit({ kind: 'submit' }))
           } else if (action === 'confirm-target') {
@@ -326,10 +409,28 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       this.shadowRoot
         .querySelectorAll<HTMLElement>('[data-category]')
         .forEach((el) => {
-          const cat = el.dataset.category as Category | undefined
+          const cat = el.dataset.category as TopLevelCategory | undefined
           if (!cat) return
           el.addEventListener('click', () =>
             this.emit({ kind: 'select-category', category: cat }),
+          )
+        })
+
+      this.shadowRoot
+        .querySelectorAll<HTMLElement>('[data-sub-category]')
+        .forEach((el) => {
+          const raw = el.dataset.subCategory
+          const cat = this.state.selectedCategory
+          // Validate the DOM-sourced string against the current
+          // category before trusting the cast. buildFeedbackPayload is
+          // the final backstop, but validating here keeps an invalid
+          // value from ever entering the action stream.
+          if (!raw || cat === null || !isValidSubCategory(cat, raw)) {
+            return
+          }
+          const sub = raw as SubCategory
+          el.addEventListener('click', () =>
+            this.emit({ kind: 'select-sub-category', subCategory: sub }),
           )
         })
 
@@ -443,6 +544,7 @@ export function createWebComponentView(element: FeedbackWidgetElement): View {
     step: 'closed',
     target: null,
     selectedCategory: null,
+    selectedSubCategory: null,
     userMessage: '',
     reporterName: '',
     errorMessage: null,
@@ -463,6 +565,7 @@ export function createWebComponentView(element: FeedbackWidgetElement): View {
         step: 'confirmed',
         target: null,
         selectedCategory: null,
+        selectedSubCategory: null,
         userMessage: '',
         reporterName: '',
         errorMessage: null,

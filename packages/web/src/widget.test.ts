@@ -279,7 +279,7 @@ describe('controller — user-action state transitions', () => {
     expect(rendered?.target).toEqual(target)
   })
 
-  it('select-category sets category and moves to precision step', () => {
+  it('select-category "other" skips sub-category and moves straight to precision', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -290,6 +290,78 @@ describe('controller — user-action state transitions', () => {
     const rendered = viewRender.mock.calls.at(-1)?.[0]
     expect(rendered?.step).toBe('precision')
     expect(rendered?.selectedCategory).toBe('other')
+    expect(rendered?.selectedSubCategory).toBeNull()
+  })
+
+  it('select-category on a non-other category opens the sub-category step', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('sub-category')
+    expect(rendered?.selectedCategory).toBe('bug')
+    expect(rendered?.selectedSubCategory).toBeNull()
+  })
+
+  it('select-sub-category records the sub-category and advances to precision', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({
+      kind: 'select-sub-category',
+      subCategory: 'crash',
+    })
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('precision')
+    expect(rendered?.selectedSubCategory).toBe('crash')
+  })
+
+  it('back from sub-category returns to the category picker', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'back' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('type')
+  })
+
+  it('back from precision returns to sub-category for a non-other category', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    onUserActionCallback?.({
+      kind: 'select-sub-category',
+      subCategory: 'crash',
+    })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'back' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('sub-category')
+  })
+
+  it('back from precision returns to the category picker for "other"', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'back' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('type')
   })
 
   it('update-message silently updates state while no validation error is visible', () => {
@@ -399,6 +471,72 @@ describe('handleSubmit — result branches', () => {
     expect(viewShowConfirmation).toHaveBeenCalled()
   })
 
+  it('builds a flat payload carrying category, sub-category, message, and the 10 auto-capture fields', async () => {
+    transportSend.mockResolvedValue({ ok: true, status: 204 })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    mountFeedbackWidget(validConfig)
+
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    onUserActionCallback?.({
+      kind: 'select-sub-category',
+      subCategory: 'crash',
+    })
+    onUserActionCallback?.({
+      kind: 'update-message',
+      value: 'The app crashes on load every time.',
+    })
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(transportSend).toHaveBeenCalledOnce()
+    const payload = transportSend.mock.calls.at(-1)?.[0]
+    // user-provided
+    expect(payload.category).toBe('bug')
+    expect(payload.subCategory).toBe('crash')
+    expect(payload.message).toBe('The app crashes on load every time.')
+    // 10 auto-capture fields present
+    expect(payload.projectId).toBe('test-project')
+    expect(typeof payload.url).toBe('string')
+    expect('referrer' in payload).toBe(true)
+    expect(typeof payload.userAgent).toBe('string')
+    expect(payload.viewport).toHaveProperty('w')
+    expect(payload.viewport).toHaveProperty('h')
+    expect(typeof payload.locale).toBe('string')
+    expect(typeof payload.timestamp).toBe('string')
+    expect(payload.widgetVersion).toBe('0.3.0')
+    expect(typeof payload.scrollDepth).toBe('number')
+    expect(typeof payload.sessionId).toBe('string')
+    // reporterName is carried (null when the user typed no name)
+    expect('reporterName' in payload).toBe(true)
+    // nested v0.2.0 keys must be gone
+    expect('meta' in payload).toBe(false)
+    expect('content' in payload).toBe(false)
+  })
+
+  it('submit on a non-other category without a sub-category bounces back to the sub-category step', async () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    // Skip sub-category selection, jump straight to submit.
+    onUserActionCallback?.({
+      kind: 'update-message',
+      value: 'A meaningful ten-char-plus message.',
+    })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+
+    expect(transportSend).not.toHaveBeenCalled()
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('sub-category')
+  })
+
   it('rate-limited submit shows an error step, not the confirmation', async () => {
     rateLimiterCanSubmit.mockReturnValue(false)
     mountFeedbackWidget(validConfig)
@@ -413,5 +551,95 @@ describe('handleSubmit — result branches', () => {
     const rendered = viewRender.mock.calls.at(-1)?.[0]
     expect(rendered?.step).toBe('error')
     expect(rendered?.errorMessage).toBeTruthy()
+  })
+
+  it('invalid submit shows a format-rejected error step', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 400,
+      reason: 'invalid',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toMatch(/format invalide/)
+  })
+
+  it('network failure enqueues for retry and shows the queued error step (no mailto)', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: null,
+      reason: 'network',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockResolvedValue(undefined)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(outboxEnqueue).toHaveBeenCalledOnce()
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toMatch(/file d’attente/)
+  })
+
+  it('network failure with a mailtoFallback shows the mailto fallback view', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: null,
+      reason: 'network',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockResolvedValue(undefined)
+    mountFeedbackWidget({ ...validConfig, mailtoFallback: 'ops@example.test' })
+    openToType()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(viewShowMailtoFallback).toHaveBeenCalledOnce()
+    const [url, message] = viewShowMailtoFallback.mock.calls.at(-1) ?? []
+    expect(url).toContain('mailto:ops@example.test')
+    expect(message).toMatch(/renvoyé automatiquement/)
+  })
+
+  it('does not promise auto-resend when enqueue itself fails', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 503,
+      reason: 'server',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockRejectedValue(new Error('no crypto'))
+    mountFeedbackWidget(validConfig)
+    openToType()
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toMatch(
+      /n’a pas pu être envoyé ni mis en file/,
+    )
   })
 })

@@ -97,6 +97,7 @@ type FeedbackPayload = {
   // category values: "bug" | "typo" | "error" | "ambiguous" | "suggestion" | "other"
   subCategory: string | null // null only when category === "other"
   message: string // free-text body, 10-2000 chars
+  reporterName: string | null // optional self-identification, else null
 
   // auto-captured by the widget (required)
   url: string // location.href at submit
