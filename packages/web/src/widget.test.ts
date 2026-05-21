@@ -550,4 +550,94 @@ describe('handleSubmit — result branches', () => {
     expect(rendered?.step).toBe('error')
     expect(rendered?.errorMessage).toBeTruthy()
   })
+
+  it('invalid submit shows a format-rejected error step', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 400,
+      reason: 'invalid',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toMatch(/format invalide/)
+  })
+
+  it('network failure enqueues for retry and shows the queued error step (no mailto)', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: null,
+      reason: 'network',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockResolvedValue(undefined)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(outboxEnqueue).toHaveBeenCalledOnce()
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toMatch(/file d’attente/)
+  })
+
+  it('network failure with a mailtoFallback shows the mailto fallback view', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: null,
+      reason: 'network',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockResolvedValue(undefined)
+    mountFeedbackWidget({ ...validConfig, mailtoFallback: 'ops@example.test' })
+    openToType()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(viewShowMailtoFallback).toHaveBeenCalledOnce()
+    const [url, message] = viewShowMailtoFallback.mock.calls.at(-1) ?? []
+    expect(url).toContain('mailto:ops@example.test')
+    expect(message).toMatch(/renvoyé automatiquement/)
+  })
+
+  it('does not promise auto-resend when enqueue itself fails', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 503,
+      reason: 'server',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockRejectedValue(new Error('no crypto'))
+    mountFeedbackWidget(validConfig)
+    openToType()
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toMatch(
+      /n’a pas pu être envoyé ni mis en file/,
+    )
+  })
 })
