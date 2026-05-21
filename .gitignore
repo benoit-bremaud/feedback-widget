@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # build outputs
 packages/*/dist/
+
+# Local editor / agent config
+.claude/
+.vscode/

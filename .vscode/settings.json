@@ -1,6 +1,0 @@
-{
-  "sonarlint.connectedMode.project": {
-    "connectionId": "sonarcloud-benoit-bremaud",
-    "projectKey": "benoit-bremaud_feedback-widget"
-  }
-}
