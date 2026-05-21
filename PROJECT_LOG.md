@@ -767,4 +767,37 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   pipeline. After merge, tag `v0.3.0` → `publish.yml` ships both
   packages to GitHub Packages under `@latest`.
 - **Ref:** PR [#45](https://github.com/benoit-bremaud/feedback-widget/pull/45),
+  merge commit [`7df2ee1`](https://github.com/benoit-bremaud/feedback-widget/commit/7df2ee1),
+  tag [`v0.3.0`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.3.0)
+  (published to GitHub Packages under `@latest`)
+
+## 2026-05-21 (later)
+
+### PR — UML diagrams for the feedback consumer pipeline
+
+- **What:** After a full design debrief of the enriched Phase B vision
+  (staging-gated delivery + agentic Telegram triage), added the UML
+  deliverables under
+  `docs/architecture/diagrams/feedback-pipeline/`: `01-use-case.md`
+  (Reviewer submits feedback; Operator triages — accept/reformulate/
+  refuse — and consults history), `02-sequence.md` (end-to-end flow
+  making the edge-buffer + outbound-pull boundary and the
+  human-in-the-loop explicit), and `03-component.md` (structural
+  boundaries across the 3 repos + edge + homelab, ports/adapters
+  mapping, secrets boundary). Added a "superseded orchestration" banner
+  to `.github/design/n8n-pipeline.md`: the ports/adapters design holds,
+  but the orchestrator is now a dedicated Docker service on the
+  bb-homelab Pi fronted by an edge Cloudflare Worker (the Pi is
+  Tailscale-only, no public ingress → it pulls outbound), with a single
+  Claude API call for reformulation (no agent loop). Back-fills PR #45's
+  merge SHA + v0.3.0 tag.
+- **Why:** The user's global UML-conformance rule requires Mermaid
+  diagrams for any substantial new feature before/at build start. This
+  pipeline spans three repos + the edge + the homelab, so the use-case
+  (who wants what), sequence (what happens in time), and component
+  (where it runs) diagrams pin the contracts and the egress/ingress
+  boundary before any code. Locks the design (decisions Q1–Q8) into a
+  reviewable, diffable visual index that the build phases (V1 then V2)
+  follow.
+- **Ref:** PR _to be filled at open-time_,
   merge commit _to be updated post-merge_

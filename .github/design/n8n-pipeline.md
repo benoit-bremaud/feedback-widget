@@ -1,5 +1,17 @@
 # n8n consumer pipeline — design
 
+> **⚠️ Orchestration superseded (2026-05-21).** The **ports/adapters
+> design below still holds** (ConfigSource, LLMGateway, IssueTracker,
+> NotificationChannel). What changed after the Phase B enriched-vision
+> debrief: the **orchestrator is no longer n8n** — it is a dedicated
+> Docker service on the bb-homelab Pi, fronted by an **edge Cloudflare
+> Worker** that buffers feedback (the Pi pulls outbound, since it is
+> Tailscale-only with no public ingress). The reformulation uses a
+> single Claude API call (no agent loop). See the current architecture
+> in [`docs/architecture/diagrams/feedback-pipeline/`](../../docs/architecture/diagrams/feedback-pipeline/).
+> Treat the n8n specifics here as historical; the port contracts and
+> the data model remain the reference.
+
 Status: **design draft**, not yet implemented. Tracks issue
 [#16](https://github.com/benoit-bremaud/feedback-widget/issues/16).
 Companion doc: [`projects-yaml-schema.md`](./projects-yaml-schema.md).
