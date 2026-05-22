@@ -821,5 +821,5 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   This produces that artifact; the source stays private (only the
   compiled bundle is published). The hosting decision (where the public
   URL lives) is the immediate next step, tracked separately.
-- **Ref:** PR _to be filled at open-time_,
+- **Ref:** PR [#47](https://github.com/benoit-bremaud/feedback-widget/pull/47),
   merge commit _to be updated post-merge_
