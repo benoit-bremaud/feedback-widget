@@ -808,8 +808,10 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 
 - **What:** Added a `build:bundle` esbuild script to `packages/web` that
   emits a self-contained minified ESM bundle
-  (`dist-bundle/feedback-widget.js` + sourcemap, ~34 kb) with the
-  private `@benoit-bremaud/feedback-widget-core` inlined. Added
+  (`dist-bundle/feedback-widget.js`, ~34 kb) with the private
+  `@benoit-bremaud/feedback-widget-core` inlined. No sourcemap — a
+  public artifact must not ship a map that re-exposes private source.
+  Added
   `esbuild ^0.28.0` devDep, gitignored `packages/*/dist-bundle/`, and a
   node-env smoke test (`bundle.test.ts`) asserting the bundle exposes
   `mountFeedbackWidget` + `createBrowserContextCollector` with no

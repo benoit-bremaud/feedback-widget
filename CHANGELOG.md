@@ -11,8 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Public bundle build** — `packages/web` gains a `build:bundle` script
   (esbuild) that emits a self-contained, minified ESM bundle
-  (`dist-bundle/feedback-widget.js` + sourcemap) with the private
-  `@benoit-bremaud/feedback-widget-core` **inlined**. This lets a
+  (`dist-bundle/feedback-widget.js`) with the private
+  `@benoit-bremaud/feedback-widget-core` **inlined**. No sourcemap is
+  emitted — a public artifact must not ship a map that re-exposes the
+  private TypeScript source. This lets a
   build-less static site load the widget via a single
   `<script type="module" src="…">` tag — no package registry auth, no
   bundler on the consumer side. Source stays private; only the compiled
