@@ -848,5 +848,5 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   the security-policy: origin allowlist (never `*`), rate-limit, size
   cap, input validation, secrets via Wrangler (never in code or the
   public site).
-- **Ref:** PR _to be filled at open-time_,
+- **Ref:** PR [#48](https://github.com/benoit-bremaud/feedback-widget/pull/48),
   merge commit _to be updated post-merge_
