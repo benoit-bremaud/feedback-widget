@@ -30,15 +30,19 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:bundle": "esbuild src/index.ts --bundle --format=esm --minify --target=es2022 --outfile=dist-bundle/feedback-widget.js",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist dist-bundle"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@benoit-bremaud/feedback-widget-core": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
   }
 }
