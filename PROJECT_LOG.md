@@ -824,4 +824,30 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   compiled bundle is published). The hosting decision (where the public
   URL lives) is the immediate next step, tracked separately.
 - **Ref:** PR [#47](https://github.com/benoit-bremaud/feedback-widget/pull/47),
+  merge commit [`89f1b29`](https://github.com/benoit-bremaud/feedback-widget/commit/89f1b29)
+
+### PR — Worker ingestion build spec (V1 chantier 2 prep)
+
+- **What:** Added `docs/architecture/specs/feedback-pipeline-worker.md`
+  — a copy-paste-ready build spec for the V1 chantier-2 Cloudflare
+  Worker (the pipeline's only public surface): serves the widget bundle
+  (`GET /widget.js` via Workers Static Assets), ingests feedback
+  (`POST /ingest` — origin allowlist + rate-limit + payload validation →
+  KV buffer → 204), and lets the Pi drain outbound
+  (`GET /drain` + `/drain/ack`, bearer `DRAIN_TOKEN`). Covers
+  wrangler.toml + `src/index.ts` skeletons, secrets/config boundary,
+  the bundle-coupling strategy (commit the built bundle into the Worker
+  repo for V1), CI, vitest-pool-workers tests, and DoD. Backfills
+  PR #47's merge SHA.
+- **Why:** The hosting decision (2026-05-22) is that the ingestion
+  Worker also serves the public bundle — free on Cloudflare's Free tier,
+  no GitHub Pro needed (Pages on a private repo is paid). The Worker
+  lives in its own repo (`feedback-pipeline-worker`) per the
+  one-session-per-project rule, so this spec lets that dedicated session
+  scaffold fast without re-deriving the design. Security baked into the
+  spec's defense-in-depth layers: CORS origin filter (never `*` — a
+  filter, not authentication, since `Origin` is forgeable), rate-limit,
+  size cap, input validation, and secrets via Wrangler (never in code or
+  the public site).
+- **Ref:** PR [#48](https://github.com/benoit-bremaud/feedback-widget/pull/48),
   merge commit _to be updated post-merge_
