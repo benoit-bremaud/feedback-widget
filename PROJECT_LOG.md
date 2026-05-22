@@ -844,9 +844,10 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   no GitHub Pro needed (Pages on a private repo is paid). The Worker
   lives in its own repo (`feedback-pipeline-worker`) per the
   one-session-per-project rule, so this spec lets that dedicated session
-  scaffold fast without re-deriving the design. Security baked in per
-  the security-policy: origin allowlist (never `*`), rate-limit, size
-  cap, input validation, secrets via Wrangler (never in code or the
-  public site).
+  scaffold fast without re-deriving the design. Security baked into the
+  spec's defense-in-depth layers: CORS origin filter (never `*` — a
+  filter, not authentication, since `Origin` is forgeable), rate-limit,
+  size cap, input validation, and secrets via Wrangler (never in code or
+  the public site).
 - **Ref:** PR [#48](https://github.com/benoit-bremaud/feedback-widget/pull/48),
   merge commit _to be updated post-merge_

@@ -15,13 +15,14 @@ pipeline. It:
 1. **Serves the public widget bundle** — `GET /widget.js` (Workers
    Static Assets). Lets the build-less brasse-bouillon static site load
    the widget via `<script type="module" src="…/widget.js">`.
-2. **Ingests feedback** — `POST /ingest`: origin allowlist + rate-limit
-   - payload validation, then buffers the JSON in KV. Returns `204`
-     fast so the reviewer's submit always succeeds (even if the Pi is
-     down).
+2. **Ingests feedback** — `POST /ingest`: CORS origin filter, rate-limit
+   and payload validation, then buffers the JSON in KV. Returns `204`
+   fast so the reviewer's submit always succeeds (even if the Pi is
+   down).
 3. **Lets the Pi drain** — `GET /drain`: bearer-token auth, returns the
-   pending feedback and marks it consumed. The Pi calls this
-   **outbound** (it has no public ingress — Tailscale-only).
+   pending feedback; the Pi acks after it has stored them
+   (`POST /drain/ack`) and only then are they deleted. The Pi calls
+   this **outbound** (it has no public ingress — Tailscale-only).
 
 Nothing connects _into_ the Pi; the Worker is the durable edge buffer.
 
@@ -50,17 +51,25 @@ Nothing connects _into_ the Pi; the Worker is the durable edge buffer.
 | --------- | ------------ | ------------------------------------- | ----------------------------------------------------------------------------------- |
 | `GET`     | `/widget.js` | none (public)                         | Serve the bundle (static asset), `Cache-Control` + `Content-Type: text/javascript`. |
 | `OPTIONS` | `/ingest`    | none                                  | CORS preflight → 204 + CORS headers.                                                |
-| `POST`    | `/ingest`    | origin allowlist + rate-limit         | Validate + buffer feedback, return `204`.                                           |
-| `GET`     | `/drain`     | `Authorization: Bearer <DRAIN_TOKEN>` | Return pending feedback (+ mark consumed), `200`.                                   |
+| `POST`    | `/ingest`    | CORS origin filter + rate-limit       | Validate + buffer feedback, return `204`.                                           |
+| `GET`     | `/drain`     | `Authorization: Bearer <DRAIN_TOKEN>` | Return pending feedback, `200`.                                                     |
+| `POST`    | `/drain/ack` | `Authorization: Bearer <DRAIN_TOKEN>` | Delete the keys the Pi has stored, `204`.                                           |
 
 ### `POST /ingest`
 
-1. **CORS / origin gate** — reject if `Origin` not in
+1. **CORS / origin filter** — reject if `Origin` not in
    `ALLOWED_ORIGINS` (env, comma-separated, e.g. the brasse-bouillon
    site URL). Echo the matched origin in `Access-Control-Allow-Origin`
-   (never `*`). This is the real gate — there is no strong client
-   token (any token shipped in the public bundle is visible, so it is
-   only a soft signal, not a secret).
+   (never `*`). Note this is **not** authentication: `Origin` is a
+   client-supplied header that a browser sets honestly but any
+   non-browser caller (curl, script) can forge. It only stops casual
+   cross-site use from other web pages; it does not prove the caller is
+   the brasse-bouillon site. There is no strong client token either
+   (anything shipped in the public bundle is visible). The actual abuse
+   defenses are the **rate-limit + size cap + payload validation**
+   below — acceptable for low-value, low-volume feedback. Real
+   authentication is intentionally out of scope for V1 (revisit if
+   spam appears).
 2. **Size cap** — reject bodies over ~16 KB (`413`).
 3. **Rate-limit** — per-IP (CF `request.headers.get('cf-connecting-ip')`)
    simple fixed-window counter in KV (e.g. 20/min). `429` over limit.
@@ -68,9 +77,19 @@ Nothing connects _into_ the Pi; the Worker is the durable edge buffer.
    subCategory, message, + the 10 auto-capture fields). Reject `400` on
    shape/type mismatch. (Reuse a small ajv/zod schema, or hand-rolled
    validation — keep it dependency-light.)
-5. **Buffer** — `KV.put("fb:" + Date.now() + ":" + crypto.randomUUID(),
-JSON.stringify({ payload, receivedAt, status: "pending" }))`. No TTL
-   (the Pi drains and deletes; add a long safety TTL e.g. 30 d).
+5. **Buffer** — write the JSON to KV under a time-ordered key:
+
+   ```ts
+   await env.FEEDBACK_BUFFER.put(
+     `fb:${Date.now()}:${crypto.randomUUID()}`,
+     JSON.stringify({ payload, receivedAt, status: 'pending' }),
+     { expirationTtl: 60 * 60 * 24 * 30 }, // 30 d safety net
+   )
+   ```
+
+   The Pi drains and deletes; the long TTL is only a safety net if a
+   drain never happens.
+
 6. Return `204`.
 
 ### `GET /drain`
@@ -78,11 +97,13 @@ JSON.stringify({ payload, receivedAt, status: "pending" }))`. No TTL
 1. **Auth** — `Authorization: Bearer <DRAIN_TOKEN>`; constant-time
    compare; `401` otherwise. `DRAIN_TOKEN` is a Wrangler **secret**,
    known only to the Worker and the Pi service.
-2. List `fb:` keys (KV `list`), read up to N, return the array.
-3. **Ack model** — simplest: the Pi sends back the consumed keys to a
-   `POST /drain/ack` (also bearer-authed) → Worker deletes them. (Or
-   delete-on-read, but that risks loss if the Pi crashes mid-store. Ack
-   is safer.) Decide at build; ack-after-store is recommended.
+2. List `fb:` keys (KV `list`), read up to N, return the array. **Do
+   not delete here** — `/drain` is read-only so a Pi crash mid-store
+   loses nothing.
+3. **Ack model** — the Pi acks after it has persisted the items: it
+   sends the stored keys to `POST /drain/ack` (also bearer-authed) and
+   only then does the Worker delete them. (Delete-on-read was rejected:
+   it risks loss if the Pi crashes between read and store.)
 
 ## Secrets / config (Wrangler)
 
@@ -169,7 +190,8 @@ optional for V1 (can deploy manually first).
 - `POST /ingest` from the brasse-bouillon origin buffers a feedback;
   other origins get 403.
 - `GET /drain` with the token returns the buffered feedback.
-- CI green; tests cover the 4 routes' happy + sad paths.
+- CI green; tests cover every route (`/widget.js`, `/ingest`, `/drain`,
+  `/drain/ack`) happy + sad paths.
 - README documents: env/secrets, the bundle-refresh step, deploy.
 
 ## Next chantiers (after this)
@@ -177,7 +199,15 @@ optional for V1 (can deploy manually first).
 - **Chantier 3** — bb-homelab Pi service: cron pulls `/drain` (outbound),
   stores on HDD, acks. (V2 then adds the Claude reformulation + Telegram
   3-button triage + GitHub kanban.)
-- **Chantier 4** — brasse-bouillon `packages/website`: add the
-  `<script type="module" src="https://<worker>/widget.js">` +
-  `mountFeedbackWidget({ projectId: 'brasse-bouillon', endpoint:
-'https://<worker>/ingest' })`.
+- **Chantier 4** — brasse-bouillon `packages/website`: load the bundle
+  and mount the widget:
+
+  ```html
+  <script type="module">
+    import { mountFeedbackWidget } from 'https://<worker>/widget.js'
+    mountFeedbackWidget({
+      projectId: 'brasse-bouillon',
+      endpoint: 'https://<worker>/ingest',
+    })
+  </script>
+  ```
