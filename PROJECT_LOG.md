@@ -800,4 +800,26 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   reviewable, diffable visual index that the build phases (V1 then V2)
   follow.
 - **Ref:** PR [#46](https://github.com/benoit-bremaud/feedback-widget/pull/46),
+  merge commit [`6a54c2e`](https://github.com/benoit-bremaud/feedback-widget/commit/6a54c2e)
+
+## 2026-05-22
+
+### PR — public bundle build (V1 chantier 1)
+
+- **What:** Added a `build:bundle` esbuild script to `packages/web` that
+  emits a self-contained minified ESM bundle
+  (`dist-bundle/feedback-widget.js` + sourcemap, ~34 kb) with the
+  private `@benoit-bremaud/feedback-widget-core` inlined. Added
+  `esbuild ^0.28.0` devDep, gitignored `packages/*/dist-bundle/`, and a
+  node-env smoke test (`bundle.test.ts`) asserting the bundle exposes
+  `mountFeedbackWidget` + `createBrowserContextCollector` with no
+  leftover bare workspace import. Backfills PR #46's merge SHA.
+- **Why:** First build chantier of the V1 feedback pipeline. The
+  brasse-bouillon target is a build-less static HTML site on GitHub
+  Pages (debrief Q2/Q4) — it can't `npm add` a private scoped package,
+  so it needs a public self-contained `<script type="module">` bundle.
+  This produces that artifact; the source stays private (only the
+  compiled bundle is published). The hosting decision (where the public
+  URL lives) is the immediate next step, tracked separately.
+- **Ref:** PR _to be filled at open-time_,
   merge commit _to be updated post-merge_
