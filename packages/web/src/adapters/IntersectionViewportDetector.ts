@@ -25,8 +25,29 @@ const POINTING_CLASS = 'fw-pointing'
 const POINTING_EVENTS = ['pointerdown', 'mousedown', 'click'] as const
 // When the click lands inside one of these, pick the interactive
 // ancestor rather than the inner descendant (e.g. an icon in a button).
-const INTERACTIVE_SELECTORS =
-  'a, button, input, select, textarea, label, summary, [role], [tabindex]'
+// Deliberately restricted to genuine interactive controls — NOT a bare
+// `[role]` / `[tabindex]`, which would also match ARIA landmark/region
+// containers (role="region", role="main", focus-managed wrappers) and
+// misattribute a click on an inner element to that wrapper.
+const INTERACTIVE_SELECTORS = [
+  'a[href]',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'label',
+  'summary',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  '[role="tab"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="option"]',
+].join(', ')
 // The widget's own custom element — never a valid feedback target.
 const WIDGET_HOST_TAG = 'feedback-widget'
 // Upper bound for a target's human-readable label / excerpt fields.
