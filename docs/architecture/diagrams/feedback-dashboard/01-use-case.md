@@ -5,10 +5,11 @@
 
 ## Context
 
-Who interacts with the dashboard and to do what. One actor (the operator).
+Who interacts with the dashboard and to do what. One actor (the operator). Use
+cases are kept at **user-goal level** (Cockburn): filtering, marking read, and
+marking handled are **steps** inside these goals, not use cases of their own.
 Grouped by **domain** (Consultation, Moderation), not by where it runs. The daily
-Telegram digest is **not** here — a scheduled push is a trigger, not an
-actor-initiated goal (see [`../feedback-pipeline/04-sequence-digest.md`](../feedback-pipeline/04-sequence-digest.md)).
+Telegram digest is **not** here — a scheduled push is a trigger, not a goal.
 
 ## Diagram
 
@@ -18,15 +19,13 @@ flowchart LR
 
   subgraph SYSTEM ["Feedback dashboard"]
     subgraph Consultation ["Consultation domain"]
-      UC1(("Browse collected feedback"))
-      UC2(("Filter feedback by project / category / date"))
-      UC7(("Review feedback statistics — V2"))
+      UC1(("Consult collected feedback"))
+      UC2(("Review feedback statistics — V2"))
     end
     subgraph Moderation ["Moderation domain"]
-      UC3(("Mark feedback as read"))
-      UC4(("Mark feedback as handled / archived"))
-      UC5(("Delete a feedback — RGPD erasure"))
-      UC6(("Triage feedback into a GitHub issue — V2"))
+      UC3(("Process a feedback to resolution"))
+      UC4(("Delete a feedback — RGPD erasure"))
+      UC5(("Triage feedback into a GitHub issue — V2"))
     end
   end
 
@@ -35,16 +34,17 @@ flowchart LR
   Operator --> UC3
   Operator --> UC4
   Operator --> UC5
-  Operator --> UC6
-  Operator --> UC7
 ```
 
 ## Notes
 
-- **V1** = UC1–UC5. **V2** = UC6 (triage) + UC7 (stats).
-- UC6 *"Triage into a GitHub issue"* is operator-initiated (the operator decides
-  and acts) — it is a valid use case. It is the **same** goal whether triggered
-  from this dashboard or from Telegram; one service backs both (spec D4).
+- **V1** = UC1, UC3, UC4. **V2** = UC2 (stats) + UC5 (triage).
+- **Steps folded into goals** (not separate use cases): *filter by
+  project/category/date* and *mark read* are steps of UC1/UC3; *mark
+  handled/archived* is the closing step of UC3.
+- UC5 *"Triage into a GitHub issue"* is operator-initiated and is the **same**
+  goal whether triggered from this dashboard or from Telegram; one service backs
+  both (spec D4).
 - The Telegram **digest** is deliberately absent: receiving a notification is a
   trigger, not a goal (UML 2.5 / Cockburn).
 - Single actor today (spec: no tenancy / YAGNI on the agency multi-tenant case).

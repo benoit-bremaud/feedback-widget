@@ -7,7 +7,8 @@
 
 The stored Feedback record — the D1 schema. Designed **stats-ready** (every
 column the wanted V2 stats need: project, category, date, url, targeted
-element). Does not show DB indexes.
+element). Does not show DB indexes. Field nuances (nullability, V2-only values)
+are in the Notes, not inline, to keep the Mermaid clean.
 
 ## Diagram
 
@@ -17,11 +18,11 @@ classDiagram
     +UUID id
     +String projectId
     +Category category
-    +String subCategory  «null only for other»
+    +String subCategory
     +String message
-    +String reporterName  «nullable»
+    +String reporterName
     +String url
-    +String targetedElement  «nullable»
+    +String targetedElement
     +BrowserContext context
     +FeedbackStatus status
     +DateTime createdAt
@@ -33,7 +34,7 @@ classDiagram
     +int viewportH
     +String locale
     +int scrollDepth
-    +String sessionId  «anonymous»
+    +String sessionId
   }
   class Category {
     <<enumeration>>
@@ -49,8 +50,8 @@ classDiagram
     new
     read
     handled
-    issue_created  «V2»
-    refused  «V2»
+    issue_created
+    refused
   }
   Feedback "1" *-- "1" BrowserContext
   Feedback --> Category
@@ -59,6 +60,11 @@ classDiagram
 
 ## Notes
 
+- **Nullable fields**: `subCategory` is null only for `category = other`;
+  `reporterName` and `targetedElement` are optional.
+- **V2-only statuses**: `issue_created` and `refused` are set by the V2 triage;
+  V1 uses only `new`, `read`, `handled`. See
+  [`05-state-feedback.md`](./05-state-feedback.md).
 - Mirrors the widget→Worker payload (spec: contract unchanged) plus two stored
   fields: `status` (mutable, spec D8) and `createdAt` (digest + trend stats).
 - **Stats-ready** (spec D9): `projectId`, `category`/`subCategory`, `createdAt`,
