@@ -18,7 +18,7 @@ flowchart TB
     Widget["Widget bundle<br/>(on each project site)"]
   end
 
-  subgraph CF ["Cloudflare (edge, always-on)"]
+  subgraph CF ["Cloudflare (edge)"]
     Access["Cloudflare Access<br/>(identity gate, custom domain)"]
     subgraph Worker ["Ingestion + dashboard Worker"]
       Ingest["/ingest"]
@@ -29,7 +29,7 @@ flowchart TB
     D1[("D1 — primary store")]
   end
 
-  subgraph Home ["bb-homelab Pi (private, Tailscale-only)"]
+  subgraph Home ["bb-homelab Pi (private)"]
     Backup[("SQLite — backup copy")]
   end
 
