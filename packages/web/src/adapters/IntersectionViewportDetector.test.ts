@@ -567,4 +567,118 @@ describe('enablePointingMode / disablePointingMode', () => {
     expect(firstPick).not.toHaveBeenCalled()
     expect(secondPick).toHaveBeenCalledOnce()
   })
+
+  it('builds a tag + nth-of-type selector when the element has no id', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<button>first</button><button>second</button>')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+
+    detector.enablePointingMode(onPick)
+    const second = document.querySelectorAll('main button')[1]!
+    second.dispatchEvent(
+      new Event('click', { bubbles: true, cancelable: true }),
+    )
+
+    const arg = onPick.mock.calls[0]?.[0]
+    expect(arg.selector).toContain('button:nth-of-type(2)')
+  })
+
+  it('anchors the selector on the nearest ancestor id when the element has none', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<div id="wrap"><button>deep</button></div>')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+
+    detector.enablePointingMode(onPick)
+    document
+      .querySelector('#wrap button')!
+      .dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+
+    expect(onPick.mock.calls[0]?.[0].selector).toBe('#wrap > button')
+  })
+
+  it('derives the label from alt text (image)', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<img id="logo" alt="Logo Brasse-Bouillon" />')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+
+    detector.enablePointingMode(onPick)
+    document
+      .getElementById('logo')!
+      .dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+
+    expect(onPick.mock.calls[0]?.[0].label).toBe('Logo Brasse-Bouillon')
+  })
+
+  it('derives the label from the placeholder, never the entered value (privacy)', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<input id="email" placeholder="Ton email" />')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const input = document.getElementById('email') as HTMLInputElement
+    input.value = 'secret@private.example' // user-entered → must NOT leak
+    const onPick = vi.fn()
+
+    detector.enablePointingMode(onPick)
+    input.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+
+    const arg = onPick.mock.calls[0]?.[0]
+    expect(arg.label).toBe('Ton email')
+    expect(arg.label).not.toContain('secret')
+  })
+
+  it('returns a null label when the element exposes no accessible name', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<button id="empty"></button>')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+
+    detector.enablePointingMode(onPick)
+    document
+      .getElementById('empty')!
+      .dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+
+    expect(onPick.mock.calls[0]?.[0].label).toBeNull()
+  })
+
+  it('escapes a leading-digit id when CSS.escape is unavailable', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<button id="123">numeric id</button>')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+
+    const globalWithCss = globalThis as { CSS?: unknown }
+    const realCss = globalWithCss.CSS
+    globalWithCss.CSS = undefined // force the no-CSS.escape fallback path
+    try {
+      detector.enablePointingMode(onPick)
+      document
+        .getElementById('123')!
+        .dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+    } finally {
+      globalWithCss.CSS = realCss
+    }
+
+    // Leading digit escaped per the CSS spec → "#\31 23", not "#123".
+    expect(onPick.mock.calls[0]?.[0].selector).toBe(String.raw`#\31 23`)
+  })
 })
