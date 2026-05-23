@@ -227,7 +227,10 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
 
     private renderTargetConfirmStep(): string {
       const hasTarget = this.state.target !== null
-      const excerpt = this.state.target?.excerpt ?? ''
+      // Fall back to the accessible label when there is no text excerpt
+      // (e.g. an icon-only button targeted in pointing mode).
+      const excerpt =
+        this.state.target?.excerpt || this.state.target?.label || ''
       const headingText = this.state.target?.headingText ?? ''
 
       return `

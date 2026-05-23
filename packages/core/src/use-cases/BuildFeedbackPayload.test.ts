@@ -16,13 +16,21 @@ describe('use-cases/buildFeedbackPayload', () => {
     sessionId: '01HK3M-AAAA-BBBB-CCCC-DDDDEEEEFFFF',
   }
 
-  it('builds a flat payload merging context, category, message, and reporter', () => {
+  it('builds a flat payload merging context, category, message, reporter, and target', () => {
+    const target = {
+      tag: 'button',
+      label: 'Acheter',
+      selector: '#cta',
+      headingText: 'Panier',
+      excerpt: 'Acheter',
+    }
     const payload = buildFeedbackPayload({
       ...baseContext,
       category: 'typo',
       subCategory: 'prose',
       message: 'Missing an "s" on the index page',
       reporterName: 'Pauline',
+      target,
     })
 
     expect(payload).toEqual({
@@ -31,18 +39,21 @@ describe('use-cases/buildFeedbackPayload', () => {
       subCategory: 'prose',
       message: 'Missing an "s" on the index page',
       reporterName: 'Pauline',
+      target,
     })
   })
 
-  it('carries a null reporterName for anonymous feedback', () => {
+  it('carries a null reporterName and target for anonymous, page-level feedback', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
       category: 'other',
       subCategory: null,
       message: 'Anonymous note about the page',
       reporterName: null,
+      target: null,
     })
     expect(payload.reporterName).toBeNull()
+    expect(payload.target).toBeNull()
   })
 
   it('preserves the discriminated category-subCategory pairing', () => {

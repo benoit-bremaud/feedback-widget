@@ -11,7 +11,7 @@ export type {
   ViewportSize,
   BrowserContext,
   FeedbackPayload,
-  TargetBlock,
+  FeedbackTarget,
 } from './domain/Feedback'
 export {
   TOP_LEVEL_CATEGORIES,
