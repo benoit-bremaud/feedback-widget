@@ -895,3 +895,26 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   Privacy: the descriptor never carries a form field's entered value.
 - **Ref:** PR [#50](https://github.com/benoit-bremaud/feedback-widget/pull/50);
   merge commit + tag `v0.4.0` to be backfilled post-merge.
+
+## 2026-05-24
+
+### feedback dashboard — needs + UML conception (edge-centric pivot)
+
+- **What:** Design documentation for a **centralized feedback dashboard** (a
+  single place to consult every feedback, all projects). Adds the needs/decision
+  spec [`feedback-dashboard.md`](docs/architecture/specs/feedback-dashboard.md)
+  (decisions D1–D9) and six UML diagrams under
+  [`docs/architecture/diagrams/feedback-dashboard/`](docs/architecture/diagrams/feedback-dashboard/)
+  (use-case, 2× sequence, component, class, state, data-flow). All Mermaid blocks
+  render clean (verified with `mmdc`).
+- **Why:** The dashboard need surfaced an **edge-centric pivot** of the pipeline:
+  **Cloudflare D1 = primary store**, the **Pi = backup copy**, a **single triage
+  service on the Worker** triggered by both the dashboard and a Telegram webhook,
+  and auth via **Cloudflare Access** (operator-owned domain). This avoids
+  duplicating triage logic and removes the unstable Pi from the critical path.
+- **Impact:** Supersedes parts of `feedback-pipeline-pi.md` (Pi = source of
+  truth) and `feedback-digest.md` (KV-cursor counting) — those two docs are on
+  separate branches and will be reconciled in a follow-up before merge. The
+  widget→Worker payload contract is unchanged.
+- **Ref:** issue [#51](https://github.com/benoit-bremaud/feedback-widget/issues/51);
+  PR backfilled post-merge.

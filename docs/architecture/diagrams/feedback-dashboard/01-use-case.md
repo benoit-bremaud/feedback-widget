@@ -39,10 +39,10 @@ flowchart LR
 ## Notes
 
 - **V1** = UC1, UC3, UC4. **V2** = UC2 (stats) + UC5 (triage).
-- **Steps folded into goals** (not separate use cases): *filter by
-  project/category/date* and *mark read* are steps of UC1/UC3; *mark
-  handled/archived* is the closing step of UC3.
-- UC5 *"Triage into a GitHub issue"* is operator-initiated and is the **same**
+- **Steps folded into goals** (not separate use cases): _filter by
+  project/category/date_ and _mark read_ are steps of UC1/UC3; _mark
+  handled/archived_ is the closing step of UC3.
+- UC5 _"Triage into a GitHub issue"_ is operator-initiated and is the **same**
   goal whether triggered from this dashboard or from Telegram; one service backs
   both (spec D4).
 - The Telegram **digest** is deliberately absent: receiving a notification is a
