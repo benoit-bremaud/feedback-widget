@@ -1,13 +1,15 @@
-import type {
-  TopLevelCategory,
-  FeedbackPayload,
-} from '@benoit-bremaud/feedback-widget-core'
 import {
   requiresSubCategory,
   MIN_MESSAGE_LENGTH,
+  buildFeedbackPayload,
+  submitFeedback,
+  drainOutbox,
+  resolveConfig,
+  type FeedbackPayload,
+  type WidgetState,
+  type ViewportDetector,
+  type WidgetConfig,
 } from '@benoit-bremaud/feedback-widget-core'
-import type { WidgetState } from '@benoit-bremaud/feedback-widget-core'
-import type { ViewportDetector } from '@benoit-bremaud/feedback-widget-core'
 import { createHttpTransport, defaultBackoff } from './adapters/HttpTransport'
 import { createLocalStorageRateLimiter } from './adapters/LocalStorageRateLimiter'
 import { createLocalStorageOutbox } from './adapters/LocalStorageOutbox'
@@ -18,11 +20,6 @@ import {
   createWebComponentView,
   defineFeedbackWidgetElement,
 } from './adapters/WebComponentView'
-import { buildFeedbackPayload } from '@benoit-bremaud/feedback-widget-core'
-import { submitFeedback } from '@benoit-bremaud/feedback-widget-core'
-import { drainOutbox } from '@benoit-bremaud/feedback-widget-core'
-import type { WidgetConfig } from '@benoit-bremaud/feedback-widget-core'
-import { resolveConfig } from '@benoit-bremaud/feedback-widget-core'
 
 const TAG_NAME = 'feedback-widget'
 const STORAGE_KEY_PREFIX = 'impropedia.feedback-widget'
@@ -465,7 +462,7 @@ function initialState(): WidgetState {
 // break sessions on runtimes without Web Crypto.
 function newSessionId(): string {
   const cryptoRef: Crypto | undefined =
-    typeof globalThis !== 'undefined' ? globalThis.crypto : undefined
+    typeof globalThis === 'undefined' ? undefined : globalThis.crypto
   if (cryptoRef && typeof cryptoRef.randomUUID === 'function') {
     return cryptoRef.randomUUID()
   }
@@ -491,4 +488,5 @@ function buildMailto(base: string | null, payload: unknown): string | null {
   return `mailto:${base}?subject=${subject}&body=${body}`
 }
 
-export type { WidgetConfig, TopLevelCategory }
+export type { WidgetConfig }
+export type { TopLevelCategory } from '@benoit-bremaud/feedback-widget-core'
