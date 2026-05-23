@@ -850,4 +850,21 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   size cap, input validation, and secrets via Wrangler (never in code or
   the public site).
 - **Ref:** PR [#48](https://github.com/benoit-bremaud/feedback-widget/pull/48),
-  merge commit _to be updated post-merge_
+  merge commit [`f96236b`](https://github.com/benoit-bremaud/feedback-widget/commit/f96236b)
+
+## 2026-05-22
+
+### Release v0.3.1 — formalize the public bundle
+
+- **What:** Cut `v0.3.1`. Moved the `CHANGELOG` `[Unreleased]` "Public
+  bundle build" entry into a dated `[0.3.1]` section, bumped
+  `packages/core` + `packages/web` to `0.3.1` in lockstep, and bumped
+  `WIDGET_VERSION` to `0.3.1` (the `version.test.ts` drift guard keeps it
+  in sync with `package.json`).
+- **Why:** The public bundle tooling (PR #47) had shipped to `main` but
+  was never released, so the `feedback-pipeline-worker` was about to
+  serve an untagged artifact whose feedback reports `widgetVersion`
+  `0.3.0`. Cutting `0.3.1` before the Worker's first deploy means its
+  bundle refresh pulls a tagged build — clean provenance, no later
+  re-refresh. No API change (packaging only), hence a patch bump.
+- **Ref:** PR (to be filled), tag `v0.3.1` (post-merge).
