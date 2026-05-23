@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createIntersectionViewportDetector } from './IntersectionViewportDetector'
 
@@ -375,6 +375,34 @@ describe('createIntersectionViewportDetector', () => {
 })
 
 describe('enablePointingMode / disablePointingMode', () => {
+  // Pointing mode installs capture-phase listeners on `document`. The
+  // handler calls stopImmediatePropagation, so a listener left over from a
+  // previous test would swallow the next test's event. Track every document
+  // listener added during a test and detach it afterwards, isolating tests.
+  const docListeners: Array<{ type: string; fn: EventListener }> = []
+  const originalAdd = document.addEventListener
+
+  beforeEach(() => {
+    docListeners.length = 0
+    document.addEventListener = function (
+      this: Document,
+      ...args: Parameters<Document['addEventListener']>
+    ): void {
+      const [type, fn] = args
+      if (typeof fn === 'function') {
+        docListeners.push({ type, fn: fn as EventListener })
+      }
+      originalAdd.apply(this, args)
+    }
+  })
+
+  afterEach(() => {
+    document.addEventListener = originalAdd
+    for (const { type, fn } of docListeners) {
+      document.removeEventListener(type, fn, { capture: true })
+    }
+  })
+
   it('adds the pointing class to the root element', () => {
     installFakeIntersectionObserver(window)
     makeDocumentWithContent('<p>a</p>')

@@ -42,6 +42,11 @@ export function buildFeedbackPayload(
     sessionId: input.sessionId,
   }
 
+  // Normalize to null so the payload always honors the documented
+  // `FeedbackTarget | null` contract, even if a JS caller (or a file
+  // excluded from typechecking) omits `target` (would be `undefined`).
+  const target = input.target ?? null
+
   if (input.category === 'other') {
     if (input.subCategory !== null) {
       throw new Error(
@@ -52,7 +57,7 @@ export function buildFeedbackPayload(
       ...context,
       message: input.message,
       reporterName: input.reporterName,
-      target: input.target,
+      target,
       category: 'other',
       subCategory: null,
     }

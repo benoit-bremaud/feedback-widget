@@ -224,22 +224,26 @@ export function createIntersectionViewportDetector(
     pointingHandler = (ev: Event) => {
       const raw = ev.target as Element | null
       if (!raw) return
+      const root = getRoot()
       // Never intercept the widget's own UI (its cancel button lives in
       // the host element's shadow DOM; clicks on it retarget to the host).
       if (raw.closest(WIDGET_HOST_TAG)) return
-      if (!getRoot().contains(raw)) return
+      if (!root.contains(raw)) return
 
       // preventDefault stops the default action (navigation, submit);
-      // stopPropagation in the capture phase stops the event before it
-      // reaches the element, so its own click handlers never run either.
+      // stopImmediatePropagation stops every other listener too — including
+      // app-level capture handlers delegated on `document` — so nothing the
+      // page wired up runs while the user is merely selecting an element.
       ev.preventDefault()
-      ev.stopPropagation()
+      ev.stopImmediatePropagation()
       if (ev.type !== 'click') return
 
       // Prefer the nearest interactive ancestor when the click lands on a
-      // descendant (e.g. an icon inside a button), otherwise the element
-      // itself.
-      const picked = raw.closest(INTERACTIVE_SELECTORS) ?? raw
+      // descendant (e.g. an icon inside a button) — but only if that
+      // ancestor is still inside the root, otherwise keep the clicked
+      // element (closest() can walk above the root, e.g. <body role=…>).
+      const ancestor = raw.closest(INTERACTIVE_SELECTORS)
+      const picked = ancestor && root.contains(ancestor) ? ancestor : raw
       highlight(picked)
       onPick(elementToTarget(picked))
     }
@@ -354,6 +358,9 @@ function computeSelector(element: Element): string | null {
 function cssEscape(value: string): string {
   const css = (globalThis as { CSS?: { escape?: (s: string) => string } }).CSS
   if (css?.escape) return css.escape(value)
-  // Minimal fallback for runtimes without CSS.escape.
-  return value.replace(/[^a-zA-Z0-9_-]/g, String.raw`\$&`)
+  // Best-effort fallback for runtimes without CSS.escape: backslash-escape
+  // every non-identifier char, and escape a leading digit as `\3N ` per the
+  // CSS spec (a bare `#123` would be an invalid selector).
+  const escaped = value.replace(/[^a-zA-Z0-9_-]/g, String.raw`\$&`)
+  return escaped.replace(/^(\d)/, (digit) => String.raw`\3${digit} `)
 }

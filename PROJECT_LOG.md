@@ -893,4 +893,5 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   hand-validates the payload) — see
   [the Worker contract](docs/architecture/specs/feedback-pipeline-worker.md).
   Privacy: the descriptor never carries a form field's entered value.
-- **Ref:** PR (to be filled), tag `v0.4.0` (post-merge).
+- **Ref:** PR [#50](https://github.com/benoit-bremaud/feedback-widget/pull/50);
+  merge commit + tag `v0.4.0` to be backfilled post-merge.
