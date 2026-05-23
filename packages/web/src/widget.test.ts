@@ -508,7 +508,7 @@ describe('handleSubmit — result branches', () => {
     expect(payload.viewport).toHaveProperty('h')
     expect(typeof payload.locale).toBe('string')
     expect(typeof payload.timestamp).toBe('string')
-    expect(payload.widgetVersion).toBe('0.3.1')
+    expect(payload.widgetVersion).toBe('0.4.0')
     expect(typeof payload.scrollDepth).toBe('number')
     expect(typeof payload.sessionId).toBe('string')
     // reporterName is carried (null when the user typed no name)

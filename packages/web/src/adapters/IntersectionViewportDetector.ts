@@ -1,8 +1,8 @@
-import type { TargetBlock } from '@benoit-bremaud/feedback-widget-core'
-import type { ViewportDetector } from '@benoit-bremaud/feedback-widget-core'
 import {
   extractExcerpt,
   pickBestCandidate,
+  type FeedbackTarget,
+  type ViewportDetector,
 } from '@benoit-bremaud/feedback-widget-core'
 
 export interface IntersectionViewportDetectorDeps {
@@ -19,6 +19,20 @@ const DEFAULT_SELECTORS =
 const DEFAULT_ROOT = 'main'
 const HIGHLIGHT_CLASS = 'fw-highlight'
 const POINTING_CLASS = 'fw-pointing'
+
+// Activating events neutralised (capture phase) while pointing, so the
+// targeted element's own behaviour never fires during selection.
+const POINTING_EVENTS = ['pointerdown', 'mousedown', 'click'] as const
+// When the click lands inside one of these, pick the interactive
+// ancestor rather than the inner descendant (e.g. an icon in a button).
+const INTERACTIVE_SELECTORS =
+  'a, button, input, select, textarea, label, summary, [role], [tabindex]'
+// The widget's own custom element — never a valid feedback target.
+const WIDGET_HOST_TAG = 'feedback-widget'
+// Upper bound for a target's human-readable label / excerpt fields.
+const LABEL_MAX_LENGTH = 120
+// Cap on the depth of a generated CSS selector path.
+const SELECTOR_MAX_DEPTH = 5
 
 export function createIntersectionViewportDetector(
   deps: IntersectionViewportDetectorDeps,
@@ -54,11 +68,11 @@ export function createIntersectionViewportDetector(
         0%, 100% { outline-color: rgba(200, 16, 46, 0.95); }
         50%      { outline-color: rgba(200, 16, 46, 0.35); }
       }
-      .${pointingClass} :is(${targetSelectors}) {
+      .${pointingClass} * {
         cursor: pointer !important;
         transition: background-color 120ms ease !important;
       }
-      .${pointingClass} :is(${targetSelectors}):hover {
+      .${pointingClass} *:hover {
         background-color: rgba(200, 16, 46, 0.08) !important;
       }
       @media (prefers-reduced-motion: reduce) {
@@ -70,19 +84,15 @@ export function createIntersectionViewportDetector(
 
   const getRoot = (): Element => doc.querySelector(rootSelector) ?? doc.body
 
-  const elementToTarget = (element: Element): TargetBlock => {
+  const elementToTarget = (element: Element): FeedbackTarget => {
     const heading = findParentHeading(element)
     const text = element.textContent ?? ''
-    const parentChildren = heading
-      ? collectBlocksBetween(heading, element)
-      : [element]
-    const blockIndex = parentChildren.indexOf(element)
 
     return {
-      headingId: heading?.id ?? null,
+      tag: element.tagName.toLowerCase(),
+      label: accessibleLabel(element),
+      selector: computeSelector(element),
       headingText: heading?.textContent?.trim() ?? null,
-      blockIndex: blockIndex >= 0 ? blockIndex : null,
-      blockTag: element.tagName.toLowerCase(),
       excerpt: extractExcerpt(text),
     }
   }
@@ -144,7 +154,7 @@ export function createIntersectionViewportDetector(
     highlight(null)
   }
 
-  const getCurrentTarget = (): TargetBlock | null => {
+  const getCurrentTarget = (): FeedbackTarget | null => {
     if (visibleById.size === 0) return null
 
     const viewportHeight = win.innerHeight
@@ -173,7 +183,9 @@ export function createIntersectionViewportDetector(
     return elementToTarget(entry.element)
   }
 
-  const enablePointingMode = (onPick: (target: TargetBlock) => void): void => {
+  const enablePointingMode = (
+    onPick: (target: FeedbackTarget) => void,
+  ): void => {
     // Guard against re-entry: if a previous listener is still installed
     // (rapid double-click on « Choisir un autre »), remove it first.
     disablePointingMode()
@@ -182,26 +194,48 @@ export function createIntersectionViewportDetector(
     getRoot().classList.add(pointingClass)
     highlight(null)
 
+    // While pointing, ANY element under the root is a valid target — not
+    // just content blocks — so the user can report on a button, link,
+    // input, etc. We intercept the activating events (pointerdown,
+    // mousedown, click) in the capture phase and neutralise them so the
+    // element's own behaviour (navigation, form submit, onclick) never
+    // fires while the user is merely selecting it. We pick on `click`.
     pointingHandler = (ev: Event) => {
-      const target = ev.target as Element | null
-      if (!target) return
-      const block = target.closest(targetSelectors)
-      if (!block || !getRoot().contains(block)) return
+      const raw = ev.target as Element | null
+      if (!raw) return
+      // Never intercept the widget's own UI (its cancel button lives in
+      // the host element's shadow DOM; clicks on it retarget to the host).
+      if (raw.closest(WIDGET_HOST_TAG)) return
+      if (!getRoot().contains(raw)) return
+
+      // preventDefault stops the default action (navigation, submit);
+      // stopPropagation in the capture phase stops the event before it
+      // reaches the element, so its own click handlers never run either.
       ev.preventDefault()
       ev.stopPropagation()
-      highlight(block)
-      onPick(elementToTarget(block))
+      if (ev.type !== 'click') return
+
+      // Prefer the nearest interactive ancestor when the click lands on a
+      // descendant (e.g. an icon inside a button), otherwise the element
+      // itself.
+      const picked = raw.closest(INTERACTIVE_SELECTORS) ?? raw
+      highlight(picked)
+      onPick(elementToTarget(picked))
     }
 
-    doc.addEventListener('click', pointingHandler, { capture: true })
+    const handler = pointingHandler
+    POINTING_EVENTS.forEach((type) =>
+      doc.addEventListener(type, handler, { capture: true }),
+    )
   }
 
   const disablePointingMode = (): void => {
     getRoot().classList.remove(pointingClass)
     if (pointingHandler) {
-      doc.removeEventListener('click', pointingHandler, {
-        capture: true,
-      } as EventListenerOptions)
+      const handler = pointingHandler
+      POINTING_EVENTS.forEach((type) =>
+        doc.removeEventListener(type, handler, { capture: true }),
+      )
       pointingHandler = null
     }
   }
@@ -240,17 +274,65 @@ function findParentHeading(element: Element): Element | null {
   return findParentHeading(parent)
 }
 
-function collectBlocksBetween(heading: Element, target: Element): Element[] {
-  const blocks: Element[] = []
-  let walker = heading.nextElementSibling
-  while (walker && !/^H[1-6]$/.test(walker.tagName)) {
-    if (walker === target || walker.contains(target)) {
-      blocks.push(walker)
-      if (walker === target) return blocks
-    } else {
-      blocks.push(walker)
-    }
-    walker = walker.nextElementSibling
+function truncate(value: string): string {
+  const trimmed = value.trim()
+  return trimmed.length > LABEL_MAX_LENGTH
+    ? `${trimmed.slice(0, LABEL_MAX_LENGTH - 1)}…`
+    : trimmed
+}
+
+// Human-readable accessible name. Privacy: deliberately never reads an
+// input's entered `value` — only its declared label-like attributes or
+// visible text — so user-entered data never leaks into the payload.
+function accessibleLabel(element: Element): string | null {
+  const sources = [
+    element.getAttribute('aria-label'),
+    element.getAttribute('alt'),
+    element.getAttribute('placeholder'),
+    element.getAttribute('title'),
+    element.textContent,
+  ]
+  for (const source of sources) {
+    const value = source?.trim()
+    if (value) return truncate(value)
   }
-  return blocks
+  return null
+}
+
+// Bounded CSS path to relocate the element. Stops at the first ancestor
+// with an id (anchored, shortest), and caps the depth.
+function computeSelector(element: Element): string | null {
+  if (element.id) return `#${cssEscape(element.id)}`
+
+  const parts: string[] = []
+  let node: Element | null = element
+  let depth = 0
+  while (node && depth < SELECTOR_MAX_DEPTH) {
+    if (node.id) {
+      parts.unshift(`#${cssEscape(node.id)}`)
+      break
+    }
+    let selector = node.tagName.toLowerCase()
+    const parent = node.parentElement
+    if (parent) {
+      const tag = node.tagName
+      const siblings = Array.from(parent.children).filter(
+        (child) => child.tagName === tag,
+      )
+      if (siblings.length > 1) {
+        selector += `:nth-of-type(${siblings.indexOf(node) + 1})`
+      }
+    }
+    parts.unshift(selector)
+    node = node.parentElement
+    depth += 1
+  }
+  return parts.length > 0 ? parts.join(' > ') : null
+}
+
+function cssEscape(value: string): string {
+  const css = (globalThis as { CSS?: { escape?: (s: string) => string } }).CSS
+  if (css?.escape) return css.escape(value)
+  // Minimal fallback for runtimes without CSS.escape.
+  return value.replace(/[^a-zA-Z0-9_-]/g, String.raw`\$&`)
 }

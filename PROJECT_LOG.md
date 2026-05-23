@@ -867,4 +867,30 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   `0.3.0`. Cutting `0.3.1` before the Worker's first deploy means its
   bundle refresh pulls a tagged build — clean provenance, no later
   re-refresh. No API change (packaging only), hence a patch bump.
-- **Ref:** PR (to be filled), tag `v0.3.1` (post-merge).
+- **Ref:** PR [#49](https://github.com/benoit-bremaud/feedback-widget/pull/49),
+  merge commit [`a014cf4`](https://github.com/benoit-bremaud/feedback-widget/commit/a014cf4),
+  tag `v0.3.1`.
+
+## 2026-05-23
+
+### v0.4.0 — feedback on any element + targeted element transmitted
+
+- **What:** Pointing mode (« Choisir un autre ») now lets the user point
+  at **any** element — a button, link, input, image — not just content
+  blocks. The activating events (`pointerdown`, `mousedown`, `click`) are
+  intercepted in the capture phase (`preventDefault` + `stopPropagation`)
+  so the element's own behavior never fires while it is being selected.
+  The picked element is described by a new `FeedbackTarget` (renamed from
+  `TargetBlock`; adds `label` + `selector`) and **carried in the
+  payload** (`target`).
+- **Why:** A reviewer could not give feedback on an interactive element:
+  clicking a button to select it triggered the button instead. And even
+  the auto-detected target was never transmitted, so the consumer could
+  not tell which element a report was about. Now the payload says WHICH
+  element — a button with `selector: "#cta"`, etc.
+- **Contract impact:** `FeedbackPayload` gains `target`, so the
+  feedback-pipeline-worker must accept the new field in lockstep (it
+  hand-validates the payload) — see
+  [the Worker contract](docs/architecture/specs/feedback-pipeline-worker.md).
+  Privacy: the descriptor never carries a form field's entered value.
+- **Ref:** PR (to be filled), tag `v0.4.0` (post-merge).

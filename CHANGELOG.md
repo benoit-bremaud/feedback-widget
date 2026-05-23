@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-23
+
+### Added
+
+- **Feedback on any element + targeted element transmitted** — in
+  pointing mode (« Choisir un autre ») the user can now point at **any**
+  element (a button, link, input, image…), not just content blocks. The
+  activating events (`pointerdown`, `mousedown`, `click`) are intercepted
+  in the capture phase so the element's own behavior (navigation, form
+  submit, `onclick`) never fires while it is being selected. The picked
+  element is described by a new `FeedbackTarget` and **carried in the
+  payload** (`target`), so the consumer pipeline knows which element a
+  report is about.
+
+### Changed
+
+- **BREAKING (type API)** — `TargetBlock` is renamed to `FeedbackTarget`
+  and restructured: `blockTag` → `tag` (now non-null), added `label`
+  (accessible name) and `selector` (bounded CSS path), dropped
+  `headingId` and `blockIndex`. `FeedbackPayload` gains a
+  `target: FeedbackTarget | null` field; `buildFeedbackPayload` takes a
+  `target` input.
+
+### Security
+
+- The target descriptor never captures a form field's entered `value`
+  (only its accessible label / placeholder / text), so no user-entered
+  data leaks into the payload.
+
 ## [0.3.1] - 2026-05-22
 
 ### Added

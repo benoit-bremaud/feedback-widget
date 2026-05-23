@@ -101,16 +101,33 @@ export type FeedbackPayload = BrowserContext &
     // typed a name in the form. Carried through so the consumer
     // pipeline can attribute the feedback if provided.
     reporterName: string | null
+    // The element the feedback is about, or null for page-level
+    // feedback. Lets the consumer pipeline know WHICH element a report
+    // targets (a button, a paragraph, …). Since v0.4.0.
+    target: FeedbackTarget | null
   }
 
-// Runtime artefact representing the block the widget points at when
-// open. Owned by the IntersectionViewportDetector port; not part of
-// the FeedbackPayload contract.
-export interface TargetBlock {
-  headingId: string | null
+// Descriptor of the element a feedback targets. Produced by the
+// ViewportDetector port (auto-detected content block when the widget
+// opens, or any element the user points at). Part of the
+// FeedbackPayload contract since v0.4.0 — the consumer relies on it to
+// attribute feedback to a specific element.
+//
+// Privacy: never carries a form field's entered value (only its
+// accessible label / placeholder / text), so no user input leaks here.
+export interface FeedbackTarget {
+  // Lowercased tag name of the element (e.g. 'button', 'p', 'a').
+  tag: string
+  // Human-readable accessible name: aria-label > alt > placeholder >
+  // title > trimmed text content (truncated). Null when none applies.
+  label: string | null
+  // Bounded CSS path to relocate the element on the page. Null when it
+  // cannot be computed.
+  selector: string | null
+  // Text of the nearest preceding section heading, for context.
   headingText: string | null
-  blockIndex: number | null
-  blockTag: string | null
+  // Short text excerpt of the element (mainly for content blocks; also
+  // used by the widget UI preview).
   excerpt: string | null
 }
 

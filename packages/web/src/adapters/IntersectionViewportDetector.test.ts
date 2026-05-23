@@ -160,7 +160,9 @@ describe('createIntersectionViewportDetector', () => {
       ''
     expect(styleContent).toContain('.custom-highlight')
     expect(styleContent).toContain('.custom-pointing')
-    expect(styleContent).toContain('article')
+    // Pointing mode highlights ANY element under the root, so the
+    // pointing rule targets `*`, not the (observer-only) targetSelectors.
+    expect(styleContent).toContain('.custom-pointing *')
   })
 
   it('falls back to document.body when the rootSelector is not found', () => {
@@ -237,7 +239,7 @@ describe('createIntersectionViewportDetector', () => {
     expect(detector.getCurrentTarget()).toBeNull()
   })
 
-  it('returns a TargetBlock with heading context when an element is visible', () => {
+  it('returns a FeedbackTarget with heading context when an element is visible', () => {
     const instances = installFakeIntersectionObserver(window)
     makeDocumentWithContent(
       '<h2 id="sec-1">Section</h2><p id="para-1">Body text long enough to excerpt</p>',
@@ -257,10 +259,10 @@ describe('createIntersectionViewportDetector', () => {
 
     const target = detector.getCurrentTarget()
     expect(target).not.toBeNull()
-    expect(target?.headingId).toBe('sec-1')
+    expect(target?.tag).toBe('p')
     expect(target?.headingText).toBe('Section')
-    expect(target?.blockTag).toBe('p')
-    expect(target?.excerpt.length).toBeGreaterThan(0)
+    expect(target?.selector).toBe('#para-1')
+    expect((target?.excerpt ?? '').length).toBeGreaterThan(0)
   })
 
   it('drops entries from the visibility map when they stop intersecting', () => {
@@ -388,7 +390,7 @@ describe('enablePointingMode / disablePointingMode', () => {
     ).toBe(true)
   })
 
-  it('invokes onPick with the TargetBlock when a matching element is clicked', () => {
+  it('invokes onPick with the FeedbackTarget when a content block is clicked', () => {
     installFakeIntersectionObserver(window)
     makeDocumentWithContent(
       '<h2>Title</h2><p id="para">pick me with enough text to pass the excerpt</p>',
@@ -405,8 +407,58 @@ describe('enablePointingMode / disablePointingMode', () => {
 
     expect(onPick).toHaveBeenCalledOnce()
     const arg = onPick.mock.calls[0]?.[0]
-    expect(arg.blockTag).toBe('p')
+    expect(arg.tag).toBe('p')
     expect(arg.headingText).toBe('Title')
+    expect(arg.selector).toBe('#para')
+  })
+
+  it('picks an interactive element (button) without firing its native click', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<button id="cta">Acheter</button>')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+    const nativeClick = vi.fn()
+    const button = document.getElementById('cta')!
+    button.addEventListener('click', nativeClick)
+
+    detector.enablePointingMode(onPick)
+    button.dispatchEvent(
+      new Event('click', { bubbles: true, cancelable: true }),
+    )
+
+    // The button is selected as the target...
+    expect(onPick).toHaveBeenCalledOnce()
+    const arg = onPick.mock.calls[0]?.[0]
+    expect(arg.tag).toBe('button')
+    expect(arg.label).toBe('Acheter')
+    expect(arg.selector).toBe('#cta')
+    // ...and its own click handler never runs.
+    expect(nativeClick).not.toHaveBeenCalled()
+  })
+
+  it('picks the interactive ancestor when the click lands on a descendant', () => {
+    installFakeIntersectionObserver(window)
+    makeDocumentWithContent(
+      '<button id="cta" aria-label="Valider"><span id="icon">✓</span></button>',
+    )
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+
+    detector.enablePointingMode(onPick)
+    const icon = document.getElementById('icon')!
+    icon.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+
+    expect(onPick).toHaveBeenCalledOnce()
+    const arg = onPick.mock.calls[0]?.[0]
+    // Picks the <button>, not the inner <span>.
+    expect(arg.tag).toBe('button')
+    expect(arg.label).toBe('Valider')
   })
 
   it('ignores clicks on elements outside the root', () => {
@@ -428,10 +480,10 @@ describe('enablePointingMode / disablePointingMode', () => {
     expect(onPick).not.toHaveBeenCalled()
   })
 
-  it('ignores clicks that do not match the target selector', () => {
+  it('picks a non-content element (e.g. a div) — any element is targetable', () => {
     installFakeIntersectionObserver(window)
     makeDocumentWithContent(
-      '<div id="non-target">not in the selector list</div>',
+      '<div id="card">a layout block, not in the content selectors</div>',
     )
     const detector = createIntersectionViewportDetector({
       doc: document,
@@ -440,10 +492,11 @@ describe('enablePointingMode / disablePointingMode', () => {
     const onPick = vi.fn()
 
     detector.enablePointingMode(onPick)
-    const div = document.getElementById('non-target')!
+    const div = document.getElementById('card')!
     div.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
 
-    expect(onPick).not.toHaveBeenCalled()
+    expect(onPick).toHaveBeenCalledOnce()
+    expect(onPick.mock.calls[0]?.[0].tag).toBe('div')
   })
 
   it('disablePointingMode removes the class and detaches the click listener', () => {

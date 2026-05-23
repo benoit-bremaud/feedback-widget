@@ -1,6 +1,7 @@
 import type {
   BrowserContext,
   FeedbackPayload,
+  FeedbackTarget,
   SubCategory,
   TopLevelCategory,
 } from '../domain/Feedback'
@@ -16,6 +17,8 @@ export type BuildPayloadInput = BrowserContext & {
   subCategory: SubCategory | null
   message: string
   reporterName: string | null
+  // The element the feedback targets, or null for page-level feedback.
+  target: FeedbackTarget | null
 }
 
 // Builds the canonical FeedbackPayload from its constituent parts and
@@ -49,6 +52,7 @@ export function buildFeedbackPayload(
       ...context,
       message: input.message,
       reporterName: input.reporterName,
+      target: input.target,
       category: 'other',
       subCategory: null,
     }
@@ -71,6 +75,7 @@ export function buildFeedbackPayload(
     ...context,
     message: input.message,
     reporterName: input.reporterName,
+    target: input.target,
     category: input.category,
     subCategory: input.subCategory,
   } as FeedbackPayload

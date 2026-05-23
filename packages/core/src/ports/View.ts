@@ -1,7 +1,7 @@
 import type {
   TopLevelCategory,
   SubCategory,
-  TargetBlock,
+  FeedbackTarget,
 } from '../domain/Feedback'
 
 export type WidgetStep =
@@ -17,7 +17,7 @@ export type WidgetStep =
 
 export interface WidgetState {
   step: WidgetStep
-  target: TargetBlock | null
+  target: FeedbackTarget | null
   selectedCategory: TopLevelCategory | null
   selectedSubCategory: SubCategory | null
   userMessage: string
@@ -31,7 +31,7 @@ export type UserAction =
   | { kind: 'confirm-target' }
   | { kind: 'reject-target' }
   | { kind: 'cancel-pointing' }
-  | { kind: 'pick-target'; target: TargetBlock }
+  | { kind: 'pick-target'; target: FeedbackTarget }
   | { kind: 'select-category'; category: TopLevelCategory }
   | { kind: 'select-sub-category'; subCategory: SubCategory }
   | { kind: 'back' }
