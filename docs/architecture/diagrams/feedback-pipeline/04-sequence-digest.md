@@ -35,14 +35,13 @@ sequenceDiagram
   Note over Cron: fires 06:00 + 07:00 UTC<br/>guard keeps only the 08:00 Europe/Paris run
   Cron->>W: scheduled() event
   W->>W: guard — is it 08:00 in Europe/Paris? else return
-  W->>D1: read digest_state.last_run_at (default 0)
-  W->>D1: SELECT project_id, COUNT(*) WHERE created_at > last_run_at GROUP BY project_id
-  D1-->>W: per-project counts
+  W->>D1: per-project counts WHERE created_at after each project's cursor
+  D1-->>W: project_id + count (per project)
   loop per project with count > 0
     W->>TG: sendMessage "Projet X — vous avez N retours"
     TG-->>O: notification
+    W->>D1: upsert digest_state(project, last_run_at = now)
   end
-  W->>D1: set digest_state.last_run_at = now<br/>(only after sends succeed)
 ```
 
 ## Notes
@@ -54,11 +53,12 @@ sequenceDiagram
 - **Timezone**: Cloudflare cron is UTC; 08:00 Paris is 07:00 UTC (CET, winter)
   or 06:00 UTC (CEST, summer). Two cron entries (`0 6` + `0 7`) plus a
   `Europe/Paris == 08:00` guard fire exactly once/day year-round.
-- **Counting = new since last digest**, from D1 by `created_at`. The
-  `last_run_at` advances **only after** the sends succeed → a Telegram outage
-  just defers the count to the next morning (no loss, no double count). D1 is the
-  durable source of truth, so the count is exact (no KV cursor, no Pi-drain
-  coexistence caveat — the Pi only backs D1 up, never deletes from it).
+- **Counting = new since last digest**, from D1 by `created_at`, with a
+  **per-project** cursor. Each project's `last_run_at` advances **right after its
+  own send succeeds** (inside the loop) → on a partial failure only the un-sent
+  projects are retried next run, never the already-sent ones (no duplicates,
+  Codex review on PR #54). D1 is the durable source of truth, so the count is
+  exact (no KV cursor, no Pi-drain coexistence caveat — the Pi only backs D1 up).
 - **Zero-count projects are skipped** — no message, per the requirement.
 - **Not a use case** (UML): a scheduled push is a system-initiated trigger, not
   an actor-initiated goal, so it adds no node to

@@ -26,8 +26,8 @@ message**. Send-only (no triage buttons — that is V2).
 
 > **Reconciled (2026-05-24)**: the original design counted via a **KV timestamp
 > cursor**. The edge-centric pivot removed the KV buffer (D2) and made **D1** the
-> primary store, so the digest now queries D1 directly. No KV, no cursor edge
-> cases, no Pi-drain coexistence caveat.
+> primary store, so the digest now queries D1 and keeps a small **per-project**
+> cursor there (`digest_state`). No KV, no Pi-drain coexistence caveat.
 
 ## Implementation (in the `feedback-pipeline-worker` repo, its own session)
 
@@ -55,23 +55,30 @@ once per day across DST.
 
 1. **Guard** — return immediately unless the local hour in `Europe/Paris` is 8
    (e.g. via `Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: ... })`).
-2. Read the last digest timestamp from a small D1 row
-   (`digest_state(last_run_at)`, default epoch 0).
-3. Query D1 for new feedback grouped by project:
+2. Query D1 for new feedback per project, using a **per-project** cursor
+   (`digest_state(project_id PK, last_run_at)`, default epoch 0):
 
    ```sql
-   SELECT project_id, COUNT(*) AS n
-   FROM feedback
-   WHERE created_at > ?1          -- last_run_at
-   GROUP BY project_id
+   SELECT f.project_id, COUNT(*) AS n
+   FROM feedback f
+   LEFT JOIN digest_state d ON d.project_id = f.project_id
+   WHERE f.created_at > COALESCE(d.last_run_at, 0)
+   GROUP BY f.project_id
    HAVING n > 0;
    ```
 
-4. For each row: `POST` to
+3. For each row: `POST` to
    `https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/sendMessage`
    with `{ chat_id, text: "Projet <label> — vous avez <N> retours" }`.
-5. Set `digest_state.last_run_at = now` **only after** all sends succeed (a
-   Telegram outage defers to the next morning — no loss, no double count).
+4. **Per project, immediately after its own send succeeds**, upsert that
+   project's cursor: `digest_state(project_id, last_run_at) = (?, now)`.
+
+> **Per-project cursor, not a global one** (Codex review, PR #54): advancing a
+> single global cursor only after _all_ sends succeed duplicates already-sent
+> projects on a **partial failure** (project A sent, project B errors → cursor
+> stays → next run resends A). Advancing each project's cursor right after its
+> own successful send makes a partial failure safe: only the un-sent projects
+> are retried next run, with no duplicates.
 
 ### Supporting changes
 
@@ -83,7 +90,9 @@ once per day across DST.
 ### Tests (vitest-pool-workers)
 
 - counts per project correctly from D1; projects at 0 are **skipped**;
-- `last_run_at` advances only after successful sends;
+- each project's `last_run_at` advances only after **its own** send succeeds;
+- **partial failure**: when one project's send errors, already-sent projects are
+  **not** resent on the next run (no duplicates), and the failed project is;
 - the Paris-08:00 guard rejects the wrong UTC run;
 - message format; Telegram `fetch` mocked; missing-secret handling.
 
@@ -91,7 +100,8 @@ once per day across DST.
 
 - Cron fires once/day at 08:00 Europe/Paris.
 - One message per project with new feedback; **none** for zero-count projects.
-- Count = new since the last digest, queried from D1 — no double-reporting.
+- Count = new since each project's last digest, queried from D1 — no
+  double-reporting, **including on partial send failure** (per-project cursor).
 - Secrets are Worker secrets; nothing leaks to repo/chat.
 - Tests green; README documents the cron, secrets, and the timezone guard.
 
