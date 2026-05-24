@@ -17,7 +17,7 @@ flowchart LR
   Visitor((Visitor)) -->|"PII: message, reporterName (+ category, url)"| W[Widget]
   W -->|"PII: message, reporterName (+ metadata)"| CF[Worker /ingest]
   CF -->|"PII at rest"| D1[(D1 primary store)]
-  D1 -->|read behind Access| Dash[Worker /dashboard]
+  D1 -->|"PII: rows read behind Access"| Dash[Worker /dashboard]
   Dash -->|"PII: displayed to operator"| Operator((Operator))
   D1 -.->|"PII: copied at rest"| Backup[(Pi SQLite backup)]
   Dash -->|delete row — RGPD erasure| D1

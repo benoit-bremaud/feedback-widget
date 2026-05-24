@@ -1,5 +1,15 @@
 # Sequence diagram — feedback-pipeline — end-to-end flow
 
+> ⚠️ **Partially superseded (2026-05-24).** This diagram shows the original
+> Pi-as-brain model (KV buffer → Pi drains → Pi runs Claude/Telegram/GitHub).
+> The **edge-centric pivot** moved the brain + primary store to the Worker
+> (Cloudflare D1), with the Pi demoted to a backup mirror. The current model is
+> the dashboard consultation sequence
+> ([`../feedback-dashboard/02b-sequence-consultation.md`](../feedback-dashboard/02b-sequence-consultation.md))
+> and component diagram
+> ([`../feedback-dashboard/03-component.md`](../feedback-dashboard/03-component.md)).
+> Kept for history; do not treat as current.
+
 > **Feature**: feedback consumer pipeline. Design locked 2026-05-21
 > (Q1–Q8).
 > **Companion**: [`01-use-case.md`](./01-use-case.md),

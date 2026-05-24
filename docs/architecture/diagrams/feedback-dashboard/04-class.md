@@ -67,6 +67,9 @@ classDiagram
   [`05-state-feedback.md`](./05-state-feedback.md).
 - Mirrors the widget→Worker payload (spec: contract unchanged) plus two stored
   fields: `status` (mutable, spec D8) and `createdAt` (digest + trend stats).
+- **Naming**: this conceptual model uses camelCase (`createdAt`, `subCategory`);
+  the **D1 columns use snake_case** (`created_at`, `sub_category`) as the SQL
+  queries in the spec/sequence diagrams show. One field, two casings by layer.
 - **Stats-ready** (spec D9): `projectId`, `category`/`subCategory`, `createdAt`,
   `url`/`targetedElement` cover all four wanted stats with `GROUP BY`. No schema
   rework when stats land in V2.
