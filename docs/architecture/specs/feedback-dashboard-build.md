@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS feedback (
   reporter_name    TEXT,
   url              TEXT,
   targeted_element TEXT,
-  context          TEXT,                       -- JSON: referrer, userAgent, viewport, locale, scrollDepth, sessionId
+  context          TEXT,                       -- JSON: referrer, userAgent, viewportW, viewportH, locale, scrollDepth, sessionId
   status           TEXT NOT NULL DEFAULT 'new',-- new | read | handled | issue_created(V2) | refused(V2)
   created_at       TEXT NOT NULL               -- ISO 8601
 );
@@ -76,10 +76,16 @@ CREATE TABLE IF NOT EXISTS digest_state (
 
 - `GET /dashboard` — server-rendered page (or a small SPA + JSON API) listing
   feedback, **filter** by project / category / date, sort by `created_at`.
-- Mutations (small JSON routes): **delete** a feedback (hard delete — RGPD),
-  **mark read/unread**, **mark handled/archived** (`UPDATE status`).
-- Until chantier 4 lands, gate behind a temporary check (env password) or keep
-  the route unlisted — **do not ship PII unprotected**.
+- Mutations (small JSON routes): **delete** a feedback (hard delete — RGPD);
+  **mark read** (`status='read'`) / **unread** (`status='new'`); **mark handled**
+  (`status='handled'`). Use **only** the canonical status vocabulary
+  `new | read | handled` (+ V2 `issue_created | refused`) — never persist
+  `unread` or `archived` as values (they are UI verbs, not stored states).
+- Until chantier 4 lands, `/dashboard` **must** sit behind a mandatory auth gate:
+  a temporary password/bearer check (a Worker secret), constant-time compared,
+  over HTTPS, with an HttpOnly + Secure + SameSite cookie. **Never** rely on an
+  unlisted or hard-to-guess URL — that is **not** access control and would expose
+  PII. (Chantier 4 replaces this stopgap with Cloudflare Access.)
 - **DoD**: list + filters work against D1; delete/status mutations persist;
   tests cover read, each mutation, and empty/edge states.
 
@@ -116,6 +122,7 @@ CREATE TABLE IF NOT EXISTS digest_state (
 ## Contract coupling reminder
 
 `/ingest` still validates the widget payload shape — keep it in lockstep with
-the widget (see the payload-coupling rule in
+the widget (see the `POST /ingest` validation step and the
+"The bundle (coupling with feedback-widget)" section in
 [`feedback-pipeline-worker.md`](./feedback-pipeline-worker.md)). The D1 columns
 are derived from that payload; a widget contract change touches both.
