@@ -64,8 +64,8 @@ CREATE TABLE IF NOT EXISTS digest_state (
 ### Chantier 2 — `/ingest` → D1 + migrate + drop KV (no domain needed)
 
 - Rewrite `POST /ingest` to `INSERT` into D1 (generate `id`, set
-  `created_at`, `status='new'`), keeping the existing origin filter + rate-limit
-  - size cap + validation. Return `204`.
+  `created_at`, `status='new'`), keeping the existing origin filter, rate-limit,
+  size cap, and validation. Return `204`.
 - **One-shot migration**: read all existing `fb:*` KV entries → insert into D1
   (idempotent on a derived id) → verify counts → then remove the KV binding +
   buffer code. Keep a dry-run/count step before deleting anything.
