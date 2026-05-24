@@ -42,8 +42,13 @@ The agency multi-tenant case is explicitly future / YAGNI.
 - The pipeline diagrams [`02-sequence`](../diagrams/feedback-pipeline/02-sequence.md)
   and [`03-component`](../diagrams/feedback-pipeline/03-component.md) still show
   the Pi as the brain → to be reconciled with the edge-centric model.
-- The widget→Worker **payload contract is unchanged** (D2 is Worker-internal);
-  [`project_worker_contract_coupling`] still applies.
+- The widget→Worker **payload contract is unchanged** (D2 is Worker-internal),
+  so the existing payload-coupling rule with the Worker still applies (see
+  [`feedback-pipeline-worker.md`](./feedback-pipeline-worker.md)).
+- **Note**: [`feedback-pipeline-worker.md`](./feedback-pipeline-worker.md) still
+  describes the KV-buffer + Pi-drain model, which D1/D2 supersede (direct D1
+  writes, KV removed). That Worker spec needs an update; treat its KV-buffer
+  design as superseded, not current.
 
 ## Phasing
 

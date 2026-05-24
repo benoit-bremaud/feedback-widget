@@ -906,7 +906,7 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   (decisions D1–D9) and six UML diagrams under
   [`docs/architecture/diagrams/feedback-dashboard/`](docs/architecture/diagrams/feedback-dashboard/)
   (use-case, 2× sequence, component, class, state, data-flow). All Mermaid blocks
-  render clean (verified with `mmdc`).
+  render cleanly (verified with `mmdc`).
 - **Why:** The dashboard need surfaced an **edge-centric pivot** of the pipeline:
   **Cloudflare D1 = primary store**, the **Pi = backup copy**, a **single triage
   service on the Worker** triggered by both the dashboard and a Telegram webhook,
@@ -914,7 +914,7 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   duplicating triage logic and removes the unstable Pi from the critical path.
 - **Impact:** Supersedes parts of `feedback-pipeline-pi.md` (Pi = source of
   truth) and `feedback-digest.md` (KV-cursor counting) — those two docs are on
-  separate branches and will be reconciled in a follow-up before merge. The
+  separate branches and will be reconciled in a follow-up PR. The
   widget→Worker payload contract is unchanged.
 - **Ref:** issue [#51](https://github.com/benoit-bremaud/feedback-widget/issues/51);
   PR backfilled post-merge.

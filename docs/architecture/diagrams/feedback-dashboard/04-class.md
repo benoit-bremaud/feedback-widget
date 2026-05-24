@@ -71,5 +71,6 @@ classDiagram
   `url`/`targetedElement` cover all four wanted stats with `GROUP BY`. No schema
   rework when stats land in V2.
 - `BrowserContext` may be stored inline (columns) or as JSON; either keeps the
-  raw payload authoritative ([`project_worker_contract_coupling`] in memory).
+  raw payload authoritative — the payload-coupling rule with the Worker (see
+  [`feedback-pipeline-worker.md`](../../specs/feedback-pipeline-worker.md)).
 - `sessionId` is anonymous (no account) — see the data-flow diagram for PII.

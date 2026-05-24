@@ -25,7 +25,7 @@ flowchart LR
 
 ## Notes
 
-- **PII-bearing edges** are prefixed `PII:`. `message` is free text (may contain
+- **PII-bearing edges** are prefixed `PII:`. `message` (free text — may contain
   anything) and `reporterName` are the sensitive fields; `url` can be
   quasi-identifying; `sessionId` is anonymous.
 - The dashboard **displays PII** → access **must** be gated (spec D6: Cloudflare
