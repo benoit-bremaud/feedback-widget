@@ -903,7 +903,7 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **What:** Design documentation for a **centralized feedback dashboard** (a
   single place to consult every feedback, all projects). Adds the needs/decision
   spec [`feedback-dashboard.md`](docs/architecture/specs/feedback-dashboard.md)
-  (decisions D1–D9) and six UML diagrams under
+  (decisions D1–D9) and seven UML diagrams under
   [`docs/architecture/diagrams/feedback-dashboard/`](docs/architecture/diagrams/feedback-dashboard/)
   (use-case, 2× sequence, component, class, state, data-flow). All Mermaid blocks
   render cleanly (verified with `mmdc`).
@@ -917,4 +917,21 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   separate branches and will be reconciled in a follow-up PR. The
   widget→Worker payload contract is unchanged.
 - **Ref:** issue [#51](https://github.com/benoit-bremaud/feedback-widget/issues/51);
-  PR backfilled post-merge.
+  PR [#52](https://github.com/benoit-bremaud/feedback-widget/pull/52).
+
+### Reconcile pipeline docs with the edge-centric pivot
+
+- **What:** Brought the digest + Pi specs into consistency with the pivot and
+  applied the deferred PR #52 review fixes. `feedback-digest.md` +
+  `04-sequence-digest.md` now count from **D1** (`created_at`), not a KV cursor;
+  `feedback-pipeline-pi.md` is rewritten as a **backup mirror of D1** (no longer
+  the source of truth / KV-drain). Added a "superseded" banner to the original
+  `feedback-pipeline/02-sequence.md` + `03-component.md`. Applied the four
+  deferred review nits (seven-diagram count, PII edge flag, `createdAt`/
+  `created_at` mapping, state-label ↔ status mapping) and re-linked the now-on-
+  main specs from `feedback-dashboard.md`.
+- **Why:** the dashboard pivot (#52) left the digest/Pi specs and two pipeline
+  diagrams describing the old Pi-as-brain model — a misleading architecture
+  trail. This makes the docs internally consistent.
+- **Ref:** issue [#53](https://github.com/benoit-bremaud/feedback-widget/issues/53);
+  follows #51/#52. PR backfilled post-merge.

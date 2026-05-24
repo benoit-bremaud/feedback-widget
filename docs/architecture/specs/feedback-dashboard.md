@@ -2,9 +2,9 @@
 
 > **Status**: needs + locked decisions (2026-05-23), UML conception phase.
 > **Diagrams**: [`../diagrams/feedback-dashboard/`](../diagrams/feedback-dashboard/).
-> **Related**: [`feedback-pipeline-worker.md`](./feedback-pipeline-worker.md);
-> `feedback-digest.md` and `feedback-pipeline-pi.md` (forthcoming — on separate
-> branches, not yet on `main`).
+> **Related**: [`feedback-pipeline-worker.md`](./feedback-pipeline-worker.md),
+> [`feedback-digest.md`](./feedback-digest.md),
+> [`feedback-pipeline-pi.md`](./feedback-pipeline-pi.md).
 
 ## Need
 
@@ -34,10 +34,10 @@ The agency multi-tenant case is explicitly future / YAGNI.
 ### Supersedes / impacts prior decisions
 
 - **Supersedes** "Pi SQLite = source of truth" and "Telegram triage on the Pi
-  via long-polling" from `feedback-pipeline-pi.md` (forthcoming)
+  via long-polling" from [`feedback-pipeline-pi.md`](./feedback-pipeline-pi.md)
   and the pipeline diagrams: the brain moves to the edge, Telegram triage uses a
   **webhook → Worker** (D4/D5).
-- **Changes the digest** (`feedback-digest.md`, forthcoming): it now
+- **Changes the digest** ([`feedback-digest.md`](./feedback-digest.md)): it now
   counts from **D1 by `created_at`**, not a KV cursor (D1/D2).
 - The pipeline diagrams [`02-sequence`](../diagrams/feedback-pipeline/02-sequence.md)
   and [`03-component`](../diagrams/feedback-pipeline/03-component.md) still show

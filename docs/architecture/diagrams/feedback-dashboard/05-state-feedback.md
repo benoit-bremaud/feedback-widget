@@ -38,3 +38,8 @@ stateDiagram-v2
   (spec D4/D8), so the lifecycle is identical across both entry points.
 - No "unread" state is modeled separately; "mark unread" is `Read → New`
   (omitted from the diagram for readability).
+- **State labels ↔ stored values**: the TitleCase states map 1:1 to the
+  lowercase `status` enum in the class diagram —
+  `New→new`, `Read→read`, `Handled→handled`, `IssueCreated→issue_created`,
+  `Refused→refused`. The diagram uses TitleCase for readability; the stored
+  values are the lowercase enum (see [`04-class.md`](./04-class.md)).

@@ -1,5 +1,12 @@
 # Component diagram — feedback-pipeline — structural boundaries
 
+> ⚠️ **Partially superseded (2026-05-24).** This shows the original Pi-as-brain
+> model (KV buffer + Pi as source of truth running Claude/Telegram/GitHub). The
+> **edge-centric pivot** made Cloudflare D1 the primary store and the Worker the
+> brain; the Pi is now only a backup mirror. The current structure is
+> [`../feedback-dashboard/03-component.md`](../feedback-dashboard/03-component.md).
+> Kept for history; do not treat as current.
+
 > **Feature**: feedback consumer pipeline. Design locked 2026-05-21
 > (Q1–Q8).
 > **Companion**: [`01-use-case.md`](./01-use-case.md),
