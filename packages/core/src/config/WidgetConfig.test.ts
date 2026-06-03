@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
   resolveConfig,
+  normalizeLocale,
   MIN_MESSAGE_LENGTH,
   MAX_MESSAGE_LENGTH,
 } from './WidgetConfig'
+import type { WidgetConfig } from './WidgetConfig'
 
 describe('config/resolveConfig', () => {
   it('applies sensible defaults when only required fields are provided', () => {
@@ -107,5 +109,67 @@ describe('config/resolveConfig', () => {
     expect(resolved.theme).toBe('dark')
     expect(resolved.locale).toBe('en')
     expect(resolved.storageNamespace).toBe('acme')
+  })
+})
+
+describe('config/normalizeLocale', () => {
+  it('passes through supported locales unchanged', () => {
+    expect(normalizeLocale('fr')).toBe('fr')
+    expect(normalizeLocale('en')).toBe('en')
+  })
+
+  it('strips the BCP-47 region subtag and keeps the language', () => {
+    expect(normalizeLocale('en-US')).toBe('en')
+    expect(normalizeLocale('fr-FR')).toBe('fr')
+    expect(normalizeLocale('en-GB')).toBe('en')
+    expect(normalizeLocale('fr-CA')).toBe('fr')
+  })
+
+  it('is case-insensitive on the language subtag', () => {
+    expect(normalizeLocale('EN')).toBe('en')
+    expect(normalizeLocale('Fr-fR')).toBe('fr')
+  })
+
+  it('falls back to the default for unsupported language subtags', () => {
+    expect(normalizeLocale('de')).toBe('fr')
+    expect(normalizeLocale('es-ES')).toBe('fr')
+    expect(normalizeLocale('zh-CN')).toBe('fr')
+  })
+
+  it('falls back to the default for non-string / empty / nullish inputs', () => {
+    expect(normalizeLocale(undefined)).toBe('fr')
+    expect(normalizeLocale(null)).toBe('fr')
+    expect(normalizeLocale('')).toBe('fr')
+    expect(normalizeLocale(42)).toBe('fr')
+    expect(normalizeLocale({})).toBe('fr')
+  })
+
+  it('respects an explicit fallback override', () => {
+    expect(normalizeLocale('de', 'en')).toBe('en')
+    expect(normalizeLocale(undefined, 'en')).toBe('en')
+  })
+})
+
+describe('config/resolveConfig — locale normalization (v0.5.1)', () => {
+  it('normalizes a BCP-47 tag passed via the host config', () => {
+    // The static `Locale` type would reject this at compile time, but a JS
+    // host can pass it at runtime. We model that with an explicit cast.
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'demo',
+      locale: 'en-US' as unknown as WidgetConfig['locale'],
+    })
+
+    expect(resolved.locale).toBe('en')
+  })
+
+  it('falls back to the default for an unsupported runtime locale', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'demo',
+      locale: 'de' as unknown as WidgetConfig['locale'],
+    })
+
+    expect(resolved.locale).toBe('fr')
   })
 })
