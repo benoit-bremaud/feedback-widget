@@ -31,37 +31,51 @@ let onUserActionCallback:
   | ((action: { kind: string; [k: string]: unknown }) => void)
   | null = null
 
+// Captured from the (mocked) adapter factories to assert wiring.
+let rateLimiterKey: string | undefined
+let outboxKey: string | undefined
+let detectorRootSelector: string | undefined
+
 vi.mock('./adapters/HttpTransport', () => ({
   createHttpTransport: () => ({ send: transportSend }),
   defaultBackoff: (n: number) => n * 100,
 }))
 
 vi.mock('./adapters/LocalStorageRateLimiter', () => ({
-  createLocalStorageRateLimiter: () => ({
-    canSubmit: rateLimiterCanSubmit,
-    recordSubmission: rateLimiterRecord,
-  }),
+  createLocalStorageRateLimiter: (deps: { key: string }) => {
+    rateLimiterKey = deps.key
+    return {
+      canSubmit: rateLimiterCanSubmit,
+      recordSubmission: rateLimiterRecord,
+    }
+  },
 }))
 
 vi.mock('./adapters/LocalStorageOutbox', () => ({
-  createLocalStorageOutbox: () => ({
-    enqueue: outboxEnqueue,
-    drain: outboxDrain,
-    purgeExpired: vi.fn(async () => undefined),
-    size: vi.fn(async () => 0),
-  }),
+  createLocalStorageOutbox: (deps: { key: string }) => {
+    outboxKey = deps.key
+    return {
+      enqueue: outboxEnqueue,
+      drain: outboxDrain,
+      purgeExpired: vi.fn(async () => undefined),
+      size: vi.fn(async () => 0),
+    }
+  },
 }))
 
 vi.mock('./adapters/IntersectionViewportDetector', () => ({
-  createIntersectionViewportDetector: () => ({
-    startObserving: detectorStart,
-    stopObserving: detectorStop,
-    refresh: detectorRefresh,
-    getCurrentTarget: detectorGetCurrentTarget,
-    enablePointingMode: detectorEnablePointing,
-    disablePointingMode: detectorDisablePointing,
-    clearHighlight: detectorClearHighlight,
-  }),
+  createIntersectionViewportDetector: (deps: { rootSelector?: string }) => {
+    detectorRootSelector = deps.rootSelector
+    return {
+      startObserving: detectorStart,
+      stopObserving: detectorStop,
+      refresh: detectorRefresh,
+      getCurrentTarget: detectorGetCurrentTarget,
+      enablePointingMode: detectorEnablePointing,
+      disablePointingMode: detectorDisablePointing,
+      clearHighlight: detectorClearHighlight,
+    }
+  },
 }))
 
 class FakeFeedbackWidgetElement extends HTMLElement {
@@ -86,6 +100,9 @@ vi.mock('./adapters/WebComponentView', () => ({
 beforeEach(() => {
   vi.clearAllMocks()
   onUserActionCallback = null
+  rateLimiterKey = undefined
+  outboxKey = undefined
+  detectorRootSelector = undefined
   document.body.innerHTML = ''
   // Reset the customElements registry where possible.
   // happy-dom allows (re)definition of the same name across tests if we
@@ -508,7 +525,7 @@ describe('handleSubmit — result branches', () => {
     expect(payload.viewport).toHaveProperty('h')
     expect(typeof payload.locale).toBe('string')
     expect(typeof payload.timestamp).toBe('string')
-    expect(payload.widgetVersion).toBe('0.4.0')
+    expect(payload.widgetVersion).toBe('0.5.0')
     expect(typeof payload.scrollDepth).toBe('number')
     expect(typeof payload.sessionId).toBe('string')
     // reporterName is carried (null when the user typed no name)
@@ -641,5 +658,39 @@ describe('handleSubmit — result branches', () => {
     expect(rendered?.errorMessage).toMatch(
       /n’a pas pu être envoyé ni mis en file/,
     )
+  })
+})
+
+describe('mountFeedbackWidget — v0.5.0 wiring', () => {
+  it('namespaces localStorage keys with the default storageNamespace', () => {
+    mountFeedbackWidget(validConfig)
+
+    expect(rateLimiterKey).toBe('feedback-widget.test-project')
+    expect(outboxKey).toBe('feedback-widget.outbox.test-project')
+  })
+
+  it('honors a custom storageNamespace', () => {
+    mountFeedbackWidget({ ...validConfig, storageNamespace: 'acme' })
+
+    expect(rateLimiterKey).toBe('acme.test-project')
+    expect(outboxKey).toBe('acme.outbox.test-project')
+  })
+
+  it('forwards rootSelector to the viewport detector', () => {
+    mountFeedbackWidget({ ...validConfig, rootSelector: '#app' })
+
+    expect(detectorRootSelector).toBe('#app')
+  })
+
+  it('leaves rootSelector undefined when unset (detector default applies)', () => {
+    mountFeedbackWidget(validConfig)
+
+    expect(detectorRootSelector).toBeUndefined()
+  })
+
+  it('drops a blank rootSelector so the detector keeps its default', () => {
+    mountFeedbackWidget({ ...validConfig, rootSelector: '   ' })
+
+    expect(detectorRootSelector).toBeUndefined()
   })
 })

@@ -55,5 +55,10 @@ export { checkRateLimit, recordSubmission } from './use-cases/TrackRateLimit'
 export type { TrackRateLimitResult } from './use-cases/TrackRateLimit'
 
 // config
-export type { WidgetConfig, ResolvedWidgetConfig } from './config/WidgetConfig'
+export type {
+  WidgetConfig,
+  ResolvedWidgetConfig,
+  Theme,
+  Locale,
+} from './config/WidgetConfig'
 export { resolveConfig, MIN_MESSAGE_LENGTH } from './config/WidgetConfig'

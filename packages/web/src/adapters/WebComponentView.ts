@@ -1,6 +1,7 @@
 import type {
   TopLevelCategory,
   SubCategory,
+  Theme,
 } from '@benoit-bremaud/feedback-widget-core'
 import {
   TOP_LEVEL_CATEGORIES,
@@ -12,65 +13,67 @@ import type {
   View,
   WidgetState,
 } from '@benoit-bremaud/feedback-widget-core'
+import type { Messages } from '../i18n'
+import { LOCALES } from '../i18n'
 
-const CATEGORY_LABELS: Record<
-  TopLevelCategory,
-  { icon: string; label: string }
-> = {
-  bug: { icon: '🐛', label: 'Bug' },
-  typo: { icon: '✏️', label: 'Faute de frappe' },
-  error: { icon: '❌', label: 'Info erronée' },
-  ambiguous: { icon: '🤔', label: 'Formulation ambiguë' },
-  suggestion: { icon: '💡', label: 'Suggestion' },
-  other: { icon: '➕', label: 'Autre' },
+// Icons are locale-neutral, so they stay here; the text labels come from
+// `Messages` (see ../i18n.ts) so the widget can render in any locale.
+const CATEGORY_ICONS: Record<TopLevelCategory, string> = {
+  bug: '🐛',
+  typo: '✏️',
+  error: '❌',
+  ambiguous: '🤔',
+  suggestion: '💡',
+  other: '➕',
 }
 
-const SUB_CATEGORY_LABELS: Record<
-  SubCategory,
-  { icon: string; label: string }
-> = {
+const SUB_CATEGORY_ICONS: Record<SubCategory, string> = {
   // bug
-  crash: { icon: '💥', label: 'Plantage' },
-  'broken-feature': { icon: '🔧', label: 'Fonction cassée' },
-  'visual-glitch': { icon: '🎨', label: 'Bug visuel' },
-  'wrong-output': { icon: '📊', label: 'Résultat erroné' },
-  regression: { icon: '⏮️', label: 'Régression' },
+  crash: '💥',
+  'broken-feature': '🔧',
+  'visual-glitch': '🎨',
+  'wrong-output': '📊',
+  regression: '⏮️',
   // typo
-  prose: { icon: '📝', label: 'Texte' },
-  'code-sample': { icon: '💻', label: 'Exemple de code' },
-  heading: { icon: '🔠', label: 'Titre' },
-  'link-text': { icon: '🔗', label: 'Texte de lien' },
-  'alt-text': { icon: '🖼️', label: 'Texte alternatif' },
+  prose: '📝',
+  'code-sample': '💻',
+  heading: '🔠',
+  'link-text': '🔗',
+  'alt-text': '🖼️',
   // error
-  'js-console': { icon: '🐞', label: 'Erreur console' },
-  'http-404': { icon: '🔍', label: 'Page introuvable (404)' },
-  'http-5xx': { icon: '🛑', label: 'Erreur serveur (5xx)' },
-  'broken-link': { icon: '🚧', label: 'Lien mort' },
-  'missing-asset': { icon: '📦', label: 'Ressource manquante' },
+  'js-console': '🐞',
+  'http-404': '🔍',
+  'http-5xx': '🛑',
+  'broken-link': '🚧',
+  'missing-asset': '📦',
   // ambiguous
-  wording: { icon: '💬', label: 'Formulation' },
-  navigation: { icon: '🧭', label: 'Navigation' },
-  terminology: { icon: '📖', label: 'Terminologie' },
-  'example-unclear': { icon: '❓', label: 'Exemple peu clair' },
-  'missing-context': { icon: '🧩', label: 'Contexte manquant' },
+  wording: '💬',
+  navigation: '🧭',
+  terminology: '📖',
+  'example-unclear': '❓',
+  'missing-context': '🧩',
   // suggestion
-  'new-feature': { icon: '✨', label: 'Nouvelle fonction' },
-  improvement: { icon: '📈', label: 'Amélioration' },
-  'new-example': { icon: '➕', label: 'Nouvel exemple' },
-  'content-refactor': { icon: '♻️', label: 'Refonte du contenu' },
-  accessibility: { icon: '♿', label: 'Accessibilité' },
+  'new-feature': '✨',
+  improvement: '📈',
+  'new-example': '➕',
+  'content-refactor': '♻️',
+  accessibility: '♿',
 }
 
 export interface WidgetViewOptions {
   maxMessageLength: number
   categories: readonly TopLevelCategory[]
   position: 'bottom-right' | 'bottom-left' | 'bottom-center'
+  theme: Theme | null
+  messages: Messages
 }
 
 const DEFAULT_VIEW_OPTIONS: WidgetViewOptions = {
   maxMessageLength: 500,
   categories: TOP_LEVEL_CATEGORIES,
   position: 'bottom-right',
+  theme: null,
+  messages: LOCALES.fr,
 }
 
 export interface FeedbackWidgetElement extends HTMLElement {
@@ -130,6 +133,13 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       }
       this.options = { ...this.options, ...defined }
       this.setAttribute('data-position', this.options.position)
+      // Drive the Shadow-DOM palette: a host-provided theme wins; absence
+      // (null) leaves the default light scheme (no attribute).
+      if (this.options.theme) {
+        this.setAttribute('data-theme', this.options.theme)
+      } else {
+        this.removeAttribute('data-theme')
+      }
       this.renderInternal()
     }
 
@@ -175,19 +185,21 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
     }
 
     private renderPointingBar(): string {
+      const m = this.options.messages
       return `
         <div class="fw-pointing-bar" role="dialog" aria-modal="false" aria-labelledby="fw-title">
-          <p class="fw-pointing-bar-text" id="fw-title">Tape sur le passage que tu veux signaler.</p>
-          <button type="button" class="fw-btn fw-btn-ghost fw-btn-compact" data-action="cancel-pointing">Annuler</button>
+          <p class="fw-pointing-bar-text" id="fw-title">${m.pointing.text}</p>
+          <button type="button" class="fw-btn fw-btn-ghost fw-btn-compact" data-action="cancel-pointing">${m.cancel}</button>
         </div>
       `
     }
 
     private renderButton(): string {
+      const m = this.options.messages
       return `
-      <button class="fw-trigger" type="button" aria-label="Signaler un problème sur cette page" data-action="open">
+      <button class="fw-trigger" type="button" aria-label="${m.trigger.aria}" data-action="open">
         <span aria-hidden="true">🚩</span>
-        <span class="fw-trigger-label">Signaler</span>
+        <span class="fw-trigger-label">${m.trigger.label}</span>
       </button>
     `
     }
@@ -196,7 +208,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       return `
       <div class="fw-backdrop" data-action="close"></div>
       <div class="fw-modal" role="dialog" aria-modal="true" aria-labelledby="fw-title">
-        <button class="fw-close" type="button" aria-label="Fermer" data-action="close">×</button>
+        <button class="fw-close" type="button" aria-label="${this.options.messages.close}" data-action="close">×</button>
         ${this.renderStep()}
       </div>
     `
@@ -232,103 +244,106 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       const excerpt =
         this.state.target?.excerpt || this.state.target?.label || ''
       const headingText = this.state.target?.headingText ?? ''
+      const m = this.options.messages
 
       return `
-      <h2 id="fw-title" class="fw-title">C'est bien ce passage&nbsp;?</h2>
+      <h2 id="fw-title" class="fw-title">${m.targetConfirm.title}</h2>
       ${
         hasTarget
           ? `<div class="fw-target-preview">
              ${headingText ? `<p class="fw-target-heading">§ ${escapeHtml(headingText)}</p>` : ''}
              <p class="fw-target-excerpt">« ${escapeHtml(excerpt)} »</p>
            </div>`
-          : `<p class="fw-subtitle">Aucun passage précis détecté — tu peux quand même continuer ou choisir un bloc.</p>`
+          : `<p class="fw-subtitle">${m.targetConfirm.noTarget}</p>`
       }
       <div class="fw-actions">
-        <button type="button" class="fw-btn fw-btn-ghost" data-action="reject-target">Choisir un autre</button>
-        <button type="button" class="fw-btn fw-btn-primary" data-action="confirm-target">Oui, continuer</button>
+        <button type="button" class="fw-btn fw-btn-ghost" data-action="reject-target">${m.targetConfirm.reject}</button>
+        <button type="button" class="fw-btn fw-btn-primary" data-action="confirm-target">${m.targetConfirm.confirm}</button>
       </div>
     `
     }
 
     private renderTypeStep(): string {
+      const m = this.options.messages
       const buttons = this.options.categories
         .map((cat) => {
-          const meta = CATEGORY_LABELS[cat]
-          if (!meta) return ''
+          const icon = CATEGORY_ICONS[cat]
+          if (!icon) return ''
           return `
         <button type="button" class="fw-category" data-category="${cat}">
-          <span class="fw-category-icon" aria-hidden="true">${meta.icon}</span>
-          <span class="fw-category-label">${meta.label}</span>
+          <span class="fw-category-icon" aria-hidden="true">${icon}</span>
+          <span class="fw-category-label">${m.categoryLabels[cat]}</span>
         </button>
       `
         })
         .join('')
 
       return `
-      <h2 id="fw-title" class="fw-title">Qu'est-ce qui ne va pas sur cette page&nbsp;?</h2>
-      <p class="fw-subtitle">Choisis le type de problème.</p>
-      <div class="fw-categories" role="group" aria-label="Type de problème">
+      <h2 id="fw-title" class="fw-title">${m.type.title}</h2>
+      <p class="fw-subtitle">${m.type.subtitle}</p>
+      <div class="fw-categories" role="group" aria-label="${m.type.aria}">
         ${buttons}
       </div>
     `
     }
 
     private renderSubCategoryStep(): string {
+      const m = this.options.messages
       const cat = this.state.selectedCategory
       if (cat === null || cat === 'other') {
         // Defensive: 'other' has no sub-categories and should never reach
         // this step. Fall back to the category picker.
         return this.renderTypeStep()
       }
-      const catMeta = CATEGORY_LABELS[cat]
       const buttons = SUB_CATEGORIES_BY_CATEGORY[cat]
         .map((sub) => {
-          const meta = SUB_CATEGORY_LABELS[sub]
-          if (!meta) return ''
+          const icon = SUB_CATEGORY_ICONS[sub]
+          if (!icon) return ''
           return `
         <button type="button" class="fw-category" data-sub-category="${sub}">
-          <span class="fw-category-icon" aria-hidden="true">${meta.icon}</span>
-          <span class="fw-category-label">${meta.label}</span>
+          <span class="fw-category-icon" aria-hidden="true">${icon}</span>
+          <span class="fw-category-label">${m.subCategoryLabels[sub]}</span>
         </button>
       `
         })
         .join('')
 
       return `
-      <h2 id="fw-title" class="fw-title"><span aria-hidden="true">${catMeta.icon}</span> ${catMeta.label}</h2>
-      <p class="fw-subtitle">Précise la nature du problème.</p>
-      <div class="fw-categories" role="group" aria-label="Sous-catégorie">
+      <h2 id="fw-title" class="fw-title"><span aria-hidden="true">${CATEGORY_ICONS[cat]}</span> ${m.categoryLabels[cat]}</h2>
+      <p class="fw-subtitle">${m.subCategory.subtitle}</p>
+      <div class="fw-categories" role="group" aria-label="${m.subCategory.aria}">
         ${buttons}
       </div>
       <div class="fw-actions">
-        <button type="button" class="fw-btn fw-btn-ghost" data-action="back">Retour</button>
+        <button type="button" class="fw-btn fw-btn-ghost" data-action="back">${m.back}</button>
       </div>
     `
     }
 
     private renderPrecisionStep(): string {
+      const m = this.options.messages
       const cat = this.state.selectedCategory
       const sub = this.state.selectedSubCategory
-      const catLabel = cat ? (CATEGORY_LABELS[cat]?.label ?? '') : ''
-      const subLabel = sub ? (SUB_CATEGORY_LABELS[sub]?.label ?? '') : ''
+      const catLabel = cat ? (m.categoryLabels[cat] ?? '') : ''
+      const subLabel = sub ? (m.subCategoryLabels[sub] ?? '') : ''
       const breadcrumb = subLabel ? `${catLabel} › ${subLabel}` : catLabel
       return `
       <h2 id="fw-title" class="fw-title">${escapeHtml(breadcrumb)}</h2>
-      <p class="fw-subtitle">Décris le problème (obligatoire), et ton prénom si tu veux.</p>
+      <p class="fw-subtitle">${m.precision.subtitle}</p>
       <form class="fw-form" data-action="submit-form" novalidate>
         <label class="fw-label">
-          <span class="fw-label-text">Description</span>
+          <span class="fw-label-text">${m.precision.descriptionLabel}</span>
           <textarea
             class="fw-textarea"
             name="message"
             maxlength="${this.options.maxMessageLength}"
-            placeholder="Décris ce que tu as vu (10 caractères minimum)"
+            placeholder="${m.precision.placeholder}"
             required
           >${escapeHtml(this.state.userMessage)}</textarea>
         </label>
         ${this.state.errorMessage ? `<p class="fw-inline-error" role="alert">${escapeHtml(this.state.errorMessage)}</p>` : ''}
         <label class="fw-label">
-          <span class="fw-label-text">Prénom (optionnel)</span>
+          <span class="fw-label-text">${m.precision.reporterLabel}</span>
           <input
             class="fw-input"
             type="text"
@@ -340,39 +355,41 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         </label>
         <input type="text" name="website" class="fw-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="fw-actions">
-          <button type="button" class="fw-btn fw-btn-ghost" data-action="back">Retour</button>
-          <button type="submit" class="fw-btn fw-btn-primary">Envoyer</button>
+          <button type="button" class="fw-btn fw-btn-ghost" data-action="back">${m.back}</button>
+          <button type="submit" class="fw-btn fw-btn-primary">${m.precision.submit}</button>
         </div>
-        <p class="fw-privacy">Les retours sont envoyés anonymement. Le prénom n'est utilisé que pour identifier ton feedback.</p>
+        <p class="fw-privacy">${m.precision.privacy}</p>
       </form>
     `
     }
 
     private renderSendingStep(): string {
       return `
-      <h2 id="fw-title" class="fw-title">Envoi en cours…</h2>
+      <h2 id="fw-title" class="fw-title">${this.options.messages.sending}</h2>
       <div class="fw-spinner" aria-hidden="true"></div>
     `
     }
 
     private renderConfirmedStep(): string {
+      const m = this.options.messages
       return `
-      <h2 id="fw-title" class="fw-title">Merci&nbsp;! 🙏</h2>
-      <p class="fw-subtitle">Ton retour a bien été envoyé.</p>
+      <h2 id="fw-title" class="fw-title">${m.confirmed.title}</h2>
+      <p class="fw-subtitle">${m.confirmed.subtitle}</p>
       <div class="fw-actions fw-actions-center">
-        <button type="button" class="fw-btn fw-btn-ghost" data-action="close">Fermer</button>
-        <button type="button" class="fw-btn fw-btn-primary" data-action="reset">Signaler autre chose</button>
+        <button type="button" class="fw-btn fw-btn-ghost" data-action="close">${m.close}</button>
+        <button type="button" class="fw-btn fw-btn-primary" data-action="reset">${m.confirmed.reset}</button>
       </div>
     `
     }
 
     private renderErrorStep(): string {
+      const m = this.options.messages
       return `
-      <h2 id="fw-title" class="fw-title">Oups…</h2>
-      <p class="fw-subtitle">${escapeHtml(this.state.errorMessage ?? 'Une erreur est survenue.')}</p>
+      <h2 id="fw-title" class="fw-title">${m.error.title}</h2>
+      <p class="fw-subtitle">${escapeHtml(this.state.errorMessage ?? m.error.defaultMessage)}</p>
       <div class="fw-actions fw-actions-center">
-        <button type="button" class="fw-btn fw-btn-ghost" data-action="close">Fermer</button>
-        <button type="button" class="fw-btn fw-btn-primary" data-action="submit">Réessayer</button>
+        <button type="button" class="fw-btn fw-btn-ghost" data-action="close">${m.close}</button>
+        <button type="button" class="fw-btn fw-btn-primary" data-action="submit">${m.error.retry}</button>
       </div>
     `
     }
@@ -577,10 +594,13 @@ export function createWebComponentView(element: FeedbackWidgetElement): View {
       element.updateState(next)
     },
     showMailtoFallback(mailtoUrl: string, message: string): void {
+      // `message` already carries the localized "email us:" lead-in (composed
+      // by the controller, which holds the active locale); this adapter only
+      // appends the address so it stays language-agnostic.
       const next: WidgetState = {
         ...lastState,
         step: 'error',
-        errorMessage: `${message} — tu peux aussi nous écrire par mail : ${mailtoUrl}`,
+        errorMessage: `${message}${mailtoUrl}`,
       }
       lastState = next
       element.updateState(next)
@@ -605,6 +625,43 @@ const STYLES = `
     z-index: 2147483000;
     pointer-events: none;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    /* Light palette (default). Dark overrides below. A host drives the
+       scheme via the data-theme attribute (see setOptions). */
+    --fw-accent: #c8102e;
+    --fw-accent-strong: #a50d25;
+    --fw-on-accent: #fff;
+    --fw-surface: #fff;
+    --fw-surface-2: #f6f6f8;
+    --fw-fg: #111;
+    --fw-muted: #555;
+    --fw-border: #ccc;
+    --fw-border-subtle: #e0e0e5;
+    --fw-error-bg: #fff3f3;
+    --fw-error-border: #e5a5a5;
+    --fw-error-fg: #a50d25;
+    --fw-focus-ring: #000;
+    --fw-backdrop: rgba(0, 0, 0, 0.45);
+    --fw-shadow: rgba(0, 0, 0, 0.3);
+    --fw-shadow-soft: rgba(0, 0, 0, 0.25);
+  }
+  :host([data-theme="dark"]) {
+    --fw-accent: #e8364f;
+    --fw-accent-strong: #c8102e;
+    --fw-on-accent: #fff;
+    --fw-surface: #1f1f27;
+    --fw-surface-2: #2a2a33;
+    --fw-fg: #f2f2f5;
+    --fw-muted: #a8a8b3;
+    --fw-border: #45454f;
+    --fw-border-subtle: #3a3a43;
+    --fw-error-bg: #3a1f23;
+    --fw-error-border: #7a3b42;
+    --fw-error-fg: #ffb3bd;
+    --fw-focus-ring: #fff;
+    --fw-backdrop: rgba(0, 0, 0, 0.6);
+    --fw-shadow: rgba(0, 0, 0, 0.6);
+    --fw-shadow-soft: rgba(0, 0, 0, 0.5);
   }
   .fw-trigger {
     position: absolute;
@@ -617,20 +674,20 @@ const STYLES = `
     padding: 10px 14px;
     border: none;
     border-radius: 999px;
-    background: #c8102e;
-    color: #fff;
+    background: var(--fw-accent);
+    color: var(--fw-on-accent);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     opacity: 0.55;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 14px var(--fw-shadow-soft);
     transition: opacity 120ms ease, transform 120ms ease;
   }
   .fw-trigger:hover,
   .fw-trigger:focus-visible {
     opacity: 1;
     transform: translateY(-1px);
-    outline: 2px solid #fff;
+    outline: 2px solid var(--fw-on-accent);
     outline-offset: 2px;
   }
   .fw-trigger-label {
@@ -643,7 +700,7 @@ const STYLES = `
   .fw-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.45);
+    background: var(--fw-backdrop);
     z-index: 1;
     pointer-events: auto;
   }
@@ -653,10 +710,10 @@ const STYLES = `
     right: 16px;
     z-index: 2;
     pointer-events: auto;
-    background: #fff;
-    color: #111;
+    background: var(--fw-surface);
+    color: var(--fw-fg);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 40px var(--fw-shadow);
     padding: 20px;
     width: min(420px, calc(100vw - 32px));
     max-height: calc(100vh - 32px);
@@ -678,11 +735,11 @@ const STYLES = `
     font-size: 28px;
     line-height: 1;
     cursor: pointer;
-    color: #666;
+    color: var(--fw-muted);
   }
   .fw-close:hover,
   .fw-close:focus-visible {
-    color: #000;
+    color: var(--fw-fg);
     outline: none;
   }
   .fw-title {
@@ -693,7 +750,7 @@ const STYLES = `
   .fw-subtitle {
     margin: 0 0 16px;
     font-size: 14px;
-    color: #555;
+    color: var(--fw-muted);
   }
   .fw-categories {
     display: grid;
@@ -706,18 +763,18 @@ const STYLES = `
     align-items: center;
     gap: 6px;
     padding: 14px 8px;
-    background: #f6f6f8;
-    border: 1px solid #e0e0e5;
+    background: var(--fw-surface-2);
+    border: 1px solid var(--fw-border-subtle);
     border-radius: 10px;
     cursor: pointer;
     font-size: 14px;
-    color: #111;
+    color: var(--fw-fg);
     transition: background 120ms ease, border-color 120ms ease;
   }
   .fw-category:hover,
   .fw-category:focus-visible {
-    background: #fff;
-    border-color: #c8102e;
+    background: var(--fw-surface);
+    border-color: var(--fw-accent);
     outline: none;
   }
   .fw-category-icon {
@@ -740,10 +797,10 @@ const STYLES = `
   .fw-textarea, .fw-input {
     font: inherit;
     padding: 8px 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--fw-border);
     border-radius: 8px;
-    background: #fff;
-    color: #111;
+    background: var(--fw-surface);
+    color: var(--fw-fg);
   }
   .fw-textarea {
     min-height: 80px;
@@ -751,9 +808,9 @@ const STYLES = `
   }
   .fw-textarea:focus,
   .fw-input:focus {
-    outline: 2px solid #c8102e;
+    outline: 2px solid var(--fw-accent);
     outline-offset: 1px;
-    border-color: #c8102e;
+    border-color: var(--fw-accent);
   }
   .fw-honeypot {
     position: absolute;
@@ -781,51 +838,51 @@ const STYLES = `
     border: none;
   }
   .fw-btn-primary {
-    background: #c8102e;
-    color: #fff;
+    background: var(--fw-accent);
+    color: var(--fw-on-accent);
   }
   .fw-btn-primary:hover,
   .fw-btn-primary:focus-visible {
-    background: #a50d25;
-    outline: 2px solid #000;
+    background: var(--fw-accent-strong);
+    outline: 2px solid var(--fw-focus-ring);
     outline-offset: 2px;
   }
   .fw-btn-ghost {
     background: transparent;
-    color: #111;
-    border: 1px solid #ccc;
+    color: var(--fw-fg);
+    border: 1px solid var(--fw-border);
   }
   .fw-btn-ghost:hover,
   .fw-btn-ghost:focus-visible {
-    background: #f0f0f2;
-    outline: 2px solid #000;
+    background: var(--fw-surface-2);
+    outline: 2px solid var(--fw-focus-ring);
     outline-offset: 2px;
   }
   .fw-privacy {
     margin: 8px 0 0;
     font-size: 12px;
-    color: #666;
+    color: var(--fw-muted);
   }
   .fw-inline-error {
     margin: 0;
     padding: 8px 10px;
-    background: #fff3f3;
-    border: 1px solid #e5a5a5;
+    background: var(--fw-error-bg);
+    border: 1px solid var(--fw-error-border);
     border-radius: 6px;
-    color: #a50d25;
+    color: var(--fw-error-fg);
     font-size: 13px;
   }
   .fw-target-preview {
     margin: 0 0 12px;
     padding: 10px 12px;
-    background: #f6f6f8;
-    border-left: 3px solid #c8102e;
+    background: var(--fw-surface-2);
+    border-left: 3px solid var(--fw-accent);
     border-radius: 4px;
     font-size: 13px;
   }
   .fw-target-heading {
     margin: 0 0 4px;
-    color: #555;
+    color: var(--fw-muted);
     font-weight: 600;
     font-size: 12px;
     text-transform: uppercase;
@@ -833,7 +890,7 @@ const STYLES = `
   }
   .fw-target-excerpt {
     margin: 0;
-    color: #222;
+    color: var(--fw-fg);
     font-style: italic;
     line-height: 1.4;
   }
@@ -853,10 +910,10 @@ const STYLES = `
     align-items: center;
     gap: 12px;
     padding: 10px 14px;
-    background: #fff;
-    color: #111;
+    background: var(--fw-surface);
+    color: var(--fw-fg);
     border-radius: 999px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 20px var(--fw-shadow-soft);
     max-width: calc(100vw - 32px);
   }
   .fw-pointing-bar-text {
@@ -891,8 +948,8 @@ const STYLES = `
   .fw-spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid #eee;
-    border-top-color: #c8102e;
+    border: 3px solid var(--fw-border);
+    border-top-color: var(--fw-accent);
     border-radius: 50%;
     margin: 16px auto;
     animation: fw-spin 800ms linear infinite;

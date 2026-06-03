@@ -6,6 +6,7 @@ import {
   defineFeedbackWidgetElement,
   type FeedbackWidgetElement,
 } from './WebComponentView'
+import { LOCALES } from '../i18n'
 
 const TAG = 'feedback-widget-test'
 
@@ -423,5 +424,38 @@ describe('setOptions', () => {
     // No throw on partial input.
     expect(() => el.setOptions({ maxMessageLength: 300 })).not.toThrow()
     expect(() => el.setOptions({ categories: ['bug'] })).not.toThrow()
+  })
+})
+
+describe('i18n + theme (v0.5.0)', () => {
+  it('renders French copy by default', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+
+    view.render({ ...initialState(), step: 'type' })
+
+    expect(el.shadowRoot!.textContent).toContain('Choisis le type de problème.')
+  })
+
+  it('renders English copy when the English messages are provided', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+
+    el.setOptions({ messages: LOCALES.en })
+    view.render({ ...initialState(), step: 'type' })
+
+    const text = el.shadowRoot!.textContent ?? ''
+    expect(text).toContain('Choose the type of problem.')
+    expect(text).not.toContain('Choisis le type de problème.')
+  })
+
+  it('reflects an explicit theme as data-theme and clears it for the light default', () => {
+    const el = mountElement()
+
+    el.setOptions({ theme: 'dark' })
+    expect(el.getAttribute('data-theme')).toBe('dark')
+
+    el.setOptions({ theme: null })
+    expect(el.hasAttribute('data-theme')).toBe(false)
   })
 })
