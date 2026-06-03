@@ -434,9 +434,7 @@ describe('i18n + theme (v0.5.0)', () => {
 
     view.render({ ...initialState(), step: 'type' })
 
-    expect(el.shadowRoot!.textContent).toContain(
-      'Choisis le type de problème.',
-    )
+    expect(el.shadowRoot!.textContent).toContain('Choisis le type de problème.')
   })
 
   it('renders English copy when the English messages are provided', () => {

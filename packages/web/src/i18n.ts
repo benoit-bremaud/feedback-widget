@@ -143,7 +143,8 @@ const fr: Messages = {
       'Ton retour a été refusé (format invalide). Réessaie en le reformulant.',
     networkBase: 'Pas de connexion réseau',
     serverBase: 'Le service est momentanément indisponible',
-    mailtoSuffixEnqueued: ' — ton retour sera renvoyé automatiquement plus tard.',
+    mailtoSuffixEnqueued:
+      ' — ton retour sera renvoyé automatiquement plus tard.',
     mailtoSuffixNotEnqueued:
       ' — impossible de le mettre en file d’attente, utilise plutôt le mail ci-dessous.',
     mailtoLinkPrefix: ' — tu peux aussi nous écrire par mail : ',
@@ -156,8 +157,7 @@ const fr: Messages = {
   },
   mailto: {
     subject: 'Signalement d’un problème',
-    bodyIntro:
-      'Voici le contenu du retour (l’envoi automatique a échoué) :',
+    bodyIntro: 'Voici le contenu du retour (l’envoi automatique a échoué) :',
   },
 }
 
