@@ -70,9 +70,7 @@ describe('adapters/migrateLegacyStorage', () => {
       migrateLegacyStorage({ storage, currentPrefix: 'feedback-widget' }),
     ).toBe(0)
     expect(storage.getItem('feedback-widget.outbox.alpha')).toBe('[]')
-    expect(
-      storage.getItem(`${LEGACY_STORAGE_PREFIX}.outbox.alpha`),
-    ).toBeNull()
+    expect(storage.getItem(`${LEGACY_STORAGE_PREFIX}.outbox.alpha`)).toBeNull()
   })
 
   it('does not overwrite fresher data already under the new namespace', () => {
@@ -87,11 +85,11 @@ describe('adapters/migrateLegacyStorage', () => {
     })
 
     expect(migrated).toBe(0) // the new value wins, legacy is discarded
-    expect(storage.getItem('feedback-widget.outbox.alpha')).toBe('[{"id":"NEW"}]')
+    expect(storage.getItem('feedback-widget.outbox.alpha')).toBe(
+      '[{"id":"NEW"}]',
+    )
     // The legacy key is still cleaned up even when the new key won.
-    expect(
-      storage.getItem(`${LEGACY_STORAGE_PREFIX}.outbox.alpha`),
-    ).toBeNull()
+    expect(storage.getItem(`${LEGACY_STORAGE_PREFIX}.outbox.alpha`)).toBeNull()
   })
 
   it('does nothing when legacyPrefix === currentPrefix (host pinned legacy)', () => {
