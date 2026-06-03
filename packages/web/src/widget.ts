@@ -24,7 +24,6 @@ import { LOCALES } from './i18n'
 import type { Messages } from './i18n'
 
 const TAG_NAME = 'feedback-widget'
-const STORAGE_KEY_PREFIX = 'impropedia.feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 // Must track packages/web/package.json version. The version.test.ts
 // node-env test guards against drift on future bumps.
@@ -89,7 +88,7 @@ function attachController(
 
   const rateLimiter = createLocalStorageRateLimiter({
     storage: window.localStorage,
-    key: `${STORAGE_KEY_PREFIX}.${config.projectId}`,
+    key: `${config.storageNamespace}.${config.projectId}`,
     windowMs: config.rateLimitWindowMs,
     maxAttempts: config.rateLimitMaxAttempts,
     now: () => Date.now(),
@@ -107,13 +106,14 @@ function attachController(
 
   const outbox = createLocalStorageOutbox({
     storage: window.localStorage,
-    key: `${STORAGE_KEY_PREFIX}.outbox.${config.projectId}`,
+    key: `${config.storageNamespace}.outbox.${config.projectId}`,
     now: () => Date.now(),
   })
 
   const detector: ViewportDetector = createIntersectionViewportDetector({
     doc: document,
     win: window,
+    rootSelector: config.rootSelector ?? undefined,
   })
 
   const contextCollector = createBrowserContextCollector({
