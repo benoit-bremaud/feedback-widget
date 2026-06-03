@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-04
+
+### Fixed
+
+- **Locale normalization** — a region-tagged `locale` (e.g. `en-US`, `fr-FR`,
+  as commonly produced by `navigator.language`) no longer resolves to
+  `undefined` messages and crash the controller on submit. The value is
+  coerced to its base language subtag (`en-US` → `en`) and falls back to the
+  default (`fr`) when unsupported, via the new `normalizeLocale` guard in
+  `resolveConfig`.
+
+### Changed
+
+- `Locale` is now derived from a single `SUPPORTED_LOCALES` source so the
+  runtime list and the compile-time union cannot drift apart (internal).
+
 ## [0.5.0] - 2026-06-03
 
 ### Added
