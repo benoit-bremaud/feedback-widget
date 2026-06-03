@@ -11,11 +11,14 @@ export const MAX_MESSAGE_LENGTH = 2000
 /** Widget colour scheme. */
 export type Theme = 'dark' | 'light'
 
-/** Widget UI language. */
-export type Locale = 'fr' | 'en'
+/**
+ * The complete set of widget UI languages. `Locale` is derived from this, so
+ * the runtime list and the compile-time union cannot drift apart.
+ */
+const SUPPORTED_LOCALES = ['fr', 'en'] as const
 
-/** The complete set of widget UI languages — kept in lockstep with `Locale`. */
-const SUPPORTED_LOCALES: readonly Locale[] = ['fr', 'en']
+/** Widget UI language. */
+export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
 /**
  * Coerce a host-supplied locale string into one of the supported `Locale`
