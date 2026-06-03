@@ -80,4 +80,32 @@ describe('config/resolveConfig', () => {
 
     expect(resolved.maxMessageLength).toBe(MAX_MESSAGE_LENGTH)
   })
+
+  it('applies the v0.5.0 multi-project defaults', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'demo',
+    })
+
+    expect(resolved.rootSelector).toBeNull()
+    expect(resolved.theme).toBeNull()
+    expect(resolved.locale).toBe('fr')
+    expect(resolved.storageNamespace).toBe('feedback-widget')
+  })
+
+  it('respects the v0.5.0 overrides', () => {
+    const resolved = resolveConfig({
+      endpoint: 'https://api.test/',
+      projectId: 'demo',
+      rootSelector: '#root',
+      theme: 'dark',
+      locale: 'en',
+      storageNamespace: 'acme',
+    })
+
+    expect(resolved.rootSelector).toBe('#root')
+    expect(resolved.theme).toBe('dark')
+    expect(resolved.locale).toBe('en')
+    expect(resolved.storageNamespace).toBe('acme')
+  })
 })

@@ -8,6 +8,12 @@ import type { TopLevelCategory } from '../domain/Feedback'
 export const MIN_MESSAGE_LENGTH = 10
 export const MAX_MESSAGE_LENGTH = 2000
 
+/** Widget colour scheme. */
+export type Theme = 'dark' | 'light'
+
+/** Widget UI language. */
+export type Locale = 'fr' | 'en'
+
 export interface WidgetConfig {
   endpoint: string
   projectId: string
@@ -21,14 +27,40 @@ export interface WidgetConfig {
   transportTimeoutMs?: number
   mailtoFallback?: string
   position?: 'bottom-right' | 'bottom-left' | 'bottom-center'
+  /**
+   * CSS selector for the root element the pointing-mode picker scans for
+   * targetable blocks. Defaults to `'main'` (the detector falls back to
+   * `document.body` when not found). Set this when the reportable content
+   * lives outside `<main>` — e.g. modals/portals rendered as siblings of it.
+   */
+  rootSelector?: string
+  /**
+   * Force the widget colour scheme. When omitted the widget keeps its light
+   * palette. A host passes its own resolved theme so the bubble matches the
+   * surrounding UI.
+   */
+  theme?: Theme
+  /** UI language for the widget's own strings. Defaults to `'fr'`. */
+  locale?: Locale
+  /**
+   * localStorage key prefix for the per-project rate-limit and outbox state.
+   * Defaults to `'feedback-widget'`. Override to isolate storage from other
+   * widget instances sharing the same origin.
+   */
+  storageNamespace?: string
 }
 
 export interface ResolvedWidgetConfig extends Required<
-  Omit<WidgetConfig, 'token' | 'categories' | 'mailtoFallback'>
+  Omit<
+    WidgetConfig,
+    'token' | 'categories' | 'mailtoFallback' | 'rootSelector' | 'theme'
+  >
 > {
   token: string | null
   categories: readonly TopLevelCategory[] | null
   mailtoFallback: string | null
+  rootSelector: string | null
+  theme: Theme | null
 }
 
 const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
@@ -42,6 +74,10 @@ const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
   transportTimeoutMs: 10_000,
   mailtoFallback: null,
   position: 'bottom-right',
+  rootSelector: null,
+  theme: null,
+  locale: 'fr',
+  storageNamespace: 'feedback-widget',
 }
 
 export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
@@ -70,5 +106,9 @@ export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
     transportTimeoutMs: input.transportTimeoutMs ?? DEFAULTS.transportTimeoutMs,
     mailtoFallback: input.mailtoFallback ?? null,
     position: input.position ?? DEFAULTS.position,
+    rootSelector: input.rootSelector ?? null,
+    theme: input.theme ?? null,
+    locale: input.locale ?? DEFAULTS.locale,
+    storageNamespace: input.storageNamespace ?? DEFAULTS.storageNamespace,
   }
 }
