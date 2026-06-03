@@ -14,6 +14,33 @@ export type Theme = 'dark' | 'light'
 /** Widget UI language. */
 export type Locale = 'fr' | 'en'
 
+/** The complete set of widget UI languages — kept in lockstep with `Locale`. */
+const SUPPORTED_LOCALES: readonly Locale[] = ['fr', 'en']
+
+/**
+ * Coerce a host-supplied locale string into one of the supported `Locale`
+ * values. A TypeScript host is constrained to the `Locale` union, but JS
+ * hosts (and runtime config loaded from JSON, query params, `navigator.
+ * language`, …) may pass a BCP-47 tag like `'en-US'` or `'fr-FR'`. Without
+ * this guard, `LOCALES[config.locale]` is `undefined` and downstream code
+ * crashes at the first render.
+ *
+ * Strategy: lowercase the input, take the language subtag (everything before
+ * the first `-`), accept it if it is in `SUPPORTED_LOCALES`, otherwise fall
+ * back to the default. Non-strings (`undefined`, numbers, etc.) also fall
+ * back to the default — `resolveConfig` is the runtime boundary.
+ */
+export function normalizeLocale(
+  input: unknown,
+  fallback: Locale = 'fr',
+): Locale {
+  if (typeof input !== 'string') return fallback
+  const base = input.toLowerCase().split('-')[0]
+  return (SUPPORTED_LOCALES as readonly string[]).includes(base ?? '')
+    ? (base as Locale)
+    : fallback
+}
+
 export interface WidgetConfig {
   endpoint: string
   projectId: string
@@ -108,7 +135,10 @@ export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
     position: input.position ?? DEFAULTS.position,
     rootSelector: input.rootSelector ?? null,
     theme: input.theme ?? null,
-    locale: input.locale ?? DEFAULTS.locale,
+    // Defensive normalization — runtime callers (JS, JSON config, query
+    // params) may pass a BCP-47 tag like `'en-US'` that the static `Locale`
+    // type would reject at compile time but doesn't block at runtime.
+    locale: normalizeLocale(input.locale, DEFAULTS.locale),
     storageNamespace: input.storageNamespace ?? DEFAULTS.storageNamespace,
   }
 }

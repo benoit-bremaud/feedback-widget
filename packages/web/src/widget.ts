@@ -15,6 +15,7 @@ import { createLocalStorageRateLimiter } from './adapters/LocalStorageRateLimite
 import { createLocalStorageOutbox } from './adapters/LocalStorageOutbox'
 import { createIntersectionViewportDetector } from './adapters/IntersectionViewportDetector'
 import { createBrowserContextCollector } from './adapters/BrowserContextCollector'
+import { migrateLegacyStorage } from './adapters/migrateLegacyStorage'
 import type { FeedbackWidgetElement } from './adapters/WebComponentView'
 import {
   createWebComponentView,
@@ -27,7 +28,7 @@ const TAG_NAME = 'feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 // Must track packages/web/package.json version. The version.test.ts
 // node-env test guards against drift on future bumps.
-export const WIDGET_VERSION = '0.5.0'
+export const WIDGET_VERSION = '0.5.1'
 
 export interface FeedbackWidgetHandle {
   // Rescans observed blocks. Call this after a SPA navigation or any DOM
@@ -77,6 +78,16 @@ function attachController(
 ): FeedbackWidgetHandle {
   const view = createWebComponentView(element)
   const messages = LOCALES[config.locale]
+
+  // One-shot migration of v0.4.x localStorage entries (hardcoded namespace
+  // `impropedia.feedback-widget`) into the v0.5.0+ configurable namespace.
+  // No-op when the host pinned the legacy name (legacy === current). Runs
+  // before the rate-limiter + outbox are read so the first drain sees the
+  // migrated queue.
+  migrateLegacyStorage({
+    storage: window.localStorage,
+    currentPrefix: config.storageNamespace,
+  })
 
   element.setOptions({
     maxMessageLength: config.maxMessageLength,

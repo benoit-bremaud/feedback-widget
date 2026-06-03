@@ -61,4 +61,8 @@ export type {
   Theme,
   Locale,
 } from './config/WidgetConfig'
-export { resolveConfig, MIN_MESSAGE_LENGTH } from './config/WidgetConfig'
+export {
+  resolveConfig,
+  MIN_MESSAGE_LENGTH,
+  normalizeLocale,
+} from './config/WidgetConfig'
