@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-03
+
+### Added
+
+- **Multi-project configuration** — four optional `WidgetConfig` fields so
+  the widget drops into any host without code changes:
+  - `rootSelector` — CSS selector for the pointing-mode picker's root, to
+    reach reportable elements rendered outside `<main>` (e.g. modals or
+    portals). The detector keeps its `'main'` default when unset.
+  - `theme` (`'dark' | 'light'`) — drives the Shadow-DOM palette via
+    `--fw-*` CSS custom properties; absent keeps the light scheme.
+  - `locale` (`'fr' | 'en'`) — selects the widget's own UI language;
+    defaults to `'fr'`. Every string now lives in a `LOCALES` dictionary.
+  - `storageNamespace` — localStorage key prefix for the rate-limit and
+    outbox state; defaults to `'feedback-widget'`.
+
+### Changed
+
+- The widget no longer hardcodes any consumer's name. The localStorage
+  namespace default changed from the legacy `impropedia.feedback-widget`
+  to a neutral `feedback-widget` (overridable via `storageNamespace`), and
+  the mailto-fallback subject is now a generic, localized string instead of
+  `[Impropedia] …`. No payload field changed, so the ingest contract is
+  unaffected. No storage migration is performed.
+
 ## [0.4.0] - 2026-05-23
 
 ### Added
