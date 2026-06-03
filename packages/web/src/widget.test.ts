@@ -687,4 +687,10 @@ describe('mountFeedbackWidget — v0.5.0 wiring', () => {
 
     expect(detectorRootSelector).toBeUndefined()
   })
+
+  it('drops a blank rootSelector so the detector keeps its default', () => {
+    mountFeedbackWidget({ ...validConfig, rootSelector: '   ' })
+
+    expect(detectorRootSelector).toBeUndefined()
+  })
 })

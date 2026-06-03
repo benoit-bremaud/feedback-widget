@@ -103,7 +103,16 @@ export function createIntersectionViewportDetector(
     doc.head.appendChild(styleNode)
   }
 
-  const getRoot = (): Element => doc.querySelector(rootSelector) ?? doc.body
+  const getRoot = (): Element => {
+    // An integrator-supplied rootSelector may be an invalid CSS selector;
+    // querySelector throws a SyntaxError on those. Fall back to body (same as
+    // the not-found case) so a bad selector never breaks mount.
+    try {
+      return doc.querySelector(rootSelector) ?? doc.body
+    } catch {
+      return doc.body
+    }
+  }
 
   const elementToTarget = (element: Element): FeedbackTarget => {
     const heading = findParentHeading(element)

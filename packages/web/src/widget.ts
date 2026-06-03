@@ -113,7 +113,11 @@ function attachController(
   const detector: ViewportDetector = createIntersectionViewportDetector({
     doc: document,
     win: window,
-    rootSelector: config.rootSelector ?? undefined,
+    // Trim and drop empty/whitespace so a blank value falls back to the
+    // detector's own default ('main') rather than being treated as a
+    // (throwing) empty selector. Genuinely-invalid non-empty selectors are
+    // caught inside the detector.
+    rootSelector: config.rootSelector?.trim() || undefined,
   })
 
   const contextCollector = createBrowserContextCollector({

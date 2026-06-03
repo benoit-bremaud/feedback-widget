@@ -179,6 +179,20 @@ describe('createIntersectionViewportDetector', () => {
     expect(instances[0]?.observed.size).toBe(1)
   })
 
+  it('falls back to document.body when the rootSelector is an invalid selector', () => {
+    const instances = installFakeIntersectionObserver(window)
+    document.body.innerHTML = '<p id="p1">top-level</p>'
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+      rootSelector: '))invalid((',
+    })
+
+    // An invalid CSS selector must not throw on mount — fall back to body.
+    expect(() => detector.startObserving()).not.toThrow()
+    expect(instances[0]?.observed.size).toBe(1)
+  })
+
   it('assigns a data-fw-id to targets that have no id already', () => {
     installFakeIntersectionObserver(window)
     makeDocumentWithContent('<p>no id here</p><p id="kept">keeps its id</p>')
