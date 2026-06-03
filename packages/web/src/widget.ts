@@ -20,6 +20,8 @@ import {
   createWebComponentView,
   defineFeedbackWidgetElement,
 } from './adapters/WebComponentView'
+import { LOCALES } from './i18n'
+import type { Messages } from './i18n'
 
 const TAG_NAME = 'feedback-widget'
 const STORAGE_KEY_PREFIX = 'impropedia.feedback-widget'
@@ -75,11 +77,14 @@ function attachController(
   config: ReturnType<typeof resolveConfig>,
 ): FeedbackWidgetHandle {
   const view = createWebComponentView(element)
+  const messages = LOCALES[config.locale]
 
   element.setOptions({
     maxMessageLength: config.maxMessageLength,
     categories: config.categories ?? undefined,
     position: config.position,
+    theme: config.theme,
+    messages,
   })
 
   const rateLimiter = createLocalStorageRateLimiter({
@@ -312,7 +317,7 @@ function attachController(
     const message = state.userMessage.trim()
     if (message.length < MIN_MESSAGE_LENGTH) {
       setState({
-        errorMessage: 'Merci de décrire le problème (10 caractères minimum).',
+        errorMessage: messages.validation.minMessage,
       })
       return null
     }
@@ -335,8 +340,7 @@ function attachController(
     } catch {
       setState({
         step: 'error',
-        errorMessage:
-          'Une erreur est survenue lors de la préparation de ton retour. Réessaie.',
+        errorMessage: messages.validation.buildError,
       })
       return null
     }
@@ -376,8 +380,7 @@ function attachController(
     if (result.reason === 'rate-limited') {
       setState({
         step: 'error',
-        errorMessage:
-          'Tu as envoyé plusieurs retours récemment. Réessaie dans quelques minutes.',
+        errorMessage: messages.transport.rateLimited,
       })
       return
     }
@@ -385,8 +388,7 @@ function attachController(
     if (result.reason === 'invalid') {
       setState({
         step: 'error',
-        errorMessage:
-          'Ton retour a été refusé (format invalide). Réessaie en le reformulant.',
+        errorMessage: messages.transport.invalid,
       })
       return
     }
@@ -401,26 +403,21 @@ function attachController(
       enqueued = false
     }
 
-    const mailto = buildMailto(config.mailtoFallback, payload)
+    const mailto = buildMailto(config.mailtoFallback, payload, messages.mailto)
     if (mailto) {
-      const base =
-        result.reason === 'network'
-          ? 'Pas de connexion réseau'
-          : 'Le service est momentanément indisponible'
-      view.showMailtoFallback(
-        mailto,
-        enqueued
-          ? `${base} — ton retour sera renvoyé automatiquement plus tard.`
-          : `${base} — impossible de le mettre en file d’attente, utilise plutôt le mail ci-dessous.`,
-      )
+      const t = messages.transport
+      const base = result.reason === 'network' ? t.networkBase : t.serverBase
+      const suffix = enqueued
+        ? t.mailtoSuffixEnqueued
+        : t.mailtoSuffixNotEnqueued
+      view.showMailtoFallback(mailto, `${base}${suffix}${t.mailtoLinkPrefix}`)
       return
     }
 
     if (!enqueued) {
       setState({
         step: 'error',
-        errorMessage:
-          'Ton retour n’a pas pu être envoyé ni mis en file d’attente — réessaie quand la connexion sera rétablie.',
+        errorMessage: messages.transport.noMailtoNotEnqueued,
       })
       return
     }
@@ -429,8 +426,8 @@ function attachController(
       step: 'error',
       errorMessage:
         result.reason === 'network'
-          ? 'Pas de connexion réseau. Ton retour a été mis en file d\u2019attente et sera renvoyé automatiquement.'
-          : 'Le service est momentanément indisponible. Ton retour a été mis en file d\u2019attente.',
+          ? messages.transport.noMailtoEnqueuedNetwork
+          : messages.transport.noMailtoEnqueuedServer,
     })
   }
 
@@ -478,13 +475,15 @@ function newSessionId(): string {
   return `fw-sess-${Date.now().toString(36)}`
 }
 
-function buildMailto(base: string | null, payload: unknown): string | null {
+function buildMailto(
+  base: string | null,
+  payload: unknown,
+  mailto: Messages['mailto'],
+): string | null {
   if (!base) return null
-  const subject = encodeURIComponent(
-    '[Impropedia] Signalement d\u2019un problème',
-  )
+  const subject = encodeURIComponent(mailto.subject)
   const body = encodeURIComponent(
-    `Voici le contenu du retour (l\u2019envoi automatique a échoué) :\n\n${JSON.stringify(payload, null, 2)}`,
+    `${mailto.bodyIntro}\n\n${JSON.stringify(payload, null, 2)}`,
   )
   return `mailto:${base}?subject=${subject}&body=${body}`
 }
