@@ -81,6 +81,8 @@ export interface FeedbackWidgetElement extends HTMLElement {
   setOptions(options: Partial<WidgetViewOptions>): void
   updateState(state: WidgetState): void
   isHoneypotFilled(): boolean
+  /** Register teardown to run on disconnectedCallback (e.g. detector.destroy). */
+  setDisconnectHandler(cb: () => void): void
 }
 
 export function defineFeedbackWidgetElement(): CustomElementConstructor {
@@ -102,6 +104,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
     private previousStep: WidgetState['step'] = 'closed'
     private lastFocusedBeforeOpen: HTMLElement | null = null
     private boundKeyDown: ((ev: KeyboardEvent) => void) | null = null
+    private onDisconnect: (() => void) | null = null
 
     connectedCallback(): void {
       if (!this.shadowRoot) {
@@ -115,6 +118,24 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         )
       }
       this.renderInternal()
+    }
+
+    // Cleanup on unmount (SPA navigation, dynamic removal): remove the
+    // shadow-root keydown listener and run the host-supplied teardown
+    // (detector.destroy) so no document-level listeners or observers leak.
+    disconnectedCallback(): void {
+      if (this.shadowRoot && this.boundKeyDown) {
+        this.shadowRoot.removeEventListener(
+          'keydown',
+          this.boundKeyDown as EventListener,
+        )
+        this.boundKeyDown = null
+      }
+      this.onDisconnect?.()
+    }
+
+    setDisconnectHandler(cb: () => void): void {
+      this.onDisconnect = cb
     }
 
     setOptions(options: Partial<WidgetViewOptions> = {}): void {

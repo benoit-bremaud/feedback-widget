@@ -27,7 +27,7 @@ const TAG_NAME = 'feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 // Must track packages/web/package.json version. The version.test.ts
 // node-env test guards against drift on future bumps.
-export const WIDGET_VERSION = '0.5.1'
+export const WIDGET_VERSION = '0.5.2'
 
 export interface FeedbackWidgetHandle {
   // Rescans observed blocks. Call this after a SPA navigation or any DOM
@@ -119,6 +119,11 @@ function attachController(
     // caught inside the detector.
     rootSelector: config.rootSelector?.trim() || undefined,
   })
+
+  // Tear the detector down when the host removes the element from the DOM
+  // (SPA navigation, dynamic removal) so document capture listeners, the
+  // IntersectionObserver, and the injected <style> never leak.
+  element.setDisconnectHandler(() => detector.destroy())
 
   const contextCollector = createBrowserContextCollector({
     projectId: config.projectId,

@@ -173,3 +173,74 @@ describe('config/resolveConfig — locale normalization (v0.5.1)', () => {
     expect(resolved.locale).toBe('fr')
   })
 })
+
+describe('config/resolveConfig — runtime hardening (v0.5.2)', () => {
+  const base: WidgetConfig = {
+    endpoint: 'https://api.test/',
+    projectId: 'demo',
+  }
+
+  it('rejects an unknown theme so data-theme never holds an unmatched value', () => {
+    const resolved = resolveConfig({
+      ...base,
+      theme: 'blue' as unknown as WidgetConfig['theme'],
+    })
+
+    expect(resolved.theme).toBeNull()
+  })
+
+  it('falls back to the default position for an unknown position value', () => {
+    const resolved = resolveConfig({
+      ...base,
+      position: 'top-right' as unknown as WidgetConfig['position'],
+    })
+
+    expect(resolved.position).toBe('bottom-right')
+  })
+
+  it('treats an empty categories array as "use the defaults"', () => {
+    const resolved = resolveConfig({ ...base, categories: [] })
+
+    expect(resolved.categories).toBeNull()
+  })
+
+  it('throws on a non-absolute endpoint', () => {
+    expect(() =>
+      resolveConfig({ ...base, endpoint: '/relative/path' }),
+    ).toThrow(/endpoint/i)
+  })
+
+  it('throws on an unsafe endpoint scheme (javascript:)', () => {
+    expect(() =>
+      resolveConfig({ ...base, endpoint: 'javascript:alert(1)' }),
+    ).toThrow(/http/i)
+  })
+
+  it('clamps absurd numeric config into safe bounds', () => {
+    const resolved = resolveConfig({
+      ...base,
+      maxTransportAttempts: 1_000_000,
+      transportTimeoutMs: 999_999_999,
+      rateLimitMaxAttempts: 0,
+    })
+
+    expect(resolved.maxTransportAttempts).toBe(10)
+    expect(resolved.transportTimeoutMs).toBe(60_000)
+    expect(resolved.rateLimitMaxAttempts).toBe(1)
+  })
+
+  it('falls back to the default for a NaN / non-numeric maxMessageLength', () => {
+    const resolved = resolveConfig({
+      ...base,
+      maxMessageLength: Number.NaN,
+    })
+
+    expect(resolved.maxMessageLength).toBe(500)
+  })
+})
+
+describe('config/normalizeLocale — DoS guard (v0.5.2)', () => {
+  it('falls back to the default for a pathologically long input', () => {
+    expect(normalizeLocale('e'.repeat(101))).toBe('fr')
+  })
+})

@@ -37,7 +37,9 @@ export function normalizeLocale(
   input: unknown,
   fallback: Locale = 'fr',
 ): Locale {
-  if (typeof input !== 'string') return fallback
+  // Cap the length before processing so a pathologically long string can't
+  // turn into wasted work (cheap DoS guard).
+  if (typeof input !== 'string' || input.length > 100) return fallback
   const base = input.toLowerCase().split('-')[0]
   return (SUPPORTED_LOCALES as readonly string[]).includes(base ?? '')
     ? (base as Locale)
@@ -110,34 +112,107 @@ const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
   storageNamespace: 'feedback-widget',
 }
 
+const POSITIONS = ['bottom-right', 'bottom-left', 'bottom-center'] as const
+type Position = (typeof POSITIONS)[number]
+
+// Clamp a numeric config value into [min, max]. Non-finite input (NaN,
+// undefined, a string from JSON/query config) falls back to the default — so a
+// hostile/misconfigured host can't hang the browser with huge retry counts or
+// timeouts, NaN-poison maxMessageLength, or disable rate limiting.
+function clampInt(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(max, Math.max(min, value))
+    : fallback
+}
+
+function isValidTheme(v: unknown): v is Theme {
+  return v === 'dark' || v === 'light'
+}
+
+function isValidPosition(v: unknown): v is Position {
+  return (POSITIONS as readonly unknown[]).includes(v)
+}
+
+// The endpoint must be an absolute http(s) URL. Reject relative URLs and unsafe
+// schemes (javascript:, data:, …): a clearly-broken endpoint should fail fast
+// at mount rather than silently emitting useless POSTs.
+function validateEndpoint(endpoint: string): string {
+  let url: URL
+  try {
+    url = new URL(endpoint)
+  } catch {
+    throw new Error(`feedback-widget: invalid endpoint URL "${endpoint}"`)
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error(
+      `feedback-widget: endpoint must use http(s), got "${url.protocol}"`,
+    )
+  }
+  return endpoint
+}
+
 export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
   return {
     ...DEFAULTS,
-    endpoint: input.endpoint,
+    endpoint: validateEndpoint(input.endpoint),
     projectId: input.projectId,
     token: input.token ?? null,
-    categories: input.categories ?? null,
-    // Clamp into [MIN, MAX]: a ceiling below the floor would lock users
-    // out behind the inline error; a ceiling above MAX would let the
-    // widget emit messages longer than the stated payload contract.
-    maxMessageLength: Math.min(
+    // An empty categories array would render an un-interactive type step;
+    // treat it (and null/undefined) as "use the defaults".
+    categories:
+      input.categories && input.categories.length > 0 ? input.categories : null,
+    // Clamp into [MIN, MAX]: a ceiling below the floor would lock users out
+    // behind the inline error; a ceiling above MAX would breach the payload
+    // contract; a non-number would poison the textarea maxlength.
+    maxMessageLength: clampInt(
+      input.maxMessageLength,
+      MIN_MESSAGE_LENGTH,
       MAX_MESSAGE_LENGTH,
-      Math.max(
-        MIN_MESSAGE_LENGTH,
-        input.maxMessageLength ?? DEFAULTS.maxMessageLength,
-      ),
+      DEFAULTS.maxMessageLength,
     ),
-    rateLimitWindowMs: input.rateLimitWindowMs ?? DEFAULTS.rateLimitWindowMs,
-    rateLimitMaxAttempts:
-      input.rateLimitMaxAttempts ?? DEFAULTS.rateLimitMaxAttempts,
-    minFormOpenMs: input.minFormOpenMs ?? DEFAULTS.minFormOpenMs,
-    maxTransportAttempts:
-      input.maxTransportAttempts ?? DEFAULTS.maxTransportAttempts,
-    transportTimeoutMs: input.transportTimeoutMs ?? DEFAULTS.transportTimeoutMs,
+    rateLimitWindowMs: clampInt(
+      input.rateLimitWindowMs,
+      1_000,
+      24 * 60 * 60 * 1_000,
+      DEFAULTS.rateLimitWindowMs,
+    ),
+    rateLimitMaxAttempts: clampInt(
+      input.rateLimitMaxAttempts,
+      1,
+      100,
+      DEFAULTS.rateLimitMaxAttempts,
+    ),
+    minFormOpenMs: clampInt(
+      input.minFormOpenMs,
+      0,
+      60_000,
+      DEFAULTS.minFormOpenMs,
+    ),
+    maxTransportAttempts: clampInt(
+      input.maxTransportAttempts,
+      1,
+      10,
+      DEFAULTS.maxTransportAttempts,
+    ),
+    transportTimeoutMs: clampInt(
+      input.transportTimeoutMs,
+      100,
+      60_000,
+      DEFAULTS.transportTimeoutMs,
+    ),
     mailtoFallback: input.mailtoFallback ?? null,
-    position: input.position ?? DEFAULTS.position,
+    position: isValidPosition(input.position)
+      ? input.position
+      : DEFAULTS.position,
     rootSelector: input.rootSelector ?? null,
-    theme: input.theme ?? null,
+    // Reject an unknown theme so `data-theme` is always 'dark', 'light', or
+    // absent (light) — never an unmatched value that silently stays light.
+    theme: isValidTheme(input.theme) ? input.theme : null,
     // Defensive normalization — runtime callers (JS, JSON config, query
     // params) may pass a BCP-47 tag like `'en-US'` that the static `Locale`
     // type would reject at compile time but doesn't block at runtime.

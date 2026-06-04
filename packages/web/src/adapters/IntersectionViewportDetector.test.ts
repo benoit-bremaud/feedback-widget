@@ -141,6 +141,37 @@ describe('createIntersectionViewportDetector', () => {
     expect(styles.length).toBe(1)
   })
 
+  it('destroy() removes the style node, disconnects the observer, and drops pointing listeners (v0.5.2)', () => {
+    const instances = installFakeIntersectionObserver(window)
+    makeDocumentWithContent('<p id="t">hello</p>')
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+
+    detector.startObserving()
+    const onPick = vi.fn()
+    detector.enablePointingMode(onPick)
+    expect(
+      document.head.querySelector('style[data-feedback-widget]'),
+    ).not.toBeNull()
+
+    detector.destroy()
+
+    expect(
+      document.head.querySelector('style[data-feedback-widget]'),
+    ).toBeNull()
+    expect(instances[0]?.disconnected).toBe(true)
+
+    // The document capture listeners are gone: a click no longer picks.
+    document
+      .querySelector('#t')
+      ?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      )
+    expect(onPick).not.toHaveBeenCalled()
+  })
+
   it('uses custom selectors + class names when provided', () => {
     installFakeIntersectionObserver(window)
     document.body.innerHTML = '<section><article>custom</article></section>'

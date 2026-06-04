@@ -935,3 +935,54 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   trail. This makes the docs internally consistent.
 - **Ref:** issue [#53](https://github.com/benoit-bremaud/feedback-widget/issues/53);
   follows #51/#52. PR backfilled post-merge.
+
+---
+
+## 2026-06-03
+
+### v0.5.0 — multi-project widget configuration
+
+- **What:** Added four optional `WidgetConfig` fields — `rootSelector`,
+  `theme`, `locale`, `storageNamespace` — so the widget embeds in any host
+  without code changes. Threaded through `resolveConfig`; introduced a
+  single-source i18n seam (`LOCALES` fr/en derived from one `SOURCE`), CSS
+  `--fw-*` theming with a `data-theme` dark/light override, and namespaced
+  localStorage keys. Purged the remaining "Impropedia" coupling. UML (class +
+  sequence) added under `docs/architecture/diagrams/widget-config-v0.5.0/`.
+- **Why:** The widget is a standalone project (SOLID) that integrates into
+  other projects but never depends on them. V-SEA was the first external host,
+  needing `theme` / `locale` / `rootSelector:'body'` (to reach modals outside
+  `<main>`).
+- **Ref:** PR [#57](https://github.com/benoit-bremaud/feedback-widget/pull/57).
+
+## 2026-06-04
+
+### v0.5.1 — locale normalization fix
+
+- **What:** A region-tagged `locale` (`en-US`, `fr-FR`, as produced by
+  `navigator.language`) resolved to `undefined` messages and crashed the
+  controller on submit. Added `normalizeLocale` (base language subtag +
+  fallback) in `resolveConfig`, and derived `Locale` from a single
+  `SUPPORTED_LOCALES` source. Dropped a storage-migration a reviewer had added
+  — it reintroduced legacy coupling, and the widget stays independent.
+- **Why:** Robustness for real-world hosts that pass BCP-47 tags; keeps the
+  widget dependency-free.
+- **Ref:** PR [#58](https://github.com/benoit-bremaud/feedback-widget/pull/58).
+
+### v0.5.2 — security-hardening release
+
+- **What:** Ran a multi-lens adversarial security audit (OWASP) + automated
+  scans (`pnpm audit`, `gitleaks` — 0 leaks) + real-browser E2E. **No XSS /
+  injection / RCE found** (87 defenses confirmed). Shipped defense-in-depth:
+  element `disconnectedCallback` tearing the detector down via the new
+  `ViewportDetector.destroy()` (no leaked document listeners on unmount);
+  runtime config clamps/validation (`theme` / `position` / `endpoint` /
+  empty `categories`, NaN-safe numerics); bounded localStorage outbox,
+  iterative depth-capped `findParentHeading`, and input-length caps
+  (`cssEscape` / `normalizeLocale`) as DoS guards; source maps excluded from
+  the published package (`files` glob ships only `*.js` + `*.d.ts`); patched
+  transitive `ws` / `brace-expansion` via pnpm overrides. +15 tests
+  (core 62, web 132); `pnpm audit` clean.
+- **Why:** The widget will be embedded across many projects on arbitrary,
+  possibly hostile hosts — harden before wider rollout.
+- **Ref:** PR for `fix/v0.5.2-hardening` (number backfilled).

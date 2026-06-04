@@ -24,6 +24,7 @@ const detectorGetCurrentTarget = vi.fn()
 const detectorEnablePointing = vi.fn()
 const detectorDisablePointing = vi.fn()
 const detectorClearHighlight = vi.fn()
+const detectorDestroy = vi.fn()
 const viewRender = vi.fn()
 const viewShowConfirmation = vi.fn()
 const viewShowMailtoFallback = vi.fn()
@@ -74,6 +75,7 @@ vi.mock('./adapters/IntersectionViewportDetector', () => ({
       enablePointingMode: detectorEnablePointing,
       disablePointingMode: detectorDisablePointing,
       clearHighlight: detectorClearHighlight,
+      destroy: detectorDestroy,
     }
   },
 }))
@@ -81,6 +83,7 @@ vi.mock('./adapters/IntersectionViewportDetector', () => ({
 class FakeFeedbackWidgetElement extends HTMLElement {
   setOptions = vi.fn()
   isHoneypotFilled = vi.fn(() => false)
+  setDisconnectHandler = vi.fn()
 }
 
 vi.mock('./adapters/WebComponentView', () => ({
@@ -172,6 +175,20 @@ describe('mountFeedbackWidget — happy path', () => {
     handle.refresh()
 
     expect(detectorRefresh).toHaveBeenCalledOnce()
+  })
+
+  it('registers a disconnect handler that tears the detector down (v0.5.2)', () => {
+    mountFeedbackWidget(validConfig)
+
+    const el =
+      document.querySelector<FakeFeedbackWidgetElement>('feedback-widget')
+    expect(el?.setDisconnectHandler).toHaveBeenCalledOnce()
+
+    // Invoking the registered teardown must destroy the detector, so no
+    // document listeners / observer / injected styles leak on unmount.
+    const teardown = el?.setDisconnectHandler.mock.calls[0]?.[0] as () => void
+    teardown()
+    expect(detectorDestroy).toHaveBeenCalledOnce()
   })
 })
 
@@ -525,7 +542,7 @@ describe('handleSubmit — result branches', () => {
     expect(payload.viewport).toHaveProperty('h')
     expect(typeof payload.locale).toBe('string')
     expect(typeof payload.timestamp).toBe('string')
-    expect(payload.widgetVersion).toBe('0.5.1')
+    expect(payload.widgetVersion).toBe('0.5.2')
     expect(typeof payload.scrollDepth).toBe('number')
     expect(typeof payload.sessionId).toBe('string')
     // reporterName is carried (null when the user typed no name)

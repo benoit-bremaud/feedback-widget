@@ -8,4 +8,6 @@ export interface ViewportDetector {
   clearHighlight(): void
   enablePointingMode(onPick: (target: FeedbackTarget) => void): void
   disablePointingMode(): void
+  /** Tear down all listeners, the observer, and the injected style node. */
+  destroy(): void
 }

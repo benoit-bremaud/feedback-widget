@@ -282,6 +282,20 @@ export function createIntersectionViewportDetector(
     startObserving()
   }
 
+  // Full teardown for the host element's disconnectedCallback — so nothing
+  // leaks when the widget is unmounted (SPA navigation, dynamic removal):
+  // document capture listeners, the IntersectionObserver, the injected
+  // <style> node, and any active highlight.
+  const destroy = (): void => {
+    disablePointingMode()
+    stopObserving()
+    highlight(null)
+    if (styleNode) {
+      styleNode.remove()
+      styleNode = null
+    }
+  }
+
   return {
     getCurrentTarget,
     startObserving,
@@ -290,6 +304,7 @@ export function createIntersectionViewportDetector(
     clearHighlight,
     enablePointingMode,
     disablePointingMode,
+    destroy,
   }
 }
 
@@ -298,14 +313,20 @@ function idOf(element: Element): string | null {
 }
 
 function findParentHeading(element: Element): Element | null {
-  let walker: Element | null = element.previousElementSibling
-  while (walker) {
-    if (/^H[1-6]$/.test(walker.tagName)) return walker
-    walker = walker.previousElementSibling
+  // Iterative + depth-capped (not recursive) so a pathologically deep DOM
+  // can't blow the call stack.
+  let current: Element | null = element
+  let depth = 0
+  while (current && depth < 100) {
+    let walker: Element | null = current.previousElementSibling
+    while (walker) {
+      if (/^H[1-6]$/.test(walker.tagName)) return walker
+      walker = walker.previousElementSibling
+    }
+    current = current.parentElement
+    depth += 1
   }
-  const parent = element.parentElement
-  if (!parent) return null
-  return findParentHeading(parent)
+  return null
 }
 
 function truncate(value: string): string {
@@ -364,7 +385,9 @@ function computeSelector(element: Element): string | null {
   return parts.length > 0 ? parts.join(' > ') : null
 }
 
-function cssEscape(value: string): string {
+function cssEscape(rawValue: string): string {
+  // Cap length so a giant id can't turn into wasted escaping work.
+  const value = rawValue.length > 256 ? rawValue.slice(0, 256) : rawValue
   const css = (globalThis as { CSS?: { escape?: (s: string) => string } }).CSS
   if (css?.escape) return css.escape(value)
   // Best-effort fallback for runtimes without CSS.escape: backslash-escape
