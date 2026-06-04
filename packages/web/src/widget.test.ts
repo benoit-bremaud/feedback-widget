@@ -193,6 +193,13 @@ describe('mountFeedbackWidget — happy path', () => {
 })
 
 describe('mountFeedbackWidget — sad / edge paths', () => {
+  it('throws on an invalid endpoint without appending a stale element (v0.5.2)', () => {
+    expect(() =>
+      mountFeedbackWidget({ ...validConfig, endpoint: 'not-a-url' }),
+    ).toThrow(/endpoint/i)
+    expect(document.querySelector('feedback-widget')).toBeNull()
+  })
+
   it('returns a NOOP handle when window is undefined (SSR guard)', () => {
     // Temporarily replace the global window with undefined via the
     // `typeof` check in mountFeedbackWidget. Since we cannot actually

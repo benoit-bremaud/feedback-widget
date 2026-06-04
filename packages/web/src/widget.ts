@@ -58,10 +58,15 @@ export function mountFeedbackWidget(
     }
   }
 
+  // Resolve (and validate) the config BEFORE touching the DOM, so an invalid
+  // config (e.g. a bad endpoint) throws without leaving a stale, unconfigured
+  // <feedback-widget> in the page — and without a retry appending a second one.
+  const resolved = resolveConfig(config)
+
   const element = document.createElement(TAG_NAME) as FeedbackWidgetElement
   document.body.appendChild(element)
 
-  const handle = attachController(element, resolveConfig(config))
+  const handle = attachController(element, resolved)
   handleRegistry.set(element, handle)
   return handle
 }
