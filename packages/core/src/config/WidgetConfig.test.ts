@@ -237,6 +237,18 @@ describe('config/resolveConfig — runtime hardening (v0.5.2)', () => {
 
     expect(resolved.maxMessageLength).toBe(500)
   })
+
+  it('coerces a fractional numeric config value to an integer', () => {
+    const resolved = resolveConfig({ ...base, maxTransportAttempts: 2.7 })
+
+    expect(resolved.maxTransportAttempts).toBe(2)
+  })
+
+  it('rejects an http(s) URL with no host (e.g. https:///path)', () => {
+    expect(() =>
+      resolveConfig({ ...base, endpoint: 'https:///nope/path' }),
+    ).toThrow(/endpoint/i)
+  })
 })
 
 describe('config/normalizeLocale — DoS guard (v0.5.2)', () => {

@@ -115,19 +115,19 @@ const DEFAULTS: Omit<ResolvedWidgetConfig, 'endpoint' | 'projectId'> = {
 const POSITIONS = ['bottom-right', 'bottom-left', 'bottom-center'] as const
 type Position = (typeof POSITIONS)[number]
 
-// Clamp a numeric config value into [min, max]. Non-finite input (NaN,
-// undefined, a string from JSON/query config) falls back to the default — so a
-// hostile/misconfigured host can't hang the browser with huge retry counts or
-// timeouts, NaN-poison maxMessageLength, or disable rate limiting.
+// Clamp a numeric config value into [min, max] and coerce to an integer.
+// Non-finite input (NaN, undefined, a string from JSON/query config) falls back
+// to the default — so a hostile/misconfigured host can't hang the browser with
+// huge retry counts or timeouts, NaN-poison maxMessageLength, feed a fractional
+// value (a non-integer maxlength / retry count), or disable rate limiting.
 function clampInt(
   value: unknown,
   min: number,
   max: number,
   fallback: number,
 ): number {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? Math.min(max, Math.max(min, value))
-    : fallback
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return Math.floor(Math.min(max, Math.max(min, value)))
 }
 
 function isValidTheme(v: unknown): v is Theme {
@@ -143,7 +143,7 @@ function isValidPosition(v: unknown): v is Position {
 // at mount rather than silently emitting useless POSTs. A regex is used rather
 // than the `URL` constructor so the DOM-free core needs no host-global types.
 function validateEndpoint(endpoint: string): string {
-  if (!/^https?:\/\/\S+$/i.test(endpoint)) {
+  if (!/^https?:\/\/[^/\s]+(\/\S*)?$/i.test(endpoint)) {
     throw new Error(
       `feedback-widget: endpoint must be an absolute http(s) URL, got "${endpoint}"`,
     )
@@ -157,7 +157,7 @@ export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
     endpoint: validateEndpoint(input.endpoint),
     projectId: input.projectId,
     token: input.token ?? null,
-    // An empty categories array would render an un-interactive type step;
+    // An empty categories array would render a non-interactive type step;
     // treat it (and null/undefined) as "use the defaults".
     categories:
       input.categories && input.categories.length > 0 ? input.categories : null,
