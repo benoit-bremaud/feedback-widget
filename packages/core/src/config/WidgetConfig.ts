@@ -140,17 +140,12 @@ function isValidPosition(v: unknown): v is Position {
 
 // The endpoint must be an absolute http(s) URL. Reject relative URLs and unsafe
 // schemes (javascript:, data:, …): a clearly-broken endpoint should fail fast
-// at mount rather than silently emitting useless POSTs.
+// at mount rather than silently emitting useless POSTs. A regex is used rather
+// than the `URL` constructor so the DOM-free core needs no host-global types.
 function validateEndpoint(endpoint: string): string {
-  let url: URL
-  try {
-    url = new URL(endpoint)
-  } catch {
-    throw new Error(`feedback-widget: invalid endpoint URL "${endpoint}"`)
-  }
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+  if (!/^https?:\/\/\S+$/i.test(endpoint)) {
     throw new Error(
-      `feedback-widget: endpoint must use http(s), got "${url.protocol}"`,
+      `feedback-widget: endpoint must be an absolute http(s) URL, got "${endpoint}"`,
     )
   }
   return endpoint
