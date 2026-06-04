@@ -124,6 +124,29 @@ describe('adapters/LocalStorageOutbox', () => {
     expect(await outbox.size()).toBe(0)
   })
 
+  it('caps the queue at the max, dropping the oldest entries (v0.5.2)', async () => {
+    const outbox = makeOutbox()
+
+    // Enqueue well past the cap; the queue must stay bounded so a long
+    // offline streak can't fill the host origin's localStorage.
+    for (let i = 0; i < 60; i++) {
+      await outbox.enqueue({
+        ...payload,
+        content: { category: 'bug', userMessage: `msg-${i}` },
+      })
+    }
+
+    expect(await outbox.size()).toBe(50)
+
+    const stored = JSON.parse(storage.getItem('outbox') ?? '[]') as Array<{
+      payload: FeedbackPayload
+    }>
+    const messages = stored.map((e) => e.payload.content.userMessage)
+    expect(messages).toContain('msg-59')
+    expect(messages).not.toContain('msg-0')
+    expect(messages).not.toContain('msg-9')
+  })
+
   it('preserves entries enqueued concurrently during drain (no race loss)', async () => {
     // C6 regression: drain reads snapshot, awaits sends, then writes back.
     // A concurrent enqueue during those awaits must not be dropped.

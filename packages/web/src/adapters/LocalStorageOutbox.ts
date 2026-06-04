@@ -14,6 +14,10 @@ interface OutboxEntry {
   payload: FeedbackPayload
 }
 
+// Hard cap on queued entries so a long offline streak can't fill the host
+// origin's localStorage. When exceeded, the oldest entries are dropped (FIFO).
+const MAX_OUTBOX_ENTRIES = 50
+
 export function createLocalStorageOutbox(
   deps: LocalStorageOutboxDeps,
 ): OutboxQueue {
@@ -54,7 +58,13 @@ export function createLocalStorageOutbox(
     async enqueue(payload: FeedbackPayload): Promise<void> {
       const entries = load()
       entries.push({ id: generateId(), enqueuedAt: deps.now(), payload })
-      save(entries)
+      // Keep only the most recent MAX_OUTBOX_ENTRIES (drop oldest) so the
+      // queue can never grow unbounded in the host's localStorage.
+      save(
+        entries.length > MAX_OUTBOX_ENTRIES
+          ? entries.slice(entries.length - MAX_OUTBOX_ENTRIES)
+          : entries,
+      )
     },
 
     async drain(send): Promise<void> {

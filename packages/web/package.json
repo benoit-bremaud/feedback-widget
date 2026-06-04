@@ -1,6 +1,6 @@
 {
   "name": "@benoit-bremaud/feedback-widget",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Web (browser / Web Component) implementation of the feedback widget. For dev/QA in-app bug reporting.",
   "author": "Benoît Bremaud",
   "license": "UNLICENSED",
@@ -26,7 +26,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

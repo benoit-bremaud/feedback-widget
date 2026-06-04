@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-06-04
+
+Security-hardening release. A multi-lens security audit found **no XSS /
+injection / RCE vulnerabilities**; the changes below are defense-in-depth and
+robustness fixes for embedding the widget on arbitrary, possibly hostile hosts.
+
+### Security
+
+- **Lifecycle teardown** — the widget element now implements
+  `disconnectedCallback`: on unmount (SPA navigation, dynamic removal) it
+  removes the shadow-root `keydown` listener and tears the viewport detector
+  down (document capture listeners, the `IntersectionObserver`, and the
+  injected `<style>` node) via the new `ViewportDetector.destroy()`. Prevents
+  leaked document listeners that could swallow host-page clicks.
+- **Runtime config hardening** in `resolveConfig`: numeric options
+  (`maxTransportAttempts`, `transportTimeoutMs`, `rateLimit*`, `minFormOpenMs`,
+  `maxMessageLength`) are clamped into safe bounds (NaN-safe); `theme` and
+  `position` fall back to a valid value when unknown; an empty `categories`
+  array falls back to the defaults; and `endpoint` must be an absolute http(s)
+  URL (unsafe schemes such as `javascript:` / `data:` are rejected).
+- **Bounded resources** — the localStorage outbox is capped (oldest entries
+  dropped) so a long offline streak can't fill the host origin's storage;
+  `findParentHeading` is now iterative and depth-capped; `cssEscape` and
+  `normalizeLocale` cap their input length (cheap DoS guards).
+- **Packaging** — source maps (`*.map`) are no longer published to the
+  registry; the `files` allowlist ships only `*.js` + `*.d.ts`.
+- **Dependencies** — patched transitive `ws` (≥ 8.20.1) and `brace-expansion`
+  (≥ 5.0.6) pinned via pnpm overrides; `pnpm audit` is clean.
+
 ## [0.5.1] - 2026-06-04
 
 ### Fixed
