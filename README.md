@@ -177,7 +177,8 @@ Cloudflare Worker. No npm install, no GitHub PAT, no build step.
     <script type="module">
       import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget.js'
       mountFeedbackWidget({
-        endpoint: 'https://feedback-pipeline-worker.bbd-concept.workers.dev/ingest',
+        endpoint:
+          'https://feedback-pipeline-worker.bbd-concept.workers.dev/ingest',
         projectId: 'my-project',
       })
     </script>
