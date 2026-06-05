@@ -15,7 +15,7 @@ target DOM block), and POSTs the payload to your backend.
 
 ## Status
 
-Currently at `v0.1.0`, private, `UNLICENSED`. This project is
+Currently at `v0.5.2`, private, `UNLICENSED`. This project is
 intentionally private and is **not published to the public npm
 registry**. Consumers install it from the **GitHub Packages
 private registry** under this repository — see
@@ -156,6 +156,53 @@ SSH avoids PAT management and keychain/credential-helper setup
 entirely — the key in `~/.ssh/` is picked up automatically. Simpler
 on a dev workstation, harder in CI (needs a deploy key or
 ssh-agent step).
+
+### Option C — Static HTML via the self-hosted CDN
+
+For sites that don't have a Node toolchain (plain HTML/CSS/JS,
+Jekyll, Hugo, Astro static export, WordPress, etc.) the widget is
+also served as a self-contained ES module from the project's own
+Cloudflare Worker. No npm install, no GitHub PAT, no build step.
+
+```html
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>My site</title>
+  </head>
+  <body>
+    <!-- … your site content … -->
+
+    <script type="module">
+      import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget.js'
+      mountFeedbackWidget({
+        endpoint:
+          'https://feedback-pipeline-worker.bbd-concept.workers.dev/ingest',
+        projectId: 'my-project',
+      })
+    </script>
+  </body>
+</html>
+```
+
+The bundle is ~43 KB minified ESM (no dependencies), targets
+`es2022`, and works in any modern evergreen browser.
+
+> ⚠️ **Note on versioning** — the URL above serves the latest
+> deployed bundle (mutable). For production sites that need
+> immutable pinning across releases, prefer the npm package
+> (Option A — GitHub Packages) or pin to a tag via git (Options A
+> with `#vX.Y.Z` or B git+SSH with a tag ref). Versioned CDN URLs
+> (`/widget-X.Y.Z.js`) are on the roadmap as chantier C.3.
+
+<!-- separator to keep markdownlint MD028 happy between two blockquotes -->
+
+> 🔒 **Cross-origin** — the integrator's site origin must be added
+> to the Worker's `ALLOWED_ORIGINS` env var before `POST /ingest`
+> accepts requests from it. Coordinate with the operator
+> (`feedback-pipeline-worker/wrangler.toml`); a redeploy is needed
+> for the change to take effect.
 
 ### Consumer CI authentication
 

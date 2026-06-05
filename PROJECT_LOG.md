@@ -986,3 +986,33 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **Why:** The widget will be embedded across many projects on arbitrary,
   possibly hostile hosts — harden before wider rollout.
 - **Ref:** PR for `fix/v0.5.2-hardening` (number backfilled).
+
+## 2026-06-05
+
+### C.2 — README static `<script>` embed guide
+
+- **What:** Added a third installation path to the widget README — an
+  "Option C — Static HTML via the self-hosted CDN" section under
+  `Installation`, showing the copy-pastable `<script type="module">`
+  import from the project's own Worker
+  (`feedback-pipeline-worker.bbd-concept.workers.dev/widget.js`) with
+  a 2-line `mountFeedbackWidget` call. Fixed the README status line
+  that still claimed `v0.1.0` (project is at v0.5.2). Deliberately
+  did NOT promote `packages/web/dist-bundle/demo.html` to a tracked
+  `examples/demo.html` in this PR — the existing demo carries
+  pre-existing SonarLint findings (`<aside role="dialog">` instead of
+  `<dialog>`, minified inline `if`, `window` vs `globalThis`) whose
+  cleanup belongs in its own follow-up PR rather than expanding the
+  scope of this docs-only change.
+- **Why:** The integrability-tier audit (2026-05-28) flagged "no
+  static-`<script>` embed guide" as one of three 🛑 blockers for
+  embedding the widget in third-party projects without a Node
+  toolchain (Jekyll, Hugo, plain HTML, WordPress, etc.). This closes
+  the first of those three; remaining are C.1 (i18n) and C.3
+  (versioned bundle URLs).
+- **Note:** The new section adds a 🔒 caveat that the integrator's
+  origin must be added to the Worker's `ALLOWED_ORIGINS` before
+  `POST /ingest` accepts requests — flags this is today still a
+  manual operator action in `feedback-pipeline-worker/wrangler.toml`.
+- **Ref:** PR for branch `docs/widget-embed-script-c2` (number
+  backfilled post-merge).
