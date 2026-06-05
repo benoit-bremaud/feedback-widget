@@ -1016,3 +1016,34 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   manual operator action in `feedback-pipeline-worker/wrangler.toml`.
 - **Ref:** PR for branch `docs/widget-embed-script-c2` (number
   backfilled post-merge).
+
+### C.3 — Versioned bundle URLs + retroactive close on C.1
+
+- **What:** `packages/web/build:bundle` now emits two files into
+  `dist-bundle/` — the legacy mutable `feedback-widget.js` and a new
+  pinned `widget-X.Y.Z.js` (version sourced from
+  `$npm_package_version`). README's Option C section rewritten to
+  recommend the pinned URL for production, keep the unversioned
+  `widget.js` as a quick-test option with an explicit warning
+  against shipping it to prod.
+- **Why:** Without immutable per-version URLs, every consumer site
+  picks up every Worker redeploy silently — a breaking widget
+  change would propagate to all consumers at once. Versioned URLs
+  let each integrator pin a tested release and bump deliberately.
+- **Retroactive close on C.1 — already shipped in v0.5.0:** Tonight's
+  inspection confirmed `packages/web/src/i18n.ts` defines `Messages`
+  for both `fr` and `en` via the `t(fr, en)` brace pattern, and
+  `WebComponentView.ts` consumes the locale-aware dict (no residual
+  hardcoded French strings). The 2026-05-28 integrability-tier
+  audit flagged C.1 as a 🛑 blocker, but was overtaken by
+  PR [#57](https://github.com/benoit-bremaud/feedback-widget/pull/57)
+  (v0.5.0 multi-project config) and never re-validated. C.1 is
+  retroactively marked closed.
+- **Worker pairing (out of scope here):** This PR ships the widget
+  artifact only. The Worker must commit `public/widget-0.5.2.js` (a
+  copy of the freshly built bundle) for the recommended URL to
+  resolve; companion brief delivered alongside this PR. Until the
+  Worker companion ships, the new versioned URL returns 404 — the
+  unversioned `/widget.js` keeps serving the latest deployed bundle.
+- **Ref:** PR for branch `feat/widget-versioned-bundle-c3` (number
+  backfilled post-merge).

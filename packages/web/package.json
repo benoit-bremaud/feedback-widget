@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "build:bundle": "esbuild src/index.ts --bundle --format=esm --minify --target=es2022 --outfile=dist-bundle/feedback-widget.js",
+    "build:bundle": "esbuild src/index.ts --bundle --format=esm --minify --target=es2022 --outfile=dist-bundle/feedback-widget.js && cp dist-bundle/feedback-widget.js dist-bundle/widget-$npm_package_version.js",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.json --noEmit",
