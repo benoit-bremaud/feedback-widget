@@ -164,6 +164,16 @@ Jekyll, Hugo, Astro static export, WordPress, etc.) the widget is
 also served as a self-contained ES module from the project's own
 Cloudflare Worker. No npm install, no GitHub PAT, no build step.
 
+Two URL patterns are available — a **versioned URL** for
+production, and an **unversioned URL** for quick tests.
+
+#### Recommended for production — pinned version
+
+The versioned URL serves an immutable copy of the bundle for a
+given widget release. The integrator's site stays on that version
+regardless of subsequent Worker redeploys; bumping is a deliberate
+edit on the consumer side.
+
 ```html
 <!doctype html>
 <html lang="fr">
@@ -175,7 +185,7 @@ Cloudflare Worker. No npm install, no GitHub PAT, no build step.
     <!-- … your site content … -->
 
     <script type="module">
-      import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget.js'
+      import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget-0.5.2.js'
       mountFeedbackWidget({
         endpoint:
           'https://feedback-pipeline-worker.bbd-concept.workers.dev/ingest',
@@ -186,17 +196,32 @@ Cloudflare Worker. No npm install, no GitHub PAT, no build step.
 </html>
 ```
 
+The list of published widget versions is the project's
+[GitHub Releases](https://github.com/benoit-bremaud/feedback-widget/releases)
+page. Versions are added to the CDN when each widget release is
+deployed to the Worker; a versioned URL is immutable once shipped.
+
+#### Quick test — latest deployed bundle
+
+For one-off tests, demos, or a dev environment where always-current
+is preferable to stable, the unversioned URL serves whatever the
+Worker currently has:
+
+```html
+<script type="module">
+  import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget.js'
+  mountFeedbackWidget({ endpoint: '…/ingest', projectId: 'my-project' })
+</script>
+```
+
+> ⚠️ Do not ship the unversioned URL to production — a breaking
+> change in the widget will silently break the host site the next
+> time the Worker is redeployed.
+
+#### Bundle facts
+
 The bundle is ~43 KB minified ESM (no dependencies), targets
 `es2022`, and works in any modern evergreen browser.
-
-> ⚠️ **Note on versioning** — the URL above serves the latest
-> deployed bundle (mutable). For production sites that need
-> immutable pinning across releases, prefer the npm package
-> (Option A — GitHub Packages) or pin to a tag via git (Options A
-> with `#vX.Y.Z` or B git+SSH with a tag ref). Versioned CDN URLs
-> (`/widget-X.Y.Z.js`) are on the roadmap as chantier C.3.
-
-<!-- separator to keep markdownlint MD028 happy between two blockquotes -->
 
 > 🔒 **Cross-origin** — the integrator's site origin must be added
 > to the Worker's `ALLOWED_ORIGINS` env var before `POST /ingest`
