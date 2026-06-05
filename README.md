@@ -196,10 +196,13 @@ edit on the consumer side.
 </html>
 ```
 
-The list of published widget versions is the project's
-[GitHub Releases](https://github.com/benoit-bremaud/feedback-widget/releases)
-page. Versions are added to the CDN when each widget release is
-deployed to the Worker; a versioned URL is immutable once shipped.
+**Availability** — a versioned URL is published to the CDN at the
+time each widget release is deployed to the project's Worker. If a
+pinned URL returns `404`, that version has not been rolled out yet
+— pin to the latest version available in the project's
+[GitHub Releases](https://github.com/benoit-bremaud/feedback-widget/releases),
+or use the unversioned URL below as a temporary fallback while the
+Worker companion deploy catches up.
 
 #### Quick test — latest deployed bundle
 
