@@ -1,47 +1,31 @@
 // Top-level feedback categories surfaced by the widget UI.
+//
+// A category names the reporter's INTENT, not the technical nature of
+// the defect — the latter is derived downstream from the auto-captured
+// context. Reworked in v0.6.0: the former `typo`/`error`/`ambiguous`
+// trio overlapped and leaked developer vocabulary, and `other` was
+// dropped as `unclear`/`suggestion` already absorb the vague cases.
 export type TopLevelCategory =
   | 'bug'
-  | 'typo'
-  | 'error'
-  | 'ambiguous'
+  | 'content'
+  | 'unclear'
   | 'suggestion'
-  | 'other'
+  | 'praise'
 
-// Sub-categories per top-level category. Locked by the Phase B
-// debrief, Q9 (2026-04-24) — see .github/design/projects-yaml-schema.md.
+// Sub-categories per top-level category.
 export type BugSubCategory =
   | 'crash'
-  | 'broken-feature'
-  | 'visual-glitch'
-  | 'wrong-output'
-  | 'regression'
+  | 'no-effect'
+  | 'broken-display'
+  | 'too-slow'
 
-export type TypoSubCategory =
-  | 'prose'
-  | 'code-sample'
-  | 'heading'
-  | 'link-text'
-  | 'alt-text'
+export type ContentSubCategory = 'typo' | 'wrong-info' | 'dead-link'
 
-export type ErrorSubCategory =
-  | 'js-console'
-  | 'http-404'
-  | 'http-5xx'
-  | 'broken-link'
-  | 'missing-asset'
-
-export type AmbiguousSubCategory =
-  | 'wording'
-  | 'navigation'
-  | 'terminology'
-  | 'example-unclear'
-  | 'missing-context'
+export type UnclearSubCategory = 'wording' | 'missing-info' | 'navigation'
 
 export type SuggestionSubCategory =
   | 'new-feature'
   | 'improvement'
-  | 'new-example'
-  | 'content-refactor'
   | 'accessibility'
 
 // Umbrella union of every sub-category across all top-level
@@ -50,20 +34,18 @@ export type SuggestionSubCategory =
 // is re-validated when the payload is built.
 export type SubCategory =
   | BugSubCategory
-  | TypoSubCategory
-  | ErrorSubCategory
-  | AmbiguousSubCategory
+  | ContentSubCategory
+  | UnclearSubCategory
   | SuggestionSubCategory
 
 // Discriminated union pairing each top-level category with its
-// allowed sub-categories. `other` carries a null sub-category.
+// allowed sub-categories. `praise` carries a null sub-category.
 export type CategorizedFeedback =
   | { category: 'bug'; subCategory: BugSubCategory }
-  | { category: 'typo'; subCategory: TypoSubCategory }
-  | { category: 'error'; subCategory: ErrorSubCategory }
-  | { category: 'ambiguous'; subCategory: AmbiguousSubCategory }
+  | { category: 'content'; subCategory: ContentSubCategory }
+  | { category: 'unclear'; subCategory: UnclearSubCategory }
   | { category: 'suggestion'; subCategory: SuggestionSubCategory }
-  | { category: 'other'; subCategory: null }
+  | { category: 'praise'; subCategory: null }
 
 // Viewport size in CSS pixels. Replaces the v0.2.0 device-aware
 // Viewport — the receiver can derive device class from w/h if needed.
@@ -133,68 +115,41 @@ export interface FeedbackTarget {
 
 export const TOP_LEVEL_CATEGORIES: readonly TopLevelCategory[] = [
   'bug',
-  'typo',
-  'error',
-  'ambiguous',
+  'content',
+  'unclear',
   'suggestion',
-  'other',
+  'praise',
 ] as const
 
 export const SUB_CATEGORIES_BY_CATEGORY: Readonly<{
   bug: readonly BugSubCategory[]
-  typo: readonly TypoSubCategory[]
-  error: readonly ErrorSubCategory[]
-  ambiguous: readonly AmbiguousSubCategory[]
+  content: readonly ContentSubCategory[]
+  unclear: readonly UnclearSubCategory[]
   suggestion: readonly SuggestionSubCategory[]
-  other: readonly never[]
+  praise: readonly never[]
 }> = {
-  bug: [
-    'crash',
-    'broken-feature',
-    'visual-glitch',
-    'wrong-output',
-    'regression',
-  ] as const,
-  typo: ['prose', 'code-sample', 'heading', 'link-text', 'alt-text'] as const,
-  error: [
-    'js-console',
-    'http-404',
-    'http-5xx',
-    'broken-link',
-    'missing-asset',
-  ] as const,
-  ambiguous: [
-    'wording',
-    'navigation',
-    'terminology',
-    'example-unclear',
-    'missing-context',
-  ] as const,
-  suggestion: [
-    'new-feature',
-    'improvement',
-    'new-example',
-    'content-refactor',
-    'accessibility',
-  ] as const,
-  other: [] as const,
+  bug: ['crash', 'no-effect', 'broken-display', 'too-slow'] as const,
+  content: ['typo', 'wrong-info', 'dead-link'] as const,
+  unclear: ['wording', 'missing-info', 'navigation'] as const,
+  suggestion: ['new-feature', 'improvement', 'accessibility'] as const,
+  praise: [] as const,
 }
 
 export function isValidCategory(value: string): value is TopLevelCategory {
   return (TOP_LEVEL_CATEGORIES as readonly string[]).includes(value)
 }
 
-// `other` is the only category with no sub-category — it falls back
+// `praise` is the only category with no sub-category — it falls back
 // to free text only.
 export function requiresSubCategory(category: TopLevelCategory): boolean {
-  return category !== 'other'
+  return category !== 'praise'
 }
 
 export function isValidSubCategory(
   category: TopLevelCategory,
   value: string,
 ): boolean {
-  if (category === 'other') {
+  if (category === 'praise') {
     return false
   }
   return (SUB_CATEGORIES_BY_CATEGORY[category] as readonly string[]).includes(

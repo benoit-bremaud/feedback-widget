@@ -2,9 +2,8 @@
 export type {
   TopLevelCategory,
   BugSubCategory,
-  TypoSubCategory,
-  ErrorSubCategory,
-  AmbiguousSubCategory,
+  ContentSubCategory,
+  UnclearSubCategory,
   SuggestionSubCategory,
   SubCategory,
   CategorizedFeedback,

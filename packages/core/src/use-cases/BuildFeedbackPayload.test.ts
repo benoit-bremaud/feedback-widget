@@ -26,8 +26,8 @@ describe('use-cases/buildFeedbackPayload', () => {
     }
     const payload = buildFeedbackPayload({
       ...baseContext,
-      category: 'typo',
-      subCategory: 'prose',
+      category: 'content',
+      subCategory: 'typo',
       message: 'Missing an "s" on the index page',
       reporterName: 'Pauline',
       target,
@@ -35,8 +35,8 @@ describe('use-cases/buildFeedbackPayload', () => {
 
     expect(payload).toEqual({
       ...baseContext,
-      category: 'typo',
-      subCategory: 'prose',
+      category: 'content',
+      subCategory: 'typo',
       message: 'Missing an "s" on the index page',
       reporterName: 'Pauline',
       target,
@@ -46,7 +46,7 @@ describe('use-cases/buildFeedbackPayload', () => {
   it('carries a null reporterName and target for anonymous, page-level feedback', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
-      category: 'other',
+      category: 'praise',
       subCategory: null,
       message: 'Anonymous note about the page',
       reporterName: null,
@@ -69,25 +69,25 @@ describe('use-cases/buildFeedbackPayload', () => {
 
     const error = buildFeedbackPayload({
       ...baseContext,
-      category: 'error',
-      subCategory: 'http-5xx',
+      category: 'bug',
+      subCategory: 'crash',
       message: 'Got a 500 on /api/foo',
       reporterName: null,
     })
-    expect(error.category).toBe('error')
-    expect(error.subCategory).toBe('http-5xx')
+    expect(error.category).toBe('bug')
+    expect(error.subCategory).toBe('crash')
   })
 
   it('forces subCategory to null when category is "other"', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
-      category: 'other',
+      category: 'praise',
       subCategory: null,
       message: 'Generic comment that does not fit anywhere',
       reporterName: null,
     })
 
-    expect(payload.category).toBe('other')
+    expect(payload.category).toBe('praise')
     expect(payload.subCategory).toBeNull()
   })
 
@@ -107,7 +107,7 @@ describe('use-cases/buildFeedbackPayload', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
       viewport: { w: 1920, h: 1080 },
-      category: 'ambiguous',
+      category: 'unclear',
       subCategory: 'navigation',
       message: 'I cannot find the docs',
       reporterName: null,

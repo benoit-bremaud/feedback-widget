@@ -39,11 +39,10 @@ classDiagram
   class Category {
     <<enumeration>>
     bug
-    typo
-    error
-    ambiguous
+    content
+    unclear
     suggestion
-    other
+    praise
   }
   class FeedbackStatus {
     <<enumeration>>

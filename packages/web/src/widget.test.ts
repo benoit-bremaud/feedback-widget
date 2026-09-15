@@ -124,7 +124,7 @@ const validConfig = {
   projectId: 'test-project',
   endpoint: 'https://example.test/feedback',
   token: 'test-token',
-  categories: ['bug', 'typo'],
+  categories: ['bug', 'content'],
   maxMessageLength: 500,
   minFormOpenMs: 0,
   maxTransportAttempts: 3,
@@ -326,11 +326,11 @@ describe('controller — user-action state transitions', () => {
     onUserActionCallback?.({ kind: 'confirm-target' })
     viewRender.mockClear()
 
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
 
     const rendered = viewRender.mock.calls.at(-1)?.[0]
     expect(rendered?.step).toBe('precision')
-    expect(rendered?.selectedCategory).toBe('other')
+    expect(rendered?.selectedCategory).toBe('praise')
     expect(rendered?.selectedSubCategory).toBeNull()
   })
 
@@ -397,7 +397,7 @@ describe('controller — user-action state transitions', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     viewRender.mockClear()
 
     onUserActionCallback?.({ kind: 'back' })
@@ -409,7 +409,7 @@ describe('controller — user-action state transitions', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     viewRender.mockClear()
 
     onUserActionCallback?.({ kind: 'update-message', value: 'typing' })
@@ -422,7 +422,7 @@ describe('controller — user-action state transitions', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     viewRender.mockClear()
 
     const longValue = 'x'.repeat(600)
@@ -454,7 +454,7 @@ describe('handleSubmit — result branches', () => {
   const openToType = (): void => {
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     onUserActionCallback?.({
       kind: 'update-message',
       value: 'A meaningful ten-char-plus message.',
@@ -484,7 +484,7 @@ describe('handleSubmit — result branches', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     onUserActionCallback?.({ kind: 'update-message', value: 'short' })
     viewRender.mockClear()
 

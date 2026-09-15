@@ -118,7 +118,7 @@ describe('createWebComponentView — render per step', () => {
 
   it('renders category buttons on the type step', () => {
     const el = mountElement()
-    el.setOptions({ categories: ['bug', 'typo', 'other'] })
+    el.setOptions({ categories: ['bug', 'content', 'praise'] })
     const view = createWebComponentView(el)
 
     view.render({ ...initialState(), step: 'type' })
@@ -152,7 +152,7 @@ describe('createWebComponentView — render per step', () => {
     view.render({
       ...initialState(),
       step: 'precision',
-      selectedCategory: 'other',
+      selectedCategory: 'praise',
       errorMessage: 'Please write more.',
     })
 
@@ -219,24 +219,24 @@ describe('createWebComponentView — user actions', () => {
 
   it('clicking a category button emits `select-category` with the chosen category', () => {
     const el = mountElement()
-    el.setOptions({ categories: ['bug', 'typo'] })
+    el.setOptions({ categories: ['bug', 'content'] })
     const view = createWebComponentView(el)
     const onAction = vi.fn()
     view.onUserAction(onAction)
     view.render({ ...initialState(), step: 'type' })
 
     const button = el.shadowRoot!.querySelector<HTMLButtonElement>(
-      '[data-category="typo"]',
+      '[data-category="content"]',
     )
     button?.click()
 
     expect(onAction).toHaveBeenCalledWith({
       kind: 'select-category',
-      category: 'typo',
+      category: 'content',
     })
   })
 
-  it('renders the 5 sub-category buttons for the selected category', () => {
+  it('renders the 4 sub-category buttons for the selected category', () => {
     const el = mountElement()
     const view = createWebComponentView(el)
     view.render({
@@ -246,7 +246,7 @@ describe('createWebComponentView — user actions', () => {
     })
 
     const buttons = el.shadowRoot!.querySelectorAll('[data-sub-category]')
-    expect(buttons).toHaveLength(5)
+    expect(buttons).toHaveLength(4)
     expect(
       el.shadowRoot!.querySelector('[data-sub-category="crash"]'),
     ).not.toBeNull()
@@ -302,7 +302,7 @@ describe('createWebComponentView — user actions', () => {
     })
 
     const title = el.shadowRoot!.querySelector('.fw-title')?.textContent ?? ''
-    expect(title).toContain('Bug')
+    expect(title).toContain('Ça ne marche pas')
     expect(title).toContain('Plantage')
   })
 
@@ -339,7 +339,7 @@ describe('createWebComponentView — user actions', () => {
     view.render({
       ...initialState(),
       step: 'precision',
-      selectedCategory: 'other',
+      selectedCategory: 'praise',
     })
 
     const textarea =
@@ -361,7 +361,7 @@ describe('createWebComponentView — user actions', () => {
     view.render({
       ...initialState(),
       step: 'precision',
-      selectedCategory: 'other',
+      selectedCategory: 'praise',
       userMessage: 'something to send',
     })
 
