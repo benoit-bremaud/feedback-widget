@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { WidgetState } from '@benoit-bremaud/feedback-widget-core'
+import { SUB_CATEGORIES_BY_CATEGORY } from '@benoit-bremaud/feedback-widget-core'
 import {
   createWebComponentView,
   defineFeedbackWidgetElement,
@@ -236,7 +237,7 @@ describe('createWebComponentView — user actions', () => {
     })
   })
 
-  it('renders the 4 sub-category buttons for the selected category', () => {
+  it('renders one button per sub-category of the selected category', () => {
     const el = mountElement()
     const view = createWebComponentView(el)
     view.render({
@@ -246,10 +247,29 @@ describe('createWebComponentView — user actions', () => {
     })
 
     const buttons = el.shadowRoot!.querySelectorAll('[data-sub-category]')
-    expect(buttons).toHaveLength(4)
+    expect(buttons).toHaveLength(SUB_CATEGORIES_BY_CATEGORY.bug.length)
     expect(
       el.shadowRoot!.querySelector('[data-sub-category="crash"]'),
     ).not.toBeNull()
+  })
+
+  it('falls back to the category picker if the sub-category step is reached with "praise"', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+    view.render({
+      ...initialState(),
+      step: 'sub-category',
+      selectedCategory: 'praise',
+    })
+
+    // `praise` declares no sub-category, so rendering the step verbatim
+    // would strand the user on an empty screen with no way forward.
+    expect(el.shadowRoot!.querySelectorAll('[data-sub-category]')).toHaveLength(
+      0,
+    )
+    expect(
+      el.shadowRoot!.querySelectorAll('[data-category]').length,
+    ).toBeGreaterThan(0)
   })
 
   it('clicking a sub-category button emits `select-sub-category`', () => {
@@ -302,8 +322,8 @@ describe('createWebComponentView — user actions', () => {
     })
 
     const title = el.shadowRoot!.querySelector('.fw-title')?.textContent ?? ''
-    expect(title).toContain('Ça ne marche pas')
-    expect(title).toContain('Plantage')
+    expect(title).toContain(LOCALES.fr.categoryLabels.bug)
+    expect(title).toContain(LOCALES.fr.subCategoryLabels.crash)
   })
 
   it('clicking confirm-target emits `confirm-target`', () => {

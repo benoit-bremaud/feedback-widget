@@ -59,7 +59,7 @@ classDiagram
 
 ## Notes
 
-- **Nullable fields**: `subCategory` is null only for `category = other`;
+- **Nullable fields**: `subCategory` is null only for `category = praise`;
   `reporterName` and `targetedElement` are optional.
 - **V2-only statuses**: `issue_created` and `refused` are set by the V2 triage;
   V1 uses only `new`, `read`, `handled`. See

@@ -67,28 +67,64 @@ describe('use-cases/buildFeedbackPayload', () => {
     expect(bug.category).toBe('bug')
     expect(bug.subCategory).toBe('crash')
 
-    const error = buildFeedbackPayload({
+    const content = buildFeedbackPayload({
+      ...baseContext,
+      category: 'content',
+      subCategory: 'dead-link',
+      message: 'The install link 404s',
+      reporterName: null,
+    })
+    expect(content.category).toBe('content')
+    expect(content.subCategory).toBe('dead-link')
+  })
+
+  it('rejects a sub-category under "praise"', () => {
+    expect(() =>
+      buildFeedbackPayload({
+        ...baseContext,
+        category: 'praise',
+        subCategory: 'crash',
+        message: 'Praise carries no sub-category',
+        reporterName: null,
+      }),
+    ).toThrow(/must not carry a sub-category/)
+  })
+
+  it('rejects a sub-category belonging to another category', () => {
+    expect(() =>
+      buildFeedbackPayload({
+        ...baseContext,
+        // `typo` is a content sub-category, not a bug one.
+        category: 'bug',
+        subCategory: 'typo',
+        message: 'Cross-category pairing must not build',
+        reporterName: null,
+      }),
+    ).toThrow(/invalid sub-category/)
+  })
+
+  it('rejects a missing sub-category on a category that requires one', () => {
+    expect(() =>
+      buildFeedbackPayload({
+        ...baseContext,
+        category: 'unclear',
+        subCategory: null,
+        message: 'Missing sub-category must not build',
+        reporterName: null,
+      }),
+    ).toThrow(/invalid sub-category/)
+  })
+
+  it('normalizes an omitted target to null on a sub-categorized payload', () => {
+    const payload = buildFeedbackPayload({
       ...baseContext,
       category: 'bug',
       subCategory: 'crash',
-      message: 'Got a 500 on /api/foo',
-      reporterName: null,
-    })
-    expect(error.category).toBe('bug')
-    expect(error.subCategory).toBe('crash')
-  })
-
-  it('forces subCategory to null when category is "other"', () => {
-    const payload = buildFeedbackPayload({
-      ...baseContext,
-      category: 'praise',
-      subCategory: null,
-      message: 'Generic comment that does not fit anywhere',
+      message: 'App crashes on load',
       reporterName: null,
     })
 
-    expect(payload.category).toBe('praise')
-    expect(payload.subCategory).toBeNull()
+    expect(payload.target).toBeNull()
   })
 
   it('preserves a null referrer (top-level navigation)', () => {

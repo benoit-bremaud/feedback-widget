@@ -80,7 +80,7 @@ export function buildFeedbackPayload(
     ...context,
     message: input.message,
     reporterName: input.reporterName,
-    target: input.target,
+    target,
     category: input.category,
     subCategory: input.subCategory,
   } as FeedbackPayload

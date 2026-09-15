@@ -38,11 +38,10 @@ projects:
     locale: <BCP-47> # fallback if widget payload has none
     labelsByCategory:
       bug: [<label>, ...]
-      typo: [<label>, ...]
-      error: [<label>, ...]
-      ambiguous: [<label>, ...]
+      content: [<label>, ...]
+      unclear: [<label>, ...]
       suggestion: [<label>, ...]
-      other: [<label>, ...]
+      praise: [<label>, ...]
     labelsBySubCategory:
       <subCategory>: [<label>, ...]
       # every sub-category from the taxonomy is allowed as a key;
@@ -62,13 +61,7 @@ Will live in `packages/core/src/ports/ProjectConfig.ts` once the pipeline
 is implemented. Reproduced here for the design doc:
 
 ```ts
-type TopLevelCategory =
-  | 'bug'
-  | 'typo'
-  | 'error'
-  | 'ambiguous'
-  | 'suggestion'
-  | 'other'
+type TopLevelCategory = 'bug' | 'content' | 'unclear' | 'suggestion' | 'praise'
 
 type ChannelConfig =
   | { kind: 'telegram'; chatId: number }
@@ -96,19 +89,23 @@ type ProjectsFile = {
 
 ## Categories (canonical taxonomy)
 
-Locked by the Phase B debrief, Q9 (2026-04-24). Every widget v0.3.0+
-release ships these six top-level categories, each with a small set of
-sub-categories. The pipeline doc, widget doc, and labels on every
-consumer repo stay in lockstep with this list.
+Reworked by the v0.6.0 taxonomy change, superseding the six-category
+table locked by the Phase B debrief, Q9 (2026-04-24). A category names
+the reporter's intent, not the technical nature of the defect — the
+technical detail is derived from the auto-captured context instead of
+being asked of the user. The pipeline doc, widget doc, and labels on
+every consumer repo stay in lockstep with this list.
 
-| Top-level    | Sub-categories                                                                   |
-| ------------ | -------------------------------------------------------------------------------- |
-| `bug`        | `crash`, `broken-feature`, `visual-glitch`, `wrong-output`, `regression`         |
-| `typo`       | `prose`, `code-sample`, `heading`, `link-text`, `alt-text`                       |
-| `error`      | `js-console`, `http-404`, `http-5xx`, `broken-link`, `missing-asset`             |
-| `ambiguous`  | `wording`, `navigation`, `terminology`, `example-unclear`, `missing-context`     |
-| `suggestion` | `new-feature`, `improvement`, `new-example`, `content-refactor`, `accessibility` |
-| `other`      | _(none — free text only)_                                                        |
+| Top-level    | Sub-categories                                     |
+| ------------ | -------------------------------------------------- |
+| `bug`        | `crash`, `no-effect`, `broken-display`, `too-slow` |
+| `content`    | `typo`, `wrong-info`, `dead-link`                  |
+| `unclear`    | `wording`, `missing-info`, `navigation`            |
+| `suggestion` | `new-feature`, `improvement`, `accessibility`      |
+| `praise`     | _(none — free text only)_                          |
+
+Note that `typo` is now a sub-category of `content`, not a top-level
+category — a stale config using it as one is dropped, not remapped.
 
 Adding a sub-category is **non-breaking** — widget and pipeline treat
 unknown keys as fall-back to empty labels. Removing or renaming a
@@ -133,15 +130,14 @@ projects:
     locale: fr-FR
     labelsByCategory:
       bug: [type:bug]
-      typo: [type:docs, area:content]
-      error: [type:bug, area:ci]
-      ambiguous: [type:docs, area:content]
+      content: [type:docs, area:content]
+      unclear: [type:docs, area:content]
       suggestion: [type:feature]
-      other: [type:task]
+      praise: [type:task]
     labelsBySubCategory:
       crash: [prio:P0]
-      http-5xx: [prio:P0]
-      regression: [prio:P1]
+      no-effect: [prio:P0]
+      dead-link: [prio:P1]
       accessibility: [area:a11y]
     channel:
       kind: telegram
@@ -154,11 +150,10 @@ projects:
     locale: fr-FR
     labelsByCategory:
       bug: [type:bug]
-      typo: [type:docs]
-      error: [type:bug]
-      ambiguous: [type:docs]
+      content: [type:docs]
+      unclear: [type:docs]
       suggestion: [type:feature]
-      other: [type:task]
+      praise: [type:task]
     labelsBySubCategory:
       crash: [prio:P0]
       accessibility: [area:a11y]
@@ -173,15 +168,14 @@ projects:
     locale: fr-FR
     labelsByCategory:
       bug: [type:bug]
-      typo: [type:docs]
-      error: [type:bug, area:ci]
-      ambiguous: [type:docs]
+      content: [type:docs]
+      unclear: [type:docs]
       suggestion: [type:feature]
-      other: [type:task]
+      praise: [type:task]
     labelsBySubCategory:
       crash: [prio:P0]
-      http-5xx: [prio:P0]
-      regression: [prio:P1]
+      no-effect: [prio:P0]
+      dead-link: [prio:P1]
     channel:
       kind: telegram
       chatId: -1000000000000
@@ -241,17 +235,10 @@ Skeleton for the CI check. Will ship as
           "locale": { "type": "string" },
           "labelsByCategory": {
             "type": "object",
-            "required": [
-              "bug",
-              "typo",
-              "error",
-              "ambiguous",
-              "suggestion",
-              "other"
-            ],
+            "required": ["bug", "content", "unclear", "suggestion", "praise"],
             "additionalProperties": false,
             "patternProperties": {
-              "^(bug|typo|error|ambiguous|suggestion|other)$": {
+              "^(bug|content|unclear|suggestion|praise)$": {
                 "type": "array",
                 "items": { "type": "string" }
               }
@@ -262,29 +249,17 @@ Skeleton for the CI check. Will ship as
             "propertyNames": {
               "enum": [
                 "crash",
-                "broken-feature",
-                "visual-glitch",
-                "wrong-output",
-                "regression",
-                "prose",
-                "code-sample",
-                "heading",
-                "link-text",
-                "alt-text",
-                "js-console",
-                "http-404",
-                "http-5xx",
-                "broken-link",
-                "missing-asset",
+                "no-effect",
+                "broken-display",
+                "too-slow",
+                "typo",
+                "wrong-info",
+                "dead-link",
                 "wording",
+                "missing-info",
                 "navigation",
-                "terminology",
-                "example-unclear",
-                "missing-context",
                 "new-feature",
                 "improvement",
-                "new-example",
-                "content-refactor",
                 "accessibility"
               ]
             },
