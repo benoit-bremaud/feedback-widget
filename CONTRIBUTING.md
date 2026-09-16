@@ -9,8 +9,8 @@ Read it once end-to-end. After that, use it as a reference.
 
 > **Authoritative scope.** This file governs contribution conventions for
 > `benoit-bremaud/feedback-widget`. Cross-repo policy (e.g. private-first
-> release, AI attribution ban) is mirrored here verbatim so the rule lives in
-> git and remains enforceable without external context.
+> release, AI attribution) is mirrored here so the rule lives in git and
+> remains enforceable without external context.
 
 ---
 
@@ -25,7 +25,7 @@ Read it once end-to-end. After that, use it as a reference.
 7. [Definition of Done](#definition-of-done)
 8. [Testing requirements](#testing-requirements)
 9. [Security](#security)
-10. [AI attribution — strictly forbidden](#ai-attribution--strictly-forbidden)
+10. [AI attribution — allowed](#ai-attribution--allowed)
 11. [Public release checklist](#public-release-checklist)
 12. [Changelog and project log](#changelog-and-project-log)
 13. [Release workflow](#release-workflow)
@@ -584,48 +584,40 @@ single source of truth, local tooling is your choice.
 
 ---
 
-## AI attribution — strictly forbidden
+## AI attribution — allowed
 
-**Never attribute or credit work to AI anywhere in this repository.**
+**Policy reversed on 2026-07-02.** This section previously banned any
+mention of AI assistance anywhere in the repository. It no longer does:
+being transparent and honest about how the work was produced matters
+more than hiding it.
 
-The rule targets _attribution and credit_, not the naming of tools in
-policy. This section itself necessarily names the forbidden patterns in
-order to define them — that is an explicit exemption for policy and
-governance docs. Everywhere else, the following are banned:
+The following are **allowed**:
 
-- **No `Co-Authored-By`** lines mentioning any AI agent in commits.
-- **No `claude-code-assisted`**, `copilot-assisted`, `codex-assisted` or
-  similar labels on issues or PRs.
-- **No "Generated with Claude Code"**, "Generated with AI", "Made with
-  Copilot" or equivalent phrases in PR bodies, issue bodies, or code
-  comments.
-- **No AI/Claude/GPT/Copilot mentions** as credit, signature, or
-  byline in code comments, docs, commit messages, or CHANGELOG entries.
-- **No "Resolves review comment from <ai-agent>"** framing in commit
-  messages — credit the substance of the review, not the reviewer's
-  nature.
+- **`Co-Authored-By`** trailers naming an AI agent in commits.
+- **"Generated with Claude Code"** or an equivalent line in PR bodies.
+- **AI mentions in comments and docs** where they are relevant — for
+  example recording that a review finding came from an automated
+  reviewer.
 
-**Exemptions (documentation only, no credit implied).** The following are
-allowed because they describe the workflow without attributing work:
+**Allowed, not mandatory.** Attribution is a choice per commit or PR,
+not a required field. Keep it sober: a trailer or a single line, never a
+banner.
 
-- The governance documents themselves (`CONTRIBUTING.md`,
-  `.github/branch-protection.md`, `.github/publish.md`) may name AI
-  tooling when defining rules or documenting workflow steps. If an
-  `AGENTS.md` or equivalent multi-agent guidance file is added later,
-  it is covered by this exemption.
-- GitHub technical identifiers — the bot username
-  `copilot-pull-request-reviewer` is a collaborator handle, not credit.
-- `PROJECT_LOG.md` entries describing review cycles may name the
-  reviewer actor (human or bot) as factual metadata.
+**What attribution does not change.** The decisions remain authored by a
+human — what to build, which trade-off to take, what to reject in
+review. A tool trailer records that a tool was used; it never stands in
+for that authorship, and it is not a reason to merge work nobody
+understands. Reviewing a diff you cannot explain is the actual problem,
+with or without a trailer on it.
 
-**Why.** The project is authored by humans regardless of tooling. The
-value of the work stands on its own; leaking tool identity as credit
-dilutes authorship and invites review bias. Naming tools in a policy
-that governs them does neither.
+**Why the reversal.** The old rule optimized for how the work would be
+perceived. In practice it meant the git history misrepresented how the
+code was written, which is a worse trade than any review bias it was
+meant to avoid.
 
-This policy applies to: commits, PRs, issues, comments, README,
-`CHANGELOG.md`, and every other file tracked by git — with the narrow
-exemptions above.
+This section is the repo-local mirror of the cross-repo policy. If the
+two ever disagree, the cross-repo policy is authoritative and this file
+is stale — fix it here rather than working around it.
 
 ---
 
