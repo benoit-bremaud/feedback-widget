@@ -320,7 +320,7 @@ describe('controller — user-action state transitions', () => {
     expect(rendered?.target).toEqual(target)
   })
 
-  it('select-category "other" skips sub-category and moves straight to precision', () => {
+  it('select-category "praise" skips sub-category and moves straight to precision', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -334,7 +334,7 @@ describe('controller — user-action state transitions', () => {
     expect(rendered?.selectedSubCategory).toBeNull()
   })
 
-  it('select-category on a non-other category opens the sub-category step', () => {
+  it('select-category on a category with sub-categories opens the sub-category step', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -377,7 +377,7 @@ describe('controller — user-action state transitions', () => {
     expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('type')
   })
 
-  it('back from precision returns to sub-category for a non-other category', () => {
+  it('back from precision returns to sub-category for a category with sub-categories', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -393,7 +393,7 @@ describe('controller — user-action state transitions', () => {
     expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('sub-category')
   })
 
-  it('back from precision returns to the category picker for "other"', () => {
+  it('back from precision returns to the category picker for "praise"', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -559,7 +559,7 @@ describe('handleSubmit — result branches', () => {
     expect('content' in payload).toBe(false)
   })
 
-  it('submit on a non-other category without a sub-category bounces back to the sub-category step', async () => {
+  it('submit on a category requiring a sub-category without one bounces back to the sub-category step', async () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })

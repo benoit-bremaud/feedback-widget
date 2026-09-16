@@ -1,32 +1,40 @@
-// Top-level feedback categories surfaced by the widget UI.
+// The feedback taxonomy — single source of truth. Every category type
+// below is DERIVED from this table, so the unions and the runtime list
+// cannot drift apart: dropping a value here removes it from the type
+// too, instead of leaving a union member the widget never renders.
 //
 // A category names the reporter's INTENT, not the technical nature of
 // the defect — the latter is derived downstream from the auto-captured
-// context. Reworked in v0.6.0: the former `typo`/`error`/`ambiguous`
-// trio overlapped and leaked developer vocabulary, and `other` was
-// dropped as `unclear`/`suggestion` already absorb the vague cases.
-export type TopLevelCategory =
-  | 'bug'
-  | 'content'
-  | 'unclear'
-  | 'suggestion'
-  | 'praise'
+// context. The former `typo`/`error`/`ambiguous` trio overlapped and
+// leaked developer vocabulary; `other` was dropped as `unclear` and
+// `suggestion` already absorb the vague cases; `praise` was added
+// because the widget was defect-only, with no way to report that
+// something works.
+//
+// Two contracts ride on this table:
+// - Array order IS the on-screen button order, so reordering is a
+//   user-visible change, not a refactor.
+// - Downstream consumers (feedback-pipeline-worker) duplicate it as
+//   their own allowlist, so any edit is BREAKING and needs a lockstep
+//   update there or valid submissions get rejected.
+export const SUB_CATEGORIES_BY_CATEGORY = {
+  bug: ['crash', 'no-effect', 'broken-display', 'too-slow'],
+  content: ['typo', 'wrong-info', 'dead-link'],
+  unclear: ['wording', 'missing-info', 'navigation'],
+  suggestion: ['new-feature', 'improvement', 'accessibility'],
+  // Free text only — the sole category carrying a null sub-category.
+  praise: [],
+} as const satisfies Record<string, readonly string[]>
 
-// Sub-categories per top-level category.
-export type BugSubCategory =
-  | 'crash'
-  | 'no-effect'
-  | 'broken-display'
-  | 'too-slow'
+export type TopLevelCategory = keyof typeof SUB_CATEGORIES_BY_CATEGORY
 
-export type ContentSubCategory = 'typo' | 'wrong-info' | 'dead-link'
-
-export type UnclearSubCategory = 'wording' | 'missing-info' | 'navigation'
-
+export type BugSubCategory = (typeof SUB_CATEGORIES_BY_CATEGORY)['bug'][number]
+export type ContentSubCategory =
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['content'][number]
+export type UnclearSubCategory =
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['unclear'][number]
 export type SuggestionSubCategory =
-  | 'new-feature'
-  | 'improvement'
-  | 'accessibility'
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['suggestion'][number]
 
 // Umbrella union of every sub-category across all top-level
 // categories. Useful for loosely-typed UI state where the parent
@@ -113,43 +121,29 @@ export interface FeedbackTarget {
   excerpt: string | null
 }
 
-export const TOP_LEVEL_CATEGORIES: readonly TopLevelCategory[] = [
-  'bug',
-  'content',
-  'unclear',
-  'suggestion',
-  'praise',
-] as const
-
-export const SUB_CATEGORIES_BY_CATEGORY: Readonly<{
-  bug: readonly BugSubCategory[]
-  content: readonly ContentSubCategory[]
-  unclear: readonly UnclearSubCategory[]
-  suggestion: readonly SuggestionSubCategory[]
-  praise: readonly never[]
-}> = {
-  bug: ['crash', 'no-effect', 'broken-display', 'too-slow'] as const,
-  content: ['typo', 'wrong-info', 'dead-link'] as const,
-  unclear: ['wording', 'missing-info', 'navigation'] as const,
-  suggestion: ['new-feature', 'improvement', 'accessibility'] as const,
-  praise: [] as const,
-}
+// Derived from the table above, so the render order and the type stay
+// in sync with it by construction.
+export const TOP_LEVEL_CATEGORIES = Object.keys(
+  SUB_CATEGORIES_BY_CATEGORY,
+) as readonly TopLevelCategory[]
 
 export function isValidCategory(value: string): value is TopLevelCategory {
   return (TOP_LEVEL_CATEGORIES as readonly string[]).includes(value)
 }
 
-// `praise` is the only category with no sub-category — it falls back
-// to free text only.
 export function requiresSubCategory(category: TopLevelCategory): boolean {
-  return category !== 'praise'
+  return SUB_CATEGORIES_BY_CATEGORY[category].length > 0
 }
 
+// Always false for a category that declares no sub-category (`praise`)
+// — callers must gate on `requiresSubCategory` first rather than
+// reading false as "the user picked an invalid value". Guards the
+// lookup too: an untyped caller can pass a retired category name.
 export function isValidSubCategory(
   category: TopLevelCategory,
   value: string,
 ): boolean {
-  if (category === 'praise') {
+  if (!isValidCategory(category)) {
     return false
   }
   return (SUB_CATEGORIES_BY_CATEGORY[category] as readonly string[]).includes(

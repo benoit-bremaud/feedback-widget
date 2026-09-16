@@ -232,7 +232,7 @@ function attachController(
 
       case 'select-category':
         // Progressive disclosure: a category with sub-categories opens
-        // the sub-category step; `other` (no sub-categories) jumps
+        // the sub-category step; `praise` (no sub-categories) jumps
         // straight to the free-text precision step.
         if (requiresSubCategory(action.category)) {
           setState({
@@ -321,8 +321,8 @@ function attachController(
       return null
     }
 
-    // Non-`other` categories require a sub-category. If it is missing
-    // (e.g. the user skipped the step), send them back to pick one.
+    // Every category but `praise` requires a sub-category. If it is
+    // missing (e.g. the user skipped the step), send them back to pick one.
     if (requiresSubCategory(category) && state.selectedSubCategory === null) {
       setState({ step: 'sub-category', errorMessage: null })
       return null
