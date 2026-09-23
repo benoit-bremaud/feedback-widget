@@ -24,13 +24,14 @@ Read it once end-to-end. After that, use it as a reference.
 6. [Pull Request description template](#pull-request-description-template)
 7. [Definition of Done](#definition-of-done)
 8. [Testing requirements](#testing-requirements)
-9. [Security](#security)
-10. [AI attribution — strictly forbidden](#ai-attribution--strictly-forbidden)
-11. [Public release checklist](#public-release-checklist)
-12. [Changelog and project log](#changelog-and-project-log)
-13. [Release workflow](#release-workflow)
-14. [Tag conventions](#tag-conventions)
-15. [Cross-links](#cross-links)
+9. [Static analysis (local)](#static-analysis-local)
+10. [Security](#security)
+11. [AI attribution — strictly forbidden](#ai-attribution--strictly-forbidden)
+12. [Public release checklist](#public-release-checklist)
+13. [Changelog and project log](#changelog-and-project-log)
+14. [Release workflow](#release-workflow)
+15. [Tag conventions](#tag-conventions)
+16. [Cross-links](#cross-links)
 
 ---
 
@@ -534,6 +535,43 @@ To get auto-format on save:
 
 Husky pre-commit hooks are intentionally out of scope — CI is the
 single source of truth, local tooling is your choice.
+
+---
+
+## Static analysis (local)
+
+SonarQube analysis runs **locally, before pushing** — it is not a CI step.
+
+**Why it is not in CI.** SonarCloud's free plan analyzes public projects
+only, and this repo is private-first. A hosted scan could never
+authenticate, so the step failed every pull request regardless of the
+diff — including docs-only ones. A check that is red on every PR teaches
+reviewers to ignore red checks, which costs more than the analysis was
+buying. Restore a hosted scan when the repo goes public; the
+[public release checklist](#public-release-checklist) already tracks it.
+
+**Running it.**
+
+```bash
+pnpm sonar
+```
+
+That runs the test suite with coverage, then hands the LCOV reports to
+`sonar-scanner`. It needs:
+
+- a SonarQube instance reachable at `http://localhost:9000` (override
+  with `-Dsonar.host.url=` for another server), and
+- `SONAR_TOKEN` exported in your shell, generated from that instance.
+
+**Never commit that token, paste it into a chat or an issue, or add it to
+the repo.** It is a local credential — if it leaks anywhere, revoke it on
+the instance first and generate a new one. See
+[If a secret is ever committed](#if-a-secret-is-ever-committed).
+
+**What it does not replace.** Lint, typecheck, and the test suite still
+run in CI and still gate every PR. The local scan adds the quality and
+security lenses those three do not cover — it does not substitute for
+them, and skipping it is not a licence to push a red suite.
 
 ---
 
