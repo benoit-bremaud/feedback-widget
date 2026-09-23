@@ -39,12 +39,14 @@ pnpm test:coverage
 step 'Static analysis'
 # SonarQube needs a running instance and a personal token; neither belongs in
 # the repo. Missing either is reported, never silently passed over.
+# `pnpm exec` rather than a bare call: the pre-push hook runs this script
+# directly, without node_modules/.bin on PATH.
 if [ -z "${SONAR_TOKEN:-}" ]; then
   skip 'SONAR_TOKEN is not exported (see CONTRIBUTING.md § Static analysis)'
 elif ! curl -sSf -o /dev/null --max-time 5 http://localhost:9000 2>/dev/null; then
   skip 'no SonarQube instance answering on http://localhost:9000'
 else
-  sonar-scanner
+  pnpm exec sonar-scanner-npm
 fi
 
 printf '\n\033[32m✔ All local checks passed.\033[0m\n'
