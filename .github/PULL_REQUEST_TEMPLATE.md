@@ -40,7 +40,6 @@ Full contribution rules: https://github.com/benoit-bremaud/feedback-widget/blob/
 - [ ] All existing tests still green (`pnpm -r test`)
 - [ ] No `any` TypeScript type introduced; no inline styles introduced (if touching `packages/web`)
 - [ ] No secrets committed (Gitleaks clean)
-- [ ] No AI attribution anywhere in this PR (commits, body, comments, diff)
 - [ ] Sidebar metadata populated: assignees, reviewers, labels triptych (`type:*` + `area:*` + `prio:*`), project `feedback-widget`, milestone inherited from the linked issue
 
 Closes #<issue-number>
