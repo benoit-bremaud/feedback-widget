@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS feedback (
   id               TEXT PRIMARY KEY,          -- UUID
   project_id       TEXT NOT NULL,
   category         TEXT NOT NULL,
-  sub_category     TEXT,                       -- NULL only for 'other'
+  sub_category     TEXT,                       -- NULL only for 'praise'
   message          TEXT NOT NULL,
   reporter_name    TEXT,
   url              TEXT,

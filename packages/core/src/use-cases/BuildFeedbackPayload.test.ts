@@ -26,8 +26,8 @@ describe('use-cases/buildFeedbackPayload', () => {
     }
     const payload = buildFeedbackPayload({
       ...baseContext,
-      category: 'typo',
-      subCategory: 'prose',
+      category: 'content',
+      subCategory: 'typo',
       message: 'Missing an "s" on the index page',
       reporterName: 'Pauline',
       target,
@@ -35,8 +35,8 @@ describe('use-cases/buildFeedbackPayload', () => {
 
     expect(payload).toEqual({
       ...baseContext,
-      category: 'typo',
-      subCategory: 'prose',
+      category: 'content',
+      subCategory: 'typo',
       message: 'Missing an "s" on the index page',
       reporterName: 'Pauline',
       target,
@@ -46,7 +46,7 @@ describe('use-cases/buildFeedbackPayload', () => {
   it('carries a null reporterName and target for anonymous, page-level feedback', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
-      category: 'other',
+      category: 'praise',
       subCategory: null,
       message: 'Anonymous note about the page',
       reporterName: null,
@@ -67,28 +67,64 @@ describe('use-cases/buildFeedbackPayload', () => {
     expect(bug.category).toBe('bug')
     expect(bug.subCategory).toBe('crash')
 
-    const error = buildFeedbackPayload({
+    const content = buildFeedbackPayload({
       ...baseContext,
-      category: 'error',
-      subCategory: 'http-5xx',
-      message: 'Got a 500 on /api/foo',
+      category: 'content',
+      subCategory: 'dead-link',
+      message: 'The install link 404s',
       reporterName: null,
     })
-    expect(error.category).toBe('error')
-    expect(error.subCategory).toBe('http-5xx')
+    expect(content.category).toBe('content')
+    expect(content.subCategory).toBe('dead-link')
   })
 
-  it('forces subCategory to null when category is "other"', () => {
+  it('rejects a sub-category under "praise"', () => {
+    expect(() =>
+      buildFeedbackPayload({
+        ...baseContext,
+        category: 'praise',
+        subCategory: 'crash',
+        message: 'Praise carries no sub-category',
+        reporterName: null,
+      }),
+    ).toThrow(/must not carry a sub-category/)
+  })
+
+  it('rejects a sub-category belonging to another category', () => {
+    expect(() =>
+      buildFeedbackPayload({
+        ...baseContext,
+        // `typo` is a content sub-category, not a bug one.
+        category: 'bug',
+        subCategory: 'typo',
+        message: 'Cross-category pairing must not build',
+        reporterName: null,
+      }),
+    ).toThrow(/invalid sub-category/)
+  })
+
+  it('rejects a missing sub-category on a category that requires one', () => {
+    expect(() =>
+      buildFeedbackPayload({
+        ...baseContext,
+        category: 'unclear',
+        subCategory: null,
+        message: 'Missing sub-category must not build',
+        reporterName: null,
+      }),
+    ).toThrow(/invalid sub-category/)
+  })
+
+  it('normalizes an omitted target to null on a sub-categorized payload', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
-      category: 'other',
-      subCategory: null,
-      message: 'Generic comment that does not fit anywhere',
+      category: 'bug',
+      subCategory: 'crash',
+      message: 'App crashes on load',
       reporterName: null,
     })
 
-    expect(payload.category).toBe('other')
-    expect(payload.subCategory).toBeNull()
+    expect(payload.target).toBeNull()
   })
 
   it('preserves a null referrer (top-level navigation)', () => {
@@ -107,7 +143,7 @@ describe('use-cases/buildFeedbackPayload', () => {
     const payload = buildFeedbackPayload({
       ...baseContext,
       viewport: { w: 1920, h: 1080 },
-      category: 'ambiguous',
+      category: 'unclear',
       subCategory: 'navigation',
       message: 'I cannot find the docs',
       reporterName: null,

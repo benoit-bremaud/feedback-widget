@@ -110,8 +110,8 @@ type FeedbackPayload = {
   // user-provided (required)
   projectId: string // e.g. "brasse-bouillon"
   category: TopLevelCategory
-  // category values: "bug" | "typo" | "error" | "ambiguous" | "suggestion" | "other"
-  subCategory: string | null // null only when category === "other"
+  // category values: "bug" | "content" | "unclear" | "suggestion" | "praise"
+  subCategory: string | null // null only when category === "praise"
   message: string // free-text body, 10-2000 chars
   reporterName: string | null // optional self-identification, else null
 

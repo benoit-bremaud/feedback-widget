@@ -15,8 +15,8 @@ const minimalPayload: FeedbackPayload = {
   widgetVersion: '0.3.0',
   scrollDepth: 0,
   sessionId: '01HK3M-0000-0000-0000-000000000000',
-  category: 'typo',
-  subCategory: 'prose',
+  category: 'content',
+  subCategory: 'typo',
   message: 'Missing closing tag in the docs',
   reporterName: null,
 }

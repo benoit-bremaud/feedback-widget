@@ -27,7 +27,7 @@ const TAG_NAME = 'feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 // Must track packages/web/package.json version. The version.test.ts
 // node-env test guards against drift on future bumps.
-export const WIDGET_VERSION = '0.5.2'
+export const WIDGET_VERSION = '0.6.0'
 
 export interface FeedbackWidgetHandle {
   // Rescans observed blocks. Call this after a SPA navigation or any DOM
@@ -232,7 +232,7 @@ function attachController(
 
       case 'select-category':
         // Progressive disclosure: a category with sub-categories opens
-        // the sub-category step; `other` (no sub-categories) jumps
+        // the sub-category step; `praise` (no sub-categories) jumps
         // straight to the free-text precision step.
         if (requiresSubCategory(action.category)) {
           setState({
@@ -321,8 +321,8 @@ function attachController(
       return null
     }
 
-    // Non-`other` categories require a sub-category. If it is missing
-    // (e.g. the user skipped the step), send them back to pick one.
+    // Every category but `praise` requires a sub-category. If it is
+    // missing (e.g. the user skipped the step), send them back to pick one.
     if (requiresSubCategory(category) && state.selectedSubCategory === null) {
       setState({ step: 'sub-category', errorMessage: null })
       return null

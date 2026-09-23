@@ -180,6 +180,11 @@ describe('config/resolveConfig — runtime hardening (v0.5.2)', () => {
     projectId: 'demo',
   }
 
+  // The static types would reject these at compile time, but an untyped JS
+  // host (the <script> embed) can pass anything at runtime.
+  const asHostInput = (values: readonly string[]): WidgetConfig['categories'] =>
+    values as unknown as WidgetConfig['categories']
+
   it('rejects an unknown theme so data-theme never holds an unmatched value', () => {
     const resolved = resolveConfig({
       ...base,
@@ -200,6 +205,26 @@ describe('config/resolveConfig — runtime hardening (v0.5.2)', () => {
 
   it('treats an empty categories array as "use the defaults"', () => {
     const resolved = resolveConfig({ ...base, categories: [] })
+
+    expect(resolved.categories).toBeNull()
+  })
+
+  it('drops categories the widget cannot render', () => {
+    const resolved = resolveConfig({
+      ...base,
+      // `typo` is a sub-category of `content` since v0.6.0, not a category.
+      categories: asHostInput(['bug', 'typo', 'suggestion']),
+    })
+
+    expect(resolved.categories).toEqual(['bug', 'suggestion'])
+  })
+
+  it('falls back to the defaults when no configured category survives', () => {
+    const resolved = resolveConfig({
+      ...base,
+      // A host still pinned to the pre-v0.6.0 taxonomy.
+      categories: asHostInput(['typo', 'error', 'ambiguous', 'other']),
+    })
 
     expect(resolved.categories).toBeNull()
   })

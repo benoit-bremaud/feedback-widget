@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING — feedback taxonomy reworked.** A category now names the
+  reporter's _intent_, not the technical nature of the defect: the technical
+  detail is derived downstream from the auto-captured context instead of being
+  asked of the user. Six categories × five sub-categories (25 in total) become
+  five categories × three-to-four sub-categories (13 in total).
+  - `typo`, `error` and `ambiguous` are gone. They overlapped (`bug/visual-glitch`
+    vs `error`, `bug/wrong-output` vs `error` vs `ambiguous`) and `error` mixed
+    wrong _content_ with purely technical failures. Their cases move to `content`
+    (what is written is wrong) and `bug` (what is broken).
+  - `unclear` replaces `ambiguous`, phrased from the reader's point of view.
+  - `praise` is new — the widget was defect-only and had no way to report that
+    something works well.
+  - `other` is removed: `unclear` and `suggestion` absorb the vague cases, and
+    the free-text message is required anyway. `praise` is now the only category
+    carrying a `null` sub-category.
+  - Developer vocabulary is gone from the UI (`js-console`, `http-5xx`,
+    `regression`, `content-refactor`, …).
+
+  New table: `bug` (crash · no-effect · broken-display · too-slow), `content`
+  (typo · wrong-info · dead-link), `unclear` (wording · missing-info ·
+  navigation), `suggestion` (new-feature · improvement · accessibility),
+  `praise` (no sub-category).
+
+  **Migration** — hosts passing `categories` must update the values. Consumers
+  storing or routing on `category` / `subCategory` (notably the
+  `feedback-pipeline-worker`, which duplicates these tables) must be updated in
+  lockstep, or they will reject the new payloads.
+
 ## [0.5.2] - 2026-06-04
 
 Security-hardening release. A multi-lens security audit found **no XSS /

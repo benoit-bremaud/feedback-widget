@@ -272,20 +272,20 @@ service account SSH key to the repository's deploy-keys list, then:
 
 ### `WidgetConfig`
 
-| Field                  | Required | Default            | Description                                                                                                                                                              |
-| ---------------------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `endpoint`             | ✓        | —                  | URL that receives the `POST` with the feedback payload (JSON).                                                                                                           |
-| `projectId`            | ✓        | —                  | Identifier carried in the payload; lets the backend route/separate per project.                                                                                          |
-| `token`                | —        | `null`             | Sent as `X-Feedback-Token` header. Treat as public — it's bundled in the browser; use the backend to validate caller identity properly.                                  |
-| `categories`           | —        | `null`             | Override the list of categories offered. Values must be drawn from `Category` (see [API Reference](#api-reference)). When `null`, all six built-in categories are shown. |
-| `maxMessageLength`     | —        | `500`              | Max length of the free-text field. Longer input is silently truncated.                                                                                                   |
-| `rateLimitWindowMs`    | —        | `600_000` (10 min) | Rolling window for the client-side rate limiter (per `projectId`, stored in `localStorage`).                                                                             |
-| `rateLimitMaxAttempts` | —        | `3`                | Max submissions per window before the widget shows a rate-limit message.                                                                                                 |
-| `minFormOpenMs`        | —        | `2000`             | Bot heuristic — submissions faster than this are silently accepted but discarded (honeypot-style).                                                                       |
-| `maxTransportAttempts` | —        | `3`                | Retries per submission (exponential backoff starting at 1 s).                                                                                                            |
-| `transportTimeoutMs`   | —        | `10_000`           | Per-attempt abort timeout (ms). Implemented via `AbortController`; feature-detected so legacy browsers fall back to a plain fetch.                                       |
-| `mailtoFallback`       | —        | `null`             | When the transport exhausts retries, offer a `mailto:` fallback to this address so users can still reach you.                                                            |
-| `position`             | —        | `'bottom-right'`   | Floating button position: `'bottom-right'`, `'bottom-left'`, or `'bottom-center'`.                                                                                       |
+| Field                  | Required | Default            | Description                                                                                                                                                               |
+| ---------------------- | -------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `endpoint`             | ✓        | —                  | URL that receives the `POST` with the feedback payload (JSON).                                                                                                            |
+| `projectId`            | ✓        | —                  | Identifier carried in the payload; lets the backend route/separate per project.                                                                                           |
+| `token`                | —        | `null`             | Sent as `X-Feedback-Token` header. Treat as public — it's bundled in the browser; use the backend to validate caller identity properly.                                   |
+| `categories`           | —        | `null`             | Override the list of categories offered. Values must be drawn from `Category` (see [API Reference](#api-reference)). When `null`, all five built-in categories are shown. |
+| `maxMessageLength`     | —        | `500`              | Max length of the free-text field. Longer input is silently truncated.                                                                                                    |
+| `rateLimitWindowMs`    | —        | `600_000` (10 min) | Rolling window for the client-side rate limiter (per `projectId`, stored in `localStorage`).                                                                              |
+| `rateLimitMaxAttempts` | —        | `3`                | Max submissions per window before the widget shows a rate-limit message.                                                                                                  |
+| `minFormOpenMs`        | —        | `2000`             | Bot heuristic — submissions faster than this are silently accepted but discarded (honeypot-style).                                                                        |
+| `maxTransportAttempts` | —        | `3`                | Retries per submission (exponential backoff starting at 1 s).                                                                                                             |
+| `transportTimeoutMs`   | —        | `10_000`           | Per-attempt abort timeout (ms). Implemented via `AbortController`; feature-detected so legacy browsers fall back to a plain fetch.                                        |
+| `mailtoFallback`       | —        | `null`             | When the transport exhausts retries, offer a `mailto:` fallback to this address so users can still reach you.                                                             |
+| `position`             | —        | `'bottom-right'`   | Floating button position: `'bottom-right'`, `'bottom-left'`, or `'bottom-center'`.                                                                                        |
 
 ### Minimal example
 
@@ -308,7 +308,7 @@ const config: WidgetConfig = {
   endpoint: 'https://api.example.com/feedback',
   projectId: 'my-project',
   token: 'public-project-token-abc',
-  categories: ['bug', 'typo', 'suggestion'],
+  categories: ['bug', 'content', 'suggestion'],
   maxMessageLength: 1000,
   rateLimitWindowMs: 15 * 60 * 1000,
   rateLimitMaxAttempts: 5,
@@ -350,7 +350,7 @@ page's blocks.
 
 - `WidgetConfig` — configuration object shape (see [Configuration](#configuration)).
 - `Category` — feedback category identifier. One of:
-  `'bug'`, `'typo'`, `'error'`, `'ambiguous'`, `'suggestion'`, `'other'`.
+  `'bug'`, `'content'`, `'unclear'`, `'suggestion'`, `'praise'`.
 - `FeedbackWidgetHandle` — return type of `mountFeedbackWidget`.
 
 The core package (`@benoit-bremaud/feedback-widget-core`) additionally

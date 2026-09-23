@@ -20,43 +20,29 @@ import { LOCALES } from '../i18n'
 // `Messages` (see ../i18n.ts) so the widget can render in any locale.
 const CATEGORY_ICONS: Record<TopLevelCategory, string> = {
   bug: '🐛',
-  typo: '✏️',
-  error: '❌',
-  ambiguous: '🤔',
+  content: '✏️',
+  unclear: '🤔',
   suggestion: '💡',
-  other: '➕',
+  praise: '💚',
 }
 
 const SUB_CATEGORY_ICONS: Record<SubCategory, string> = {
   // bug
   crash: '💥',
-  'broken-feature': '🔧',
-  'visual-glitch': '🎨',
-  'wrong-output': '📊',
-  regression: '⏮️',
-  // typo
-  prose: '📝',
-  'code-sample': '💻',
-  heading: '🔠',
-  'link-text': '🔗',
-  'alt-text': '🖼️',
-  // error
-  'js-console': '🐞',
-  'http-404': '🔍',
-  'http-5xx': '🛑',
-  'broken-link': '🚧',
-  'missing-asset': '📦',
-  // ambiguous
+  'no-effect': '🔧',
+  'broken-display': '🎨',
+  'too-slow': '🐌',
+  // content
+  typo: '📝',
+  'wrong-info': '❌',
+  'dead-link': '🔗',
+  // unclear
   wording: '💬',
+  'missing-info': '🧩',
   navigation: '🧭',
-  terminology: '📖',
-  'example-unclear': '❓',
-  'missing-context': '🧩',
   // suggestion
   'new-feature': '✨',
   improvement: '📈',
-  'new-example': '➕',
-  'content-refactor': '♻️',
   accessibility: '♿',
 }
 
@@ -311,8 +297,8 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
     private renderSubCategoryStep(): string {
       const m = this.options.messages
       const cat = this.state.selectedCategory
-      if (cat === null || cat === 'other') {
-        // Defensive: 'other' has no sub-categories and should never reach
+      if (cat === null || cat === 'praise') {
+        // Defensive: 'praise' has no sub-categories and should never reach
         // this step. Fall back to the category picker.
         return this.renderTypeStep()
       }

@@ -1,4 +1,5 @@
 import type { TopLevelCategory } from '../domain/Feedback'
+import { isValidCategory } from '../domain/Feedback'
 
 // Bounds for the free-text message, part of the v0.3.0 payload
 // contract (10–2000 chars). Shared between the view (inline
@@ -151,16 +152,31 @@ function validateEndpoint(endpoint: string): string {
   return endpoint
 }
 
+// Keeps only categories the widget can actually render. Returns null (use
+// the built-in defaults) when nothing survives — never an empty list.
+function resolveCategories(
+  input: readonly TopLevelCategory[] | undefined,
+): readonly TopLevelCategory[] | null {
+  if (!Array.isArray(input)) {
+    return null
+  }
+  const known = input.filter((category) => isValidCategory(category))
+  return known.length > 0 ? known : null
+}
+
 export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
   return {
     ...DEFAULTS,
     endpoint: validateEndpoint(input.endpoint),
     projectId: input.projectId,
     token: input.token ?? null,
-    // An empty categories array would render a non-interactive type step;
-    // treat it (and null/undefined) as "use the defaults".
-    categories:
-      input.categories && input.categories.length > 0 ? input.categories : null,
+    // Unknown category names are dropped rather than trusted: `input` comes
+    // from an untyped host (the static <script> embed passes JSON), and the
+    // view renders nothing for a name it has no icon for — so a config left
+    // on a retired taxonomy would yield a category step with no buttons and
+    // no way out. An empty result (or null/undefined) falls back to the
+    // defaults for the same reason.
+    categories: resolveCategories(input.categories),
     // Clamp into [MIN, MAX]: a ceiling below the floor would lock users out
     // behind the inline error; a ceiling above MAX would breach the payload
     // contract; a non-number would poison the textarea maxlength.

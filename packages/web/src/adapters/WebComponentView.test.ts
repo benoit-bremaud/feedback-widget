@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { WidgetState } from '@benoit-bremaud/feedback-widget-core'
+import { SUB_CATEGORIES_BY_CATEGORY } from '@benoit-bremaud/feedback-widget-core'
 import {
   createWebComponentView,
   defineFeedbackWidgetElement,
@@ -118,7 +119,7 @@ describe('createWebComponentView — render per step', () => {
 
   it('renders category buttons on the type step', () => {
     const el = mountElement()
-    el.setOptions({ categories: ['bug', 'typo', 'other'] })
+    el.setOptions({ categories: ['bug', 'content', 'praise'] })
     const view = createWebComponentView(el)
 
     view.render({ ...initialState(), step: 'type' })
@@ -152,7 +153,7 @@ describe('createWebComponentView — render per step', () => {
     view.render({
       ...initialState(),
       step: 'precision',
-      selectedCategory: 'other',
+      selectedCategory: 'praise',
       errorMessage: 'Please write more.',
     })
 
@@ -219,24 +220,24 @@ describe('createWebComponentView — user actions', () => {
 
   it('clicking a category button emits `select-category` with the chosen category', () => {
     const el = mountElement()
-    el.setOptions({ categories: ['bug', 'typo'] })
+    el.setOptions({ categories: ['bug', 'content'] })
     const view = createWebComponentView(el)
     const onAction = vi.fn()
     view.onUserAction(onAction)
     view.render({ ...initialState(), step: 'type' })
 
     const button = el.shadowRoot!.querySelector<HTMLButtonElement>(
-      '[data-category="typo"]',
+      '[data-category="content"]',
     )
     button?.click()
 
     expect(onAction).toHaveBeenCalledWith({
       kind: 'select-category',
-      category: 'typo',
+      category: 'content',
     })
   })
 
-  it('renders the 5 sub-category buttons for the selected category', () => {
+  it('renders one button per sub-category of the selected category', () => {
     const el = mountElement()
     const view = createWebComponentView(el)
     view.render({
@@ -246,10 +247,29 @@ describe('createWebComponentView — user actions', () => {
     })
 
     const buttons = el.shadowRoot!.querySelectorAll('[data-sub-category]')
-    expect(buttons).toHaveLength(5)
+    expect(buttons).toHaveLength(SUB_CATEGORIES_BY_CATEGORY.bug.length)
     expect(
       el.shadowRoot!.querySelector('[data-sub-category="crash"]'),
     ).not.toBeNull()
+  })
+
+  it('falls back to the category picker if the sub-category step is reached with "praise"', () => {
+    const el = mountElement()
+    const view = createWebComponentView(el)
+    view.render({
+      ...initialState(),
+      step: 'sub-category',
+      selectedCategory: 'praise',
+    })
+
+    // `praise` declares no sub-category, so rendering the step verbatim
+    // would strand the user on an empty screen with no way forward.
+    expect(el.shadowRoot!.querySelectorAll('[data-sub-category]')).toHaveLength(
+      0,
+    )
+    expect(
+      el.shadowRoot!.querySelectorAll('[data-category]').length,
+    ).toBeGreaterThan(0)
   })
 
   it('clicking a sub-category button emits `select-sub-category`', () => {
@@ -302,8 +322,8 @@ describe('createWebComponentView — user actions', () => {
     })
 
     const title = el.shadowRoot!.querySelector('.fw-title')?.textContent ?? ''
-    expect(title).toContain('Bug')
-    expect(title).toContain('Plantage')
+    expect(title).toContain(LOCALES.fr.categoryLabels.bug)
+    expect(title).toContain(LOCALES.fr.subCategoryLabels.crash)
   })
 
   it('clicking confirm-target emits `confirm-target`', () => {
@@ -339,7 +359,7 @@ describe('createWebComponentView — user actions', () => {
     view.render({
       ...initialState(),
       step: 'precision',
-      selectedCategory: 'other',
+      selectedCategory: 'praise',
     })
 
     const textarea =
@@ -361,7 +381,7 @@ describe('createWebComponentView — user actions', () => {
     view.render({
       ...initialState(),
       step: 'precision',
-      selectedCategory: 'other',
+      selectedCategory: 'praise',
       userMessage: 'something to send',
     })
 

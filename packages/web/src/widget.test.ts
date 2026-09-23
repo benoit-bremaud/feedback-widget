@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { mountFeedbackWidget } from './widget'
+import { mountFeedbackWidget, WIDGET_VERSION } from './widget'
 
 /**
  * widget.ts tests — focused on the public API surface (`mountFeedbackWidget`)
@@ -124,7 +124,7 @@ const validConfig = {
   projectId: 'test-project',
   endpoint: 'https://example.test/feedback',
   token: 'test-token',
-  categories: ['bug', 'typo'],
+  categories: ['bug', 'content'],
   maxMessageLength: 500,
   minFormOpenMs: 0,
   maxTransportAttempts: 3,
@@ -320,21 +320,21 @@ describe('controller — user-action state transitions', () => {
     expect(rendered?.target).toEqual(target)
   })
 
-  it('select-category "other" skips sub-category and moves straight to precision', () => {
+  it('select-category "praise" skips sub-category and moves straight to precision', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
     viewRender.mockClear()
 
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
 
     const rendered = viewRender.mock.calls.at(-1)?.[0]
     expect(rendered?.step).toBe('precision')
-    expect(rendered?.selectedCategory).toBe('other')
+    expect(rendered?.selectedCategory).toBe('praise')
     expect(rendered?.selectedSubCategory).toBeNull()
   })
 
-  it('select-category on a non-other category opens the sub-category step', () => {
+  it('select-category on a category with sub-categories opens the sub-category step', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -377,7 +377,7 @@ describe('controller — user-action state transitions', () => {
     expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('type')
   })
 
-  it('back from precision returns to sub-category for a non-other category', () => {
+  it('back from precision returns to sub-category for a category with sub-categories', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
@@ -393,11 +393,11 @@ describe('controller — user-action state transitions', () => {
     expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('sub-category')
   })
 
-  it('back from precision returns to the category picker for "other"', () => {
+  it('back from precision returns to the category picker for "praise"', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     viewRender.mockClear()
 
     onUserActionCallback?.({ kind: 'back' })
@@ -409,7 +409,7 @@ describe('controller — user-action state transitions', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     viewRender.mockClear()
 
     onUserActionCallback?.({ kind: 'update-message', value: 'typing' })
@@ -422,7 +422,7 @@ describe('controller — user-action state transitions', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     viewRender.mockClear()
 
     const longValue = 'x'.repeat(600)
@@ -454,7 +454,7 @@ describe('handleSubmit — result branches', () => {
   const openToType = (): void => {
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     onUserActionCallback?.({
       kind: 'update-message',
       value: 'A meaningful ten-char-plus message.',
@@ -484,7 +484,7 @@ describe('handleSubmit — result branches', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })
-    onUserActionCallback?.({ kind: 'select-category', category: 'other' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
     onUserActionCallback?.({ kind: 'update-message', value: 'short' })
     viewRender.mockClear()
 
@@ -549,7 +549,7 @@ describe('handleSubmit — result branches', () => {
     expect(payload.viewport).toHaveProperty('h')
     expect(typeof payload.locale).toBe('string')
     expect(typeof payload.timestamp).toBe('string')
-    expect(payload.widgetVersion).toBe('0.5.2')
+    expect(payload.widgetVersion).toBe(WIDGET_VERSION)
     expect(typeof payload.scrollDepth).toBe('number')
     expect(typeof payload.sessionId).toBe('string')
     // reporterName is carried (null when the user typed no name)
@@ -559,7 +559,7 @@ describe('handleSubmit — result branches', () => {
     expect('content' in payload).toBe(false)
   })
 
-  it('submit on a non-other category without a sub-category bounces back to the sub-category step', async () => {
+  it('submit on a category requiring a sub-category without one bounces back to the sub-category step', async () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
     onUserActionCallback?.({ kind: 'confirm-target' })

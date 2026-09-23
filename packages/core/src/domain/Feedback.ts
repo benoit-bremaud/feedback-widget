@@ -1,48 +1,40 @@
-// Top-level feedback categories surfaced by the widget UI.
-export type TopLevelCategory =
-  | 'bug'
-  | 'typo'
-  | 'error'
-  | 'ambiguous'
-  | 'suggestion'
-  | 'other'
+// The feedback taxonomy — single source of truth. Every category type
+// below is DERIVED from this table, so the unions and the runtime list
+// cannot drift apart: dropping a value here removes it from the type
+// too, instead of leaving a union member the widget never renders.
+//
+// A category names the reporter's INTENT, not the technical nature of
+// the defect — the latter is derived downstream from the auto-captured
+// context. The former `typo`/`error`/`ambiguous` trio overlapped and
+// leaked developer vocabulary; `other` was dropped as `unclear` and
+// `suggestion` already absorb the vague cases; `praise` was added
+// because the widget was defect-only, with no way to report that
+// something works.
+//
+// Two contracts ride on this table:
+// - Array order IS the on-screen button order, so reordering is a
+//   user-visible change, not a refactor.
+// - Downstream consumers (feedback-pipeline-worker) duplicate it as
+//   their own allowlist, so any edit is BREAKING and needs a lockstep
+//   update there or valid submissions get rejected.
+export const SUB_CATEGORIES_BY_CATEGORY = {
+  bug: ['crash', 'no-effect', 'broken-display', 'too-slow'],
+  content: ['typo', 'wrong-info', 'dead-link'],
+  unclear: ['wording', 'missing-info', 'navigation'],
+  suggestion: ['new-feature', 'improvement', 'accessibility'],
+  // Free text only — the sole category carrying a null sub-category.
+  praise: [],
+} as const satisfies Record<string, readonly string[]>
 
-// Sub-categories per top-level category. Locked by the Phase B
-// debrief, Q9 (2026-04-24) — see .github/design/projects-yaml-schema.md.
-export type BugSubCategory =
-  | 'crash'
-  | 'broken-feature'
-  | 'visual-glitch'
-  | 'wrong-output'
-  | 'regression'
+export type TopLevelCategory = keyof typeof SUB_CATEGORIES_BY_CATEGORY
 
-export type TypoSubCategory =
-  | 'prose'
-  | 'code-sample'
-  | 'heading'
-  | 'link-text'
-  | 'alt-text'
-
-export type ErrorSubCategory =
-  | 'js-console'
-  | 'http-404'
-  | 'http-5xx'
-  | 'broken-link'
-  | 'missing-asset'
-
-export type AmbiguousSubCategory =
-  | 'wording'
-  | 'navigation'
-  | 'terminology'
-  | 'example-unclear'
-  | 'missing-context'
-
+export type BugSubCategory = (typeof SUB_CATEGORIES_BY_CATEGORY)['bug'][number]
+export type ContentSubCategory =
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['content'][number]
+export type UnclearSubCategory =
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['unclear'][number]
 export type SuggestionSubCategory =
-  | 'new-feature'
-  | 'improvement'
-  | 'new-example'
-  | 'content-refactor'
-  | 'accessibility'
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['suggestion'][number]
 
 // Umbrella union of every sub-category across all top-level
 // categories. Useful for loosely-typed UI state where the parent
@@ -50,20 +42,18 @@ export type SuggestionSubCategory =
 // is re-validated when the payload is built.
 export type SubCategory =
   | BugSubCategory
-  | TypoSubCategory
-  | ErrorSubCategory
-  | AmbiguousSubCategory
+  | ContentSubCategory
+  | UnclearSubCategory
   | SuggestionSubCategory
 
 // Discriminated union pairing each top-level category with its
-// allowed sub-categories. `other` carries a null sub-category.
+// allowed sub-categories. `praise` carries a null sub-category.
 export type CategorizedFeedback =
   | { category: 'bug'; subCategory: BugSubCategory }
-  | { category: 'typo'; subCategory: TypoSubCategory }
-  | { category: 'error'; subCategory: ErrorSubCategory }
-  | { category: 'ambiguous'; subCategory: AmbiguousSubCategory }
+  | { category: 'content'; subCategory: ContentSubCategory }
+  | { category: 'unclear'; subCategory: UnclearSubCategory }
   | { category: 'suggestion'; subCategory: SuggestionSubCategory }
-  | { category: 'other'; subCategory: null }
+  | { category: 'praise'; subCategory: null }
 
 // Viewport size in CSS pixels. Replaces the v0.2.0 device-aware
 // Viewport — the receiver can derive device class from w/h if needed.
@@ -131,70 +121,29 @@ export interface FeedbackTarget {
   excerpt: string | null
 }
 
-export const TOP_LEVEL_CATEGORIES: readonly TopLevelCategory[] = [
-  'bug',
-  'typo',
-  'error',
-  'ambiguous',
-  'suggestion',
-  'other',
-] as const
-
-export const SUB_CATEGORIES_BY_CATEGORY: Readonly<{
-  bug: readonly BugSubCategory[]
-  typo: readonly TypoSubCategory[]
-  error: readonly ErrorSubCategory[]
-  ambiguous: readonly AmbiguousSubCategory[]
-  suggestion: readonly SuggestionSubCategory[]
-  other: readonly never[]
-}> = {
-  bug: [
-    'crash',
-    'broken-feature',
-    'visual-glitch',
-    'wrong-output',
-    'regression',
-  ] as const,
-  typo: ['prose', 'code-sample', 'heading', 'link-text', 'alt-text'] as const,
-  error: [
-    'js-console',
-    'http-404',
-    'http-5xx',
-    'broken-link',
-    'missing-asset',
-  ] as const,
-  ambiguous: [
-    'wording',
-    'navigation',
-    'terminology',
-    'example-unclear',
-    'missing-context',
-  ] as const,
-  suggestion: [
-    'new-feature',
-    'improvement',
-    'new-example',
-    'content-refactor',
-    'accessibility',
-  ] as const,
-  other: [] as const,
-}
+// Derived from the table above, so the render order and the type stay
+// in sync with it by construction.
+export const TOP_LEVEL_CATEGORIES = Object.keys(
+  SUB_CATEGORIES_BY_CATEGORY,
+) as readonly TopLevelCategory[]
 
 export function isValidCategory(value: string): value is TopLevelCategory {
   return (TOP_LEVEL_CATEGORIES as readonly string[]).includes(value)
 }
 
-// `other` is the only category with no sub-category — it falls back
-// to free text only.
 export function requiresSubCategory(category: TopLevelCategory): boolean {
-  return category !== 'other'
+  return SUB_CATEGORIES_BY_CATEGORY[category].length > 0
 }
 
+// Always false for a category that declares no sub-category (`praise`)
+// — callers must gate on `requiresSubCategory` first rather than
+// reading false as "the user picked an invalid value". Guards the
+// lookup too: an untyped caller can pass a retired category name.
 export function isValidSubCategory(
   category: TopLevelCategory,
   value: string,
 ): boolean {
-  if (category === 'other') {
+  if (!isValidCategory(category)) {
     return false
   }
   return (SUB_CATEGORIES_BY_CATEGORY[category] as readonly string[]).includes(

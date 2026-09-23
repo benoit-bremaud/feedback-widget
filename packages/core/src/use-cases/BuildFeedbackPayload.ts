@@ -22,7 +22,7 @@ export type BuildPayloadInput = BrowserContext & {
 }
 
 // Builds the canonical FeedbackPayload from its constituent parts and
-// enforces the core invariant: `other` carries no sub-category, every
+// enforces the core invariant: `praise` carries no sub-category, every
 // other category carries a sub-category valid for that category.
 // Throws on violation — these are programming errors the view layer is
 // expected to prevent, not user-facing validation.
@@ -47,10 +47,10 @@ export function buildFeedbackPayload(
   // excluded from typechecking) omits `target` (would be `undefined`).
   const target = input.target ?? null
 
-  if (input.category === 'other') {
+  if (input.category === 'praise') {
     if (input.subCategory !== null) {
       throw new Error(
-        'buildFeedbackPayload: category "other" must not carry a sub-category',
+        'buildFeedbackPayload: category "praise" must not carry a sub-category',
       )
     }
     return {
@@ -58,7 +58,7 @@ export function buildFeedbackPayload(
       message: input.message,
       reporterName: input.reporterName,
       target,
-      category: 'other',
+      category: 'praise',
       subCategory: null,
     }
   }
@@ -80,7 +80,7 @@ export function buildFeedbackPayload(
     ...context,
     message: input.message,
     reporterName: input.reporterName,
-    target: input.target,
+    target,
     category: input.category,
     subCategory: input.subCategory,
   } as FeedbackPayload
