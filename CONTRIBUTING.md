@@ -24,7 +24,7 @@ Read it once end-to-end. After that, use it as a reference.
 6. [Pull Request description template](#pull-request-description-template)
 7. [Definition of Done](#definition-of-done)
 8. [Testing requirements](#testing-requirements)
-9. [Static analysis (local)](#static-analysis-local)
+9. [Local verification gate](#local-verification-gate)
 10. [Security](#security)
 11. [AI attribution — strictly forbidden](#ai-attribution--strictly-forbidden)
 12. [Public release checklist](#public-release-checklist)
@@ -362,9 +362,9 @@ A PR is Done — and eligible for merge — when **all** of the following hold:
 - [ ] `tsc --noEmit` passes on all affected packages.
 - [ ] `pnpm -r build` passes.
 - [ ] All existing tests still green (`pnpm -r test`).
-- [ ] All security scans green — Gitleaks must pass; CodeQL and
-      Dependency Review are gated on `repository.visibility == 'public'`
-      and skip silently on private.
+- [ ] `pnpm verify` passes locally — it is the gate, and the pre-push
+      hook runs it for you.
+- [ ] Gitleaks green (locally via `pnpm verify`, and in CI).
 - [ ] No `any` TypeScript type introduced. No default exports introduced.
       No inline styles introduced (if touching `packages/web`).
 - [ ] PR description follows the template and ends with `Closes #<issue>`.
@@ -533,14 +533,44 @@ To get auto-format on save:
 - **JetBrains** — enable `Prettier` and `ESLint` under Languages &
   Frameworks → JavaScript; set the actions to run on save.
 
-Husky pre-commit hooks are intentionally out of scope — CI is the
-single source of truth, local tooling is your choice.
+Git hooks used to be out of scope, on the grounds that CI was the single
+source of truth. That reversed once the checks moved local: see
+[Local verification gate](#local-verification-gate). No hook manager is
+installed — `pnpm install` points `core.hooksPath` at `.githooks/`.
 
 ---
 
-## Static analysis (local)
+## Local verification gate
 
-SonarQube analysis runs **locally, before pushing** — it is not a CI step.
+Most checks run **on your machine, before pushing** rather than in CI.
+
+```bash
+pnpm verify
+```
+
+It runs, cheapest first so an obvious mistake fails in seconds: format
+check → lint → secret detection → build → typecheck → tests with coverage
+→ SonarQube analysis. It stops at the **first** failure — the point is to
+fix it, not to collect a list.
+
+`pnpm install` wires a **pre-push hook** that runs it automatically. To
+push past it deliberately — a work-in-progress spike, a branch you know is
+red — use `git push --no-verify`. That is a conscious choice, not a
+default: `main` is not branch-protected on this repo, so the hook is the
+last thing between a broken tree and a shared branch.
+
+**Two checks announce themselves as skipped rather than passing quietly:**
+secret detection when `gitleaks` is not installed, and static analysis
+when `SONAR_TOKEN` is unset or no instance answers. A check that is
+skipped in silence is worse than one that is absent.
+
+**What stays in CI.** Build, typecheck, tests, lint, and Gitleaks still
+run on every PR. The local gate is the fast feedback loop, not a
+replacement — it cannot be trusted to have run on someone else's machine.
+
+### Static analysis
+
+SonarQube analysis runs **locally** — it is not a CI step.
 
 **Why it is not in CI.** SonarCloud's free plan analyzes public projects
 only, and this repo is private-first. A hosted scan could never
@@ -600,8 +630,10 @@ them, and skipping it is not a licence to push a red suite.
 
 ### Dependency security
 
-- Dependency changes are reviewed via GitHub's Dependency Review workflow
-  (gated on public visibility + GHAS).
+- Dependency changes are reviewed by hand at PR time. GitHub's Dependency
+  Review workflow needs GHAS, which a private repo on the free plan does
+  not have — it was removed rather than left skipping on every PR. Restore
+  it when the repo goes public.
 - Renovate runs on this repo (configured by `renovate.json` at the root).
   It opens one grouped PR per week (Monday before 6am Europe/Paris) for
   all `minor` + `patch` updates, and one PR per `major` update. Every PR
@@ -684,9 +716,11 @@ GitHub Packages) public, every item below must be satisfied:
 - [ ] `.env.example` exists with placeholder values only.
 - [ ] All secrets used during private development are **rotated** — bot
       tokens, OAuth credentials, API keys, passwords.
-- [ ] CI includes a secret-detection job (Gitleaks already does; CodeQL
-      and Dependency Review activate automatically once the repo is
-      public and GHAS is available).
+- [ ] CI includes a secret-detection job (Gitleaks already does).
+- [ ] **Re-add the GHAS-gated workflows** removed while private — CodeQL
+      and Dependency Review — and restore a hosted SonarQube scan. They
+      were deleted because they could not run on a private free-plan
+      repo, not because they are unwanted.
 - [ ] The public-facing README reflects the current install flow (no
       stale references to private-only endpoints).
 

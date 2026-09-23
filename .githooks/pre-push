@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Runs the local verification gate before every push.
+#
+# Enabled by `pnpm install` (the `prepare` script points core.hooksPath here),
+# so a fresh clone gets it without installing a hook manager.
+#
+# To push without it — a work-in-progress branch, a docs typo on a spike:
+#   git push --no-verify
+# That is a deliberate choice, not a default. `main` is not protected on this
+# repo, so this hook is the last thing standing between a broken tree and a
+# shared branch.
+set -euo pipefail
+
+exec "$(dirname "$0")/../scripts/verify.sh"
