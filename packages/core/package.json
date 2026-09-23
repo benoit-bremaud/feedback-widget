@@ -1,6 +1,6 @@
 {
   "name": "@benoit-bremaud/feedback-widget-core",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Pure-logic core for the feedback widget — domain, ports, use-cases, config. Runs in any JS runtime.",
   "author": "Benoît Bremaud",
   "license": "UNLICENSED",

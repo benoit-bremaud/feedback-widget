@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { mountFeedbackWidget } from './widget'
+import { mountFeedbackWidget, WIDGET_VERSION } from './widget'
 
 /**
  * widget.ts tests — focused on the public API surface (`mountFeedbackWidget`)
@@ -549,7 +549,7 @@ describe('handleSubmit — result branches', () => {
     expect(payload.viewport).toHaveProperty('h')
     expect(typeof payload.locale).toBe('string')
     expect(typeof payload.timestamp).toBe('string')
-    expect(payload.widgetVersion).toBe('0.5.2')
+    expect(payload.widgetVersion).toBe(WIDGET_VERSION)
     expect(typeof payload.scrollDepth).toBe('number')
     expect(typeof payload.sessionId).toBe('string')
     // reporterName is carried (null when the user typed no name)
