@@ -454,7 +454,7 @@ describe('i18n + theme (v0.5.0)', () => {
 
     view.render({ ...initialState(), step: 'type' })
 
-    expect(el.shadowRoot!.textContent).toContain('Choisis le type de problème.')
+    expect(el.shadowRoot!.textContent).toContain('Choisis le type de retour.')
   })
 
   it('renders English copy when the English messages are provided', () => {
@@ -465,8 +465,8 @@ describe('i18n + theme (v0.5.0)', () => {
     view.render({ ...initialState(), step: 'type' })
 
     const text = el.shadowRoot!.textContent ?? ''
-    expect(text).toContain('Choose the type of problem.')
-    expect(text).not.toContain('Choisis le type de problème.')
+    expect(text).toContain('Choose the type of feedback.')
+    expect(text).not.toContain('Choisis le type de retour.')
   })
 
   it('reflects an explicit theme as data-theme and clears it for the light default', () => {

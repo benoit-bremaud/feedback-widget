@@ -91,10 +91,7 @@ const SOURCE: DeepLocalized<Messages> = {
     accessibility: t('Accessibilité', 'Accessibility'),
   },
   trigger: {
-    aria: t(
-      'Signaler un problème sur cette page',
-      'Report a problem on this page',
-    ),
+    aria: t('Donner un retour sur cette page', 'Give feedback on this page'),
     label: t('Signaler', 'Report'),
   },
   close: t('Fermer', 'Close'),
@@ -116,24 +113,18 @@ const SOURCE: DeepLocalized<Messages> = {
     confirm: t('Oui, continuer', 'Yes, continue'),
   },
   type: {
-    title: t(
-      'Qu’est-ce qui ne va pas sur cette page&nbsp;?',
-      'What’s wrong on this page?',
-    ),
-    subtitle: t('Choisis le type de problème.', 'Choose the type of problem.'),
-    aria: t('Type de problème', 'Problem type'),
+    title: t('Tu veux nous dire quoi&nbsp;?', 'What’s wrong on this page?'),
+    subtitle: t('Choisis le type de retour.', 'Choose the type of feedback.'),
+    aria: t('Type de retour', 'Feedback type'),
   },
   subCategory: {
-    subtitle: t(
-      'Précise la nature du problème.',
-      'Specify the nature of the problem.',
-    ),
+    subtitle: t('Précise de quoi il s’agit.', 'Narrow it down.'),
     aria: t('Sous-catégorie', 'Sub-category'),
   },
   precision: {
     subtitle: t(
-      'Décris le problème (obligatoire), et ton prénom si tu veux.',
-      'Describe the problem (required), and your name if you like.',
+      'Dis-nous en plus (obligatoire), et ton prénom si tu veux.',
+      'Tell us more (required), and your name if you like.',
     ),
     descriptionLabel: t('Description', 'Description'),
     placeholder: t(
@@ -154,7 +145,7 @@ const SOURCE: DeepLocalized<Messages> = {
       'Ton retour a bien été envoyé.',
       'Your feedback has been sent.',
     ),
-    reset: t('Signaler autre chose', 'Report something else'),
+    reset: t('Envoyer un autre retour', 'Send another one'),
   },
   error: {
     title: t('Oups…', 'Oops…'),
@@ -163,8 +154,8 @@ const SOURCE: DeepLocalized<Messages> = {
   },
   validation: {
     minMessage: t(
-      'Merci de décrire le problème (10 caractères minimum).',
-      'Please describe the problem (10 characters minimum).',
+      'Merci d’en dire un peu plus (10 caractères minimum).',
+      'Please say a little more (10 characters minimum).',
     ),
     buildError: t(
       'Une erreur est survenue lors de la préparation de ton retour. Réessaie.',
@@ -211,7 +202,7 @@ const SOURCE: DeepLocalized<Messages> = {
     ),
   },
   mailto: {
-    subject: t('Signalement d’un problème', 'Problem report'),
+    subject: t('Retour sur le site', 'Site feedback'),
     bodyIntro: t(
       'Voici le contenu du retour (l’envoi automatique a échoué) :',
       'Here is the report content (automatic sending failed):',
