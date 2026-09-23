@@ -36,7 +36,7 @@ so it can only **pull outbound**:
 - Built from **`bb-homelab`** (Docker), in its own Claude Code session
   (one-session-per-project — spec here, code in its repo).
 - Follow bb-homelab's IaC structure + house conventions (CI, secret hygiene,
-  Conventional Commits, no AI attribution, PROJECT_LOG).
+  Conventional Commits, AI attribution allowed, PROJECT_LOG).
 
 ## Stack
 
