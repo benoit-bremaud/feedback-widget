@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-23
+
+Breaking release: the feedback taxonomy is reworked around what the reporter
+means, not how a developer would classify the defect. **Deploy the consumer
+pipeline before this widget bundle** — see the migration note below.
+
 ### Changed
 
 - **BREAKING — feedback taxonomy reworked.** A category now names the
@@ -32,10 +38,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   navigation), `suggestion` (new-feature · improvement · accessibility),
   `praise` (no sub-category).
 
-  **Migration** — hosts passing `categories` must update the values. Consumers
-  storing or routing on `category` / `subCategory` (notably the
-  `feedback-pipeline-worker`, which duplicates these tables) must be updated in
-  lockstep, or they will reject the new payloads.
+  **Migration** — hosts passing `categories` must update the values; unknown
+  names are now dropped by `resolveConfig` rather than rendered, and a config
+  where nothing survives falls back to the built-in defaults instead of showing
+  an empty picker. Consumers storing or routing on `category` / `subCategory`
+  (notably the `feedback-pipeline-worker`, which duplicates these tables) must
+  be updated **in lockstep, and deployed first**, or they will reject every new
+  payload. Rows already stored carry the old vocabulary.
+
+- `SUB_CATEGORIES_BY_CATEGORY` is now the single source of truth: the category
+  types are derived from it, so the unions and the runtime table can no longer
+  drift apart.
+
+### Fixed
+
+- `buildFeedbackPayload` returns a normalized `target` on sub-categorized
+  payloads. It passed the raw input, so an omitted target became `undefined`
+  and `JSON.stringify` dropped the key entirely — sending a payload with no
+  `target` at all on the majority path.
+
+### Removed
+
+- The `codeql` and `dependency-review` workflows, and the SonarCloud CI step.
+  None could run on a private repo on GitHub's and SonarCloud's free plans, so
+  all three reported nothing while appearing to gate every pull request. The
+  public release checklist tracks restoring them. Verification moved to a local
+  gate (`pnpm verify`) with a pre-push hook — see `CONTRIBUTING.md`.
 
 ## [0.5.2] - 2026-06-04
 
