@@ -31,7 +31,7 @@ Nothing connects _into_ the Pi; the Worker is the durable edge buffer.
 - New dedicated repo: **`feedback-pipeline-worker`** (private-first).
 - Mirror feedback-widget governance: `CONTRIBUTING.md`, `PROJECT_LOG.md`,
   branch + tag protection, CI (lint + typecheck + test + secret
-  detection), Conventional Commits, no AI attribution.
+  detection), Conventional Commits, AI attribution allowed.
 - Add it to a GitHub Project (reuse `feedback-widget` board or a new
   one — decide at scaffold time).
 
