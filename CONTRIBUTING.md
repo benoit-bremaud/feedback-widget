@@ -24,13 +24,14 @@ Read it once end-to-end. After that, use it as a reference.
 6. [Pull Request description template](#pull-request-description-template)
 7. [Definition of Done](#definition-of-done)
 8. [Testing requirements](#testing-requirements)
-9. [Security](#security)
-10. [AI attribution — allowed](#ai-attribution--allowed)
-11. [Public release checklist](#public-release-checklist)
-12. [Changelog and project log](#changelog-and-project-log)
-13. [Release workflow](#release-workflow)
-14. [Tag conventions](#tag-conventions)
-15. [Cross-links](#cross-links)
+9. [Local verification gate](#local-verification-gate)
+10. [Security](#security)
+11. [AI attribution — allowed](#ai-attribution--allowed)
+12. [Public release checklist](#public-release-checklist)
+13. [Changelog and project log](#changelog-and-project-log)
+14. [Release workflow](#release-workflow)
+15. [Tag conventions](#tag-conventions)
+16. [Cross-links](#cross-links)
 
 ---
 
@@ -361,9 +362,9 @@ A PR is Done — and eligible for merge — when **all** of the following hold:
 - [ ] `tsc --noEmit` passes on all affected packages.
 - [ ] `pnpm -r build` passes.
 - [ ] All existing tests still green (`pnpm -r test`).
-- [ ] All security scans green — Gitleaks must pass; CodeQL and
-      Dependency Review are gated on `repository.visibility == 'public'`
-      and skip silently on private.
+- [ ] `pnpm verify` passes locally — it is the gate, and the pre-push
+      hook runs it for you.
+- [ ] Gitleaks green (locally via `pnpm verify`, and in CI).
 - [ ] No `any` TypeScript type introduced. No default exports introduced.
       No inline styles introduced (if touching `packages/web`).
 - [ ] PR description follows the template and ends with `Closes #<issue>`.
@@ -416,23 +417,13 @@ pnpm test:coverage
 ```
 
 CI runs `pnpm test:coverage` on every push and PR and uploads the
-LCOV files as a `coverage-lcov` workflow artifact. On internal PRs
-and on pushes to `main`, it also feeds those reports to SonarCloud
-via `SonarSource/sonarqube-scan-action` so the SonarCloud Quality
-Gate check reports a real coverage percentage. The SonarCloud
-project is configured for CI-based analysis (not Automatic
-Analysis) so LCOV data is read directly; the scan step relies on
-the `SONAR_TOKEN` repository secret.
+LCOV files as a `coverage-lcov` workflow artifact.
 
-**Forked PRs do not run the SonarCloud scan** — GitHub does not
-expose repository secrets to workflows triggered from forks, so the
-scan would fail with an authentication error. The workflow step is
-guarded with `if: github.event.pull_request.head.repo.fork != true`
-and simply skips on fork PRs, keeping the rest of CI (build,
-typecheck, tests, LCOV artifact upload) green for external
-contributors. Quality Gate decoration then only appears when the PR
-is rerun in a trusted context (e.g. by a maintainer pushing the
-branch to the upstream repo).
+The coverage percentage itself is read **locally**: `pnpm verify`
+hands the same LCOV reports to the self-hosted SonarQube instance.
+See [Local verification gate](#local-verification-gate). There is no
+`SONAR_TOKEN` repository secret and no hosted Quality Gate — the
+token is personal and lives only in your shell.
 
 #### Enforced thresholds
 
@@ -532,8 +523,75 @@ To get auto-format on save:
 - **JetBrains** — enable `Prettier` and `ESLint` under Languages &
   Frameworks → JavaScript; set the actions to run on save.
 
-Husky pre-commit hooks are intentionally out of scope — CI is the
-single source of truth, local tooling is your choice.
+Git hooks used to be out of scope, on the grounds that CI was the single
+source of truth. That reversed once the checks moved local: see
+[Local verification gate](#local-verification-gate). No hook manager is
+installed — `pnpm install` points `core.hooksPath` at `.githooks/`.
+
+---
+
+## Local verification gate
+
+Most checks run **on your machine, before pushing** rather than in CI.
+
+```bash
+pnpm verify
+```
+
+It runs, cheapest first so an obvious mistake fails in seconds: format
+check → lint → secret detection → build → typecheck → tests with coverage
+→ SonarQube analysis. It stops at the **first** failure — the point is to
+fix it, not to collect a list.
+
+`pnpm install` wires a **pre-push hook** that runs it automatically. To
+push past it deliberately — a work-in-progress spike, a branch you know is
+red — use `git push --no-verify`. That is a conscious choice, not a
+default: `main` is not branch-protected on this repo, so the hook is the
+last thing between a broken tree and a shared branch.
+
+**Two checks announce themselves as skipped rather than passing quietly:**
+secret detection when `gitleaks` is not installed, and static analysis
+when `SONAR_TOKEN` is unset or no instance answers. A check that is
+skipped in silence is worse than one that is absent.
+
+**What stays in CI.** Build, typecheck, tests, lint, and Gitleaks still
+run on every PR. The local gate is the fast feedback loop, not a
+replacement — it cannot be trusted to have run on someone else's machine.
+
+### Static analysis
+
+SonarQube analysis runs **locally** — it is not a CI step.
+
+**Why it is not in CI.** SonarCloud's free plan analyzes public projects
+only, and this repo is private-first. A hosted scan could never
+authenticate, so the step failed every pull request regardless of the
+diff — including docs-only ones. A check that is red on every PR teaches
+reviewers to ignore red checks, which costs more than the analysis was
+buying. Restore a hosted scan when the repo goes public; the
+[public release checklist](#public-release-checklist) already tracks it.
+
+**Running it.**
+
+```bash
+pnpm sonar
+```
+
+That runs the test suite with coverage, then hands the LCOV reports to
+`sonar-scanner`. It needs:
+
+- a SonarQube instance reachable at `http://localhost:9000` (override
+  with `-Dsonar.host.url=` for another server), and
+- `SONAR_TOKEN` exported in your shell, generated from that instance.
+
+**Never commit that token, paste it into a chat or an issue, or add it to
+the repo.** It is a local credential — if it leaks anywhere, revoke it on
+the instance first and generate a new one. See
+[If a secret is ever committed](#if-a-secret-is-ever-committed).
+
+**What it does not replace.** Lint, typecheck, and the test suite still
+run in CI and still gate every PR. The local scan adds the quality and
+security lenses those three do not cover — it does not substitute for
+them, and skipping it is not a licence to push a red suite.
 
 ---
 
@@ -562,8 +620,10 @@ single source of truth, local tooling is your choice.
 
 ### Dependency security
 
-- Dependency changes are reviewed via GitHub's Dependency Review workflow
-  (gated on public visibility + GHAS).
+- Dependency changes are reviewed by hand at PR time. GitHub's Dependency
+  Review workflow needs GHAS, which a private repo on the free plan does
+  not have — it was removed rather than left skipping on every PR. Restore
+  it when the repo goes public.
 - Renovate runs on this repo (configured by `renovate.json` at the root).
   It opens one grouped PR per week (Monday before 6am Europe/Paris) for
   all `minor` + `patch` updates, and one PR per `major` update. Every PR
@@ -638,9 +698,11 @@ GitHub Packages) public, every item below must be satisfied:
 - [ ] `.env.example` exists with placeholder values only.
 - [ ] All secrets used during private development are **rotated** — bot
       tokens, OAuth credentials, API keys, passwords.
-- [ ] CI includes a secret-detection job (Gitleaks already does; CodeQL
-      and Dependency Review activate automatically once the repo is
-      public and GHAS is available).
+- [ ] CI includes a secret-detection job (Gitleaks already does).
+- [ ] **Re-add the GHAS-gated workflows** removed while private — CodeQL
+      and Dependency Review — and restore a hosted SonarQube scan. They
+      were deleted because they could not run on a private free-plan
+      repo, not because they are unwanted.
 - [ ] The public-facing README reflects the current install flow (no
       stale references to private-only endpoints).
 
