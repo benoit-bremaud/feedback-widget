@@ -4,12 +4,23 @@ This document is the canonical reference for how branch protection is
 configured on `main`. It is committed so the config can be replayed,
 diffed, or audited without needing access to the GitHub UI.
 
+> **Not currently applied.** `GET /repos/.../branches/main` reports
+> `protected: false`, and the protection API answers `403 — Upgrade to
+GitHub Pro or make this repository public`. Branch protection is a paid
+> feature for private repositories, so nothing below is in force today:
+> **direct pushes to `main` succeed**. Always check
+> `git branch --show-current` before committing. The pre-push hook
+> described in [CONTRIBUTING.md](../CONTRIBUTING.md#local-verification-gate)
+> is the interim control. Apply this configuration the day the repo goes
+> public or the plan changes.
+
 ## Policy
 
 - Pull request required before merge (no direct pushes to `main`)
 - Required status checks (strict / up-to-date branch):
   - `build-test`
-  - `SonarCloud Code Analysis`
+  - `lint`
+  - `Secret detection`
 - Linear history required (squash/rebase only, no merge commits)
 - Force-pushes blocked
 - Deletions blocked
@@ -25,15 +36,18 @@ diffed, or audited without needing access to the GitHub UI.
 
 ## Apply / update
 
-The two required status checks below come from two different sources:
+Every required status check below is a job in this repo:
 
-- `build-test` — job in [`.github/workflows/ci.yml`](workflows/ci.yml) (lives in this repo).
-- `SonarCloud Code Analysis` — posted by the **SonarCloud GitHub App**
-  integration (no workflow file in this repo). The string must match
-  the check name exactly as it appears on a PR. If the SonarCloud
-  integration is ever uninstalled, renamed, or disabled, the `contexts`
-  array **must be updated in the same change** — otherwise the missing
-  check will never report and all merges to `main` will be blocked.
+- `build-test` — [`.github/workflows/ci.yml`](workflows/ci.yml)
+- `lint` — [`.github/workflows/lint.yml`](workflows/lint.yml)
+- `Secret detection` — [`.github/workflows/gitleaks.yml`](workflows/gitleaks.yml)
+
+`SonarCloud Code Analysis` **was** listed here and has been removed:
+SonarCloud's free plan analyzes public projects only, so that check can
+never report on this repo, and a required check that never reports blocks
+every merge permanently. This file warned about exactly that failure mode
+— honour it: a check listed here that stops reporting must be removed in
+the same change that retires it.
 
 Run this command (idempotent — overwrites the current protection
 config with what is declared here):
@@ -44,7 +58,7 @@ gh api repos/benoit-bremaud/feedback-widget/branches/main/protection \
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["build-test", "SonarCloud Code Analysis"]
+    "contexts": ["build-test", "lint", "Secret detection"]
   },
   "enforce_admins": false,
   "required_pull_request_reviews": {
