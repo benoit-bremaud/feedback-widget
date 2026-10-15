@@ -68,7 +68,8 @@ then `pnpm verify`) → PR review (skill `pr-review-procedure`). Procedure:
 - Shadow DOM rendering goes through the single `innerHTML` in
   `WebComponentView.renderInternal`; **every user-provided string passes
   through `escapeHtml`**. Host-provided strings (config, i18n) are trusted.
-- Storage is namespaced per `projectId`; outbox and rate limiter are bounded
+- Storage is namespaced per `projectId`; the outbox persists **full payloads**
+  (50 entries, 7 days, see SECURITY.md); outbox and rate limiter are bounded
   and degrade silently when `localStorage` is unavailable.
 - Messages are i18n'd via `packages/web/src/i18n.ts` (`fr` / `en`): no
   hardcoded UI strings in views.

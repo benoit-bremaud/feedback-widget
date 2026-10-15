@@ -32,8 +32,15 @@ pin a version and bump deliberately; only the latest release receives fixes.
 - **Rendering**: the widget renders inside a shadow root; every user-provided
   string is HTML-escaped before insertion. Host-provided configuration is
   trusted by design (it is the integrator's own code).
-- **Client-side storage**: outbox and rate-limiter data are bounded and
-  namespaced per project; nothing sensitive is stored.
+- **Client-side storage**: when a submission fails (network or server error)
+  the **full feedback payload** is queued in `localStorage` for retry: free-text
+  message, optional reporter name, page URL and referrer, user agent, viewport,
+  session id, widget version and the targeted element's descriptor (never a
+  form field's value). The outbox keeps at most 50 entries for up to 7 days,
+  then purges them; the rate limiter stores only timestamps. Both are
+  namespaced per project and readable by any script on the same origin, as all
+  `localStorage` is. Integrators who collect feedback on pages with sensitive
+  content should disclose this in their privacy notice.
 - **Transport**: the payload is POSTed to the integrator's endpoint. Origin
   filtering, rate limiting and validation are enforced server-side by
   `feedback-pipeline-worker`.
