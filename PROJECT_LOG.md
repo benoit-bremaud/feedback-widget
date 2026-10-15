@@ -1145,3 +1145,37 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **Ref:** issue [#82](https://github.com/benoit-bremaud/feedback-widget/issues/82), PR [#67](https://github.com/benoit-bremaud/feedback-widget/pull/67),
   merge commit [`ac6c677`](https://github.com/benoit-bremaud/feedback-widget/commit/ac6c677),
   tag [`v0.6.0`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.6.0).
+
+### PR #103 merged — legacy taxonomy remap decision recorded (#84)
+
+- **What:** Adds the decision spec and sequence diagram for the D1 rows that
+  still carried the taxonomy retired by #64. Option C was chosen: remap the
+  legacy rows once with a D1 migration instead of a tolerant read path. Review
+  finding (Codex, P2) fixed: the DDL in `feedback-dashboard-build.md` now
+  matches the as-built schema. The implementation lives in
+  [feedback-pipeline-worker#39](https://github.com/benoit-bremaud/feedback-pipeline-worker/pull/39),
+  deployed as Version `e1e79acd`, D1 migration `0002` applied, 0 legacy rows
+  left.
+- **Why:** A tolerant read would have kept two taxonomies alive in every
+  consumer; a one-shot remap keeps the Worker contract single-sourced. The
+  decision had to live in git, next to the diagrams, not in session memory.
+- **Ref:** issue [#84](https://github.com/benoit-bremaud/feedback-widget/issues/84), PR [#103](https://github.com/benoit-bremaud/feedback-widget/pull/103),
+  squash commit [`468a0df`](https://github.com/benoit-bremaud/feedback-widget/commit/468a0df).
+
+### Backlog hygiene — stale issues, milestones and board statuses (#86, #87)
+
+- **What:** Closed #15 (roadmap v0.3.0+, superseded by epics #76–#81), #17
+  (memory entry, done locally months ago) and epic #76 (all children done:
+  #13, #82, #83, #84); #43 had already been closed by #90 (Dependabot replaced
+  Renovate). Closed the three milestones left open without live work:
+  v0.2.1 — Hardening, v0.3.0 — Multi-project pipeline, v0.6.0 — Feedback
+  taxonomy rework. On Project 52, every item now has a Status (Done on every
+  closed issue and merged PR, Backlog on every open issue); PRs #64–#67 and
+  the widget bug reports #68–#75 and #88 are attached to the board. This PR
+  carries this entry plus the #103 entry above; no code change.
+- **Why:** The board could not pilot the project while 68 items had no
+  Status and three milestones pointed at shipped work. Only live milestones
+  and epics remain open, which is epic #81's definition of done for these
+  two children.
+- **Ref:** issues [#86](https://github.com/benoit-bremaud/feedback-widget/issues/86), [#87](https://github.com/benoit-bremaud/feedback-widget/issues/87),
+  PR [#104](https://github.com/benoit-bremaud/feedback-widget/pull/104).
