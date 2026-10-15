@@ -44,6 +44,6 @@
     "@benoit-bremaud/feedback-widget-core": "workspace:*"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.2"
   }
 }

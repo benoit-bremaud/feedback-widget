@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/benoit-bremaud/feedback-widget/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/benoit-bremaud/feedback-widget/actions/workflows/ci.yml)
 [![Gitleaks](https://github.com/benoit-bremaud/feedback-widget/actions/workflows/gitleaks.yml/badge.svg?branch=main)](https://github.com/benoit-bremaud/feedback-widget/actions/workflows/gitleaks.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=benoit-bremaud_feedback-widget&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=benoit-bremaud_feedback-widget)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 [![pnpm](https://img.shields.io/badge/pnpm-workspaces-f69220)](https://pnpm.io/workspaces)
 [![License: UNLICENSED](https://img.shields.io/badge/license-UNLICENSED-lightgrey)](LICENSE)
@@ -366,9 +365,7 @@ recommended pattern uses the bundler's build-time env:
 
 ```ts
 if (import.meta.env.DEV) {
-  mountFeedbackWidget({
-    /* ... */
-  })
+  mountFeedbackWidget({/* ... */})
 }
 ```
 
@@ -376,9 +373,7 @@ Or via an explicit flag (Vite-style):
 
 ```ts
 if (import.meta.env.VITE_FEEDBACK_WIDGET_ENABLED === 'true') {
-  mountFeedbackWidget({
-    /* ... */
-  })
+  mountFeedbackWidget({/* ... */})
 }
 ```
 

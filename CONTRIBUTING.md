@@ -17,21 +17,22 @@ Read it once end-to-end. After that, use it as a reference.
 ## Table of contents
 
 1. [Workflow overview](#workflow-overview)
-2. [Issue conventions](#issue-conventions)
-3. [Branch naming](#branch-naming)
-4. [Commit conventions](#commit-conventions)
-5. [Pull Request metadata (mandatory)](#pull-request-metadata-mandatory)
-6. [Pull Request description template](#pull-request-description-template)
-7. [Definition of Done](#definition-of-done)
-8. [Testing requirements](#testing-requirements)
-9. [Local verification gate](#local-verification-gate)
-10. [Security](#security)
-11. [AI attribution — allowed](#ai-attribution--allowed)
-12. [Public release checklist](#public-release-checklist)
-13. [Changelog and project log](#changelog-and-project-log)
-14. [Release workflow](#release-workflow)
-15. [Tag conventions](#tag-conventions)
-16. [Cross-links](#cross-links)
+2. [Working method — the three gates](#working-method--the-three-gates)
+3. [Issue conventions](#issue-conventions)
+4. [Branch naming](#branch-naming)
+5. [Commit conventions](#commit-conventions)
+6. [Pull Request metadata (mandatory)](#pull-request-metadata-mandatory)
+7. [Pull Request description template](#pull-request-description-template)
+8. [Definition of Done](#definition-of-done)
+9. [Testing requirements](#testing-requirements)
+10. [Local verification gate](#local-verification-gate)
+11. [Security](#security)
+12. [AI attribution — allowed](#ai-attribution--allowed)
+13. [Public release checklist](#public-release-checklist)
+14. [Changelog and project log](#changelog-and-project-log)
+15. [Release workflow](#release-workflow)
+16. [Tag conventions](#tag-conventions)
+17. [Cross-links](#cross-links)
 
 ---
 
@@ -56,6 +57,63 @@ inflating the current PR.
 trail readable. Every change on `main` can be traced back to an issue with
 rationale, a PR with review history, and a commit with a conventional
 message. Skipping a step breaks that chain forever.
+
+---
+
+## Working method — the three gates
+
+These gates apply to every change, by a human or by an AI agent. They are
+the repo-level expression of the cross-agent rules in
+`~/.agent-rules/common.md`; the agent-facing summary lives in
+[CLAUDE.md](./CLAUDE.md).
+
+### 1. Conception gate — design before code
+
+No new behaviour is implemented before its design is validated:
+
+1. The need and its acceptance criteria exist as an issue.
+2. The specification and the **minimum** UML views that answer the
+   feature's real questions live under `docs/architecture/specs/` and
+   `docs/architecture/diagrams/<feature>/` (Mermaid; use-case, sequence,
+   component, class, state, data-flow — only the ones that apply).
+3. The conception is reviewed for requirements traceability, dependency
+   direction (core never imports web or infrastructure), KISS/YAGNI/DRY,
+   and pattern fit.
+4. The owner validates explicitly. Then, and only then, code.
+
+The spec and the accepted design are the source of truth: when the
+implementation reveals a design defect, the design is updated and
+re-validated in the same change. Proportionality rules: a one-line fix
+needs no diagram; a new use-case does.
+
+### 2. Pre-push review gate — every branch, no trivial-diff exception
+
+Before every `git push`, run a structured read-only review of
+`origin/main...HEAD` (Claude Code: skill `review-local`). Classify every
+finding **Must Have / Should Have / Nice to Have / Disagree** with a
+`file:line` anchor, and answer each one (done / deferred with reason /
+disagreed with rationale). The push is authorised only when every Must
+Have is resolved and `pnpm verify` is green. A reviewer that could not run
+is reported, never silently skipped.
+
+`pnpm verify` is the mechanical half of this gate (format, lint, secrets,
+build, types, tests, static analysis). The review is the judgement half:
+reach (did the change travel everywhere it should), depth (are the new
+invariants tested), and the Worker contract coupling described in
+[CLAUDE.md](./CLAUDE.md).
+
+### 3. PR-review gate — one comment at a time
+
+Reviewer comments (Copilot, Codex, humans) are handled one distinct issue
+at a time: **verify each claim against the code** before relaying it, let
+the owner decide, reply inline per comment. Before any merge, **re-fetch
+all reviews** — later batches count. The step-by-step procedure lives in
+the skill `pr-review-procedure` and is not duplicated here.
+
+**Why three gates.** Each one catches what the others cannot: the first
+catches the wrong design, the second the wrong diff, the third the wrong
+assumption. Together they are cheaper than one production bug on a widget
+embedded in someone else's site.
 
 ---
 
@@ -364,6 +422,11 @@ A PR is Done — and eligible for merge — when **all** of the following hold:
 - [ ] All existing tests still green (`pnpm -r test`).
 - [ ] `pnpm verify` passes locally — it is the gate, and the pre-push
       hook runs it for you.
+- [ ] Pre-push review done (§ Working method, gate 2): every Must Have
+      resolved, each finding answered.
+- [ ] New behaviour went through the conception gate (§ Working method,
+      gate 1): spec + UML validated before the code was written. N/A for
+      fixes and chores.
 - [ ] Gitleaks green (locally via `pnpm verify`, and in CI).
 - [ ] No `any` TypeScript type introduced. No default exports introduced.
       No inline styles introduced (if touching `packages/web`).
@@ -624,23 +687,22 @@ them, and skipping it is not a licence to push a red suite.
   Review workflow needs GHAS, which a private repo on the free plan does
   not have — it was removed rather than left skipping on every PR. Restore
   it when the repo goes public.
-- Renovate runs on this repo (configured by `renovate.json` at the root).
-  It opens one grouped PR per week (Monday before 6am Europe/Paris) for
-  all `minor` + `patch` updates, and one PR per `major` update. Every PR
-  auto-applies the `type:task` + `area:ci` labels, assigns
-  `benoit-bremaud`, and follows the `chore(deps):` commit convention.
-  Security updates flagged by GitHub vulnerability alerts bypass the
-  schedule and carry a `prio:P1` label.
-- **Auto-merge is disabled** — every Renovate PR requires manual review
+- **Dependabot** runs on this repo (`.github/dependabot.yml`): one grouped
+  PR per week (Monday 06:00 Europe/Paris) for `minor` + `patch` npm
+  updates, one PR per `major`, plus GitHub Actions version bumps (SHA pins updated). PRs carry
+  `type:task` + `area:ci`, are assigned to `benoit-bremaud`, and use the
+  `chore(deps):` / `chore(ci):` prefixes. Dependabot **alerts** and
+  **security updates** are enabled in the repo settings, so a CVE opens its
+  PR outside the weekly schedule. (Renovate was configured in April 2026
+  but its GitHub App was never installed; it was replaced on 2026-10-15,
+  tracked in #43.)
+- **Auto-merge is disabled** — every dependency PR requires manual review
   and the same merge gate as any other PR (CI green, automated review
   posted, explicit owner approval). This matches the global "never merge
   autonomously" rule.
-- The Renovate dependency dashboard (auto-created issue) is the canonical
-  view of pending updates; use it to throttle noise or trigger specific
-  packages ahead of schedule.
-- Renovate itself is a GitHub App and must be installed once on the repo
-  via [github.com/apps/renovate](https://github.com/apps/renovate) —
-  config lives in git, install state lives on GitHub; both are required.
+- `pnpm audit` runs on demand; findings without an upstream fix are recorded
+  as accepted risks in [SECURITY.md](./SECURITY.md) with a review trigger,
+  never silently ignored.
 
 ---
 
@@ -876,6 +938,9 @@ Repository ruleset scoped to `refs/tags/v*`:
 ## Cross-links
 
 - [README.md](./README.md) — user-facing quickstart, install, API, integration
+- [CLAUDE.md](./CLAUDE.md) — agent-facing project specifics (commands, gates,
+  Worker coupling, GitHub metadata); inherits the global rules
+- [SECURITY.md](./SECURITY.md) — reporting policy, practices, accepted risks
 - [PROJECT_LOG.md](./PROJECT_LOG.md) — operational logbook
 - [CHANGELOG.md](./CHANGELOG.md) — published versions
 - [.github/branch-protection.md](./.github/branch-protection.md) — branch
