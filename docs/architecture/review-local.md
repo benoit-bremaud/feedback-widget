@@ -1,24 +1,22 @@
 # Local review — feedback-widget (branch diff main...HEAD)
 
 - Date: 2026-10-15
-- Commit: 1e554c9 (reviewed; fixes applied in the follow-up commit)
-- Scope: `git diff origin/main...HEAD` — 1 file: PROJECT_LOG.md (entries for PR #103 and the backlog hygiene pass #86/#87)
-- Checks run: docs · correctness (design · tests · security assessed inline as not applicable: no code, no dependency, no workflow change)
-- Verdict: ship · Must 1 · Should 2 · Nice 2 — Must and both Nice resolved in-branch; the "PR #TBD" placeholder filled once the PR number was known
+- Commit: working tree on `chore/T-105-deps-majors` (reviewed before the first commit)
+- Scope: `git diff origin/main` — `package.json`, `pnpm-lock.yaml`, `PROJECT_LOG.md`, `.github/dependabot.yml` (dependency majors #96–#99 + `@eslint/js` 10, dead `pnpm.overrides` dropped, log entry for #105)
+- Checks run: security · correctness · docs (design · tests assessed inline as not applicable: no source file changed)
+- Verdict: ship · Must 0 · Should 1 · Nice 1 — the Should resolved in-branch
 
 ## 🔴 Must Have
 
-- `PROJECT_LOG.md:1175` `[docs]` · The Why line said "four milestones" while the What line names three closed milestones (v0.2.0 was already closed) · Fixed: "three milestones".
+_None._
 
 ## 🟡 Should Have
 
-- `PROJECT_LOG.md:1180` `[docs]` · Ref line reads "PR #TBD" · Filled with the PR number as soon as the PR is opened (same commit flow as earlier bundled entries).
-- `PROJECT_LOG.md:1153` `[docs]` · "Codex P2 fixed by …" is reviewer jargon · Fixed: "Review finding (Codex, P2) fixed: …".
+- `.github/dependabot.yml:13` `[correctness]` · `eslint` and `@eslint/js` share a major line but were not grouped, so Dependabot proposed eslint 10 alone (#96) and will do it again · Fixed: `eslint-major` group (`patterns: eslint, @eslint/*`, `update-types: [major]`).
 
 ## 🔵 Nice to Have
 
-- `PROJECT_LOG.md:1157` `[docs]` · `feedback-pipeline-worker#39` was plain text while every other reference is a link · Fixed: linked to the Worker PR.
-- `PROJECT_LOG.md:1171` `[docs]` · Board attachments listed one by one · Kept as an audit trail (the log's purpose).
+- `PROJECT_LOG.md:1184` `[docs]` · Long entry · Kept: the log is the audit trail (precedent: #86/#87 entry).
 
 ## ⚪ Disagree / Intentional
 
@@ -26,4 +24,4 @@ _None._
 
 ## Per-dimension summary
 
-- Design: not applicable (no code) · Docs: format consistent with earlier entries, one internal contradiction fixed · Tests: not applicable · Security: no secrets, no sensitive data in the entries · Correctness: cross-references checked against GitHub (#43 closed 2026-10-15 by the Dependabot decision, #103 squash `468a0df`, milestones 2/3/4 closed with 0 open issues).
+- Design: not applicable (no source change) · Docs: PROJECT_LOG entry cross-checked against GitHub (#91–#95 merged, alert #1 dismissed as tolerable risk, issue #105 under epic #81) · Tests: 68 + 134 pass under happy-dom 21 / typescript 6 · Security: every lockfile source is `registry.npmjs.org`, `pnpm audit` unchanged (node-forge only, accepted risk), no secrets · Correctness: `pnpm verify` green through tests (format, lint zero-warning under eslint 10 / globals 17, build, typecheck TS 6 without deprecation); the SonarQube step failed with 401 on an invalid local token, unrelated to the change.
