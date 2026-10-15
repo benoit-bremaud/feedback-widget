@@ -835,6 +835,30 @@ Releases are **tag-driven**. The canonical reference is
    dist-tag (`vX.Y.Z` → `latest`, `vX.Y.Z-rc*` → `rc`, etc.) and
    publishes both packages to GitHub Packages under
    `@benoit-bremaud`.
+6. **Deploy in this order — the only production-affecting steps.** Merging
+   and tagging touch no site. Then: (a) update `feedback-pipeline-worker`
+   (it duplicates the category tables and the payload bounds — see
+   [CLAUDE.md](./CLAUDE.md) § Repo-specific traps), copy the fresh bundle
+   to its `public/widget.js` + `public/widget-X.Y.Z.js`, and deploy it;
+   (b) only then let any consumer site load `widget-X.Y.Z.js`. A bundle
+   shipped before the Worker means every submission is rejected with 400.
+   The Worker _code_ update is needed only when the release changed the
+   payload shape, the category tables or the bounds; the bundle copy and
+   deploy are needed on every release.
+7. **Notify consumers.** The repo owner, right after the tag is pushed,
+   opens the Worker PR of step 6 and one `chore(deps)` issue (or PR) on
+   each consumer repo that embeds the widget, pointing at the CHANGELOG
+   section and the new `widget-X.Y.Z.js` URL. Consumers bump when they
+   choose; the pinned URL means nothing changes for them until they do.
+
+**Version bump rule.** Conventional Commits decide the bump: a `!` or
+`BREAKING CHANGE` footer → MAJOR (MINOR while the project is `0.y.z`, as
+`v0.6.0` was for the taxonomy rework), `feat` → MINOR, `fix` / `chore` /
+`docs` → PATCH.
+
+**Hotfix.** Same flow, smaller: branch `release/vX.Y.(Z+1)` from `main`,
+cherry-pick or fix, run steps 1–7 with a PATCH bump. Never tag from the
+hotfix branch itself — merge to `main` first, then tag.
 
 **Never tag a commit that is not on `main`.** The publish workflow
 enforces this — do not try to work around the check.
