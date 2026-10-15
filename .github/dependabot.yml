@@ -10,6 +10,10 @@ updates:
       time: '06:00'
       timezone: Europe/Paris
     groups:
+      # eslint and @eslint/js share a major line: bump them together (#105).
+      eslint-major:
+        patterns: ['eslint', '@eslint/*']
+        update-types: [major]
       minor-and-patch:
         update-types: [minor, patch]
     labels: [type:task, area:ci]

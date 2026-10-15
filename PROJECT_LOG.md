@@ -1178,4 +1178,33 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   and epics remain open, which is epic #81's definition of done for these
   two children.
 - **Ref:** issues [#86](https://github.com/benoit-bremaud/feedback-widget/issues/86), [#87](https://github.com/benoit-bremaud/feedback-widget/issues/87),
-  PR [#104](https://github.com/benoit-bremaud/feedback-widget/pull/104).
+  PR [#104](https://github.com/benoit-bremaud/feedback-widget/pull/104),
+  squash commit [`06c1f0b`](https://github.com/benoit-bremaud/feedback-widget/commit/06c1f0b).
+
+### Dependabot majors triaged — #91–#99 cleared, npm lockfile PRs unblocked (#105)
+
+- **What:** First Dependabot backlog, nine MAJOR bumps. The five workflow
+  PRs (#91 pnpm/action-setup 6, #92 actions/checkout 7, #93 gitleaks-action
+  3, #94 actions/setup-node 7, #95 actions/upload-artifact 7) were green and
+  independent: merged as-is. The four npm PRs (#96 eslint 10, #97 globals 17,
+  #98 happy-dom 21, #99 typescript 6) all failed at
+  `pnpm install --frozen-lockfile`: Dependabot regenerates `pnpm-lock.yaml`
+  without the root `pnpm.overrides` block, so the lockfile never matches
+  `package.json`. Those three overrides (`ws`, `brace-expansion`, `vite`)
+  were dead: the lockfile resolves the patched versions without them and
+  `pnpm audit` is unchanged. This PR drops them and lands the four majors
+  plus `@eslint/js` 10 (the eslint pair Dependabot did not propose) in one
+  change validated by `pnpm verify`; #96–#99 are closed with a reason, and
+  `.github/dependabot.yml` now groups `eslint` + `@eslint/*` majors. The
+  high alert #1 (`node-forge` ≤ 1.4.0 via `sonarqube-scanner`) is dismissed
+  as tolerable risk: dev-only, no patched version, already recorded in
+  `SECURITY.md`.
+- **Why:** Merging the npm PRs one by one would have failed on every rebase
+  for the same lockfile reason, and every future Dependabot npm PR with it.
+  Removing the dead overrides fixes the cause; one combined PR keeps the
+  decision and the verification in a single place.
+- **Ref:** issue [#105](https://github.com/benoit-bremaud/feedback-widget/issues/105)
+  under epic [#81](https://github.com/benoit-bremaud/feedback-widget/issues/81),
+  PRs [#91](https://github.com/benoit-bremaud/feedback-widget/pull/91)–[#95](https://github.com/benoit-bremaud/feedback-widget/pull/95)
+  merged, [#96](https://github.com/benoit-bremaud/feedback-widget/pull/96)–[#99](https://github.com/benoit-bremaud/feedback-widget/pull/99)
+  closed, Dependabot alert [#1](https://github.com/benoit-bremaud/feedback-widget/security/dependabot/1).
