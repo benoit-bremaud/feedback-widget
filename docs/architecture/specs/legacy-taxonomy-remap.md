@@ -46,7 +46,10 @@ Sensitivity: reversibility 25 / KISS 5 → B 405 vs C 410; ingest window 30 / UX
 - **Columns are the v0.6.0 projection, `payload` is the source of truth.**
   `category` / `sub_category` only ever carry the current vocabulary; the JSON
   column keeps the pair the widget sent. The remap is reversible with
-  `json_extract(payload, '$.category')` / `'$.subCategory'`.
+  `json_extract(payload, '$.category')` / `'$.subCategory'`. The `payload`
+  column exists since the executable schema
+  `feedback-pipeline-worker/migrations/0001_init.sql` (as-built DDL mirrored in
+  [`feedback-dashboard-build.md`](./feedback-dashboard-build.md)).
 - **One mapping table**, `LEGACY_TAXONOMY_REMAP` in the Worker
   (`src/lib/taxonomy.ts`), used at write time by `insertFeedback` and mirrored
   by `migrations/0002_remap_legacy_taxonomy.sql` for the rows stored before.
