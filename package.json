@@ -29,7 +29,7 @@
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^15.15.0",
-    "happy-dom": "^20.14.6",
+    "happy-dom": "^21.0.1",
     "prettier": "^3.9.10",
     "sonarqube-scanner": "5.0.1",
     "typescript": "^5.9.3",
