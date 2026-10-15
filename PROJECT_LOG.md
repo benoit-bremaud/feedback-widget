@@ -1123,4 +1123,4 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **Why:** The method the global rules require was nowhere in git; an agent
   or a human opening the repo had to rely on memory. Dependabot gives the
   repo its first automated CVE signal.
-- **Ref:** issue [#89](https://github.com/benoit-bremaud/feedback-widget/issues/89), PR number to follow.
+- **Ref:** issue [#89](https://github.com/benoit-bremaud/feedback-widget/issues/89), PR [#90](https://github.com/benoit-bremaud/feedback-widget/pull/90).
