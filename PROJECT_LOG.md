@@ -893,8 +893,8 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   hand-validates the payload) — see
   [the Worker contract](docs/architecture/specs/feedback-pipeline-worker.md).
   Privacy: the descriptor never carries a form field's entered value.
-- **Ref:** PR [#50](https://github.com/benoit-bremaud/feedback-widget/pull/50);
-  merge commit + tag `v0.4.0` to be backfilled post-merge.
+- **Ref:** PR [#50](https://github.com/benoit-bremaud/feedback-widget/pull/50),
+  merge commit [`749ccd9`](https://github.com/benoit-bremaud/feedback-widget/commit/749ccd9), tag `v0.4.0`.
 
 ## 2026-05-24
 
@@ -934,7 +934,7 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   diagrams describing the old Pi-as-brain model — a misleading architecture
   trail. This makes the docs internally consistent.
 - **Ref:** issue [#53](https://github.com/benoit-bremaud/feedback-widget/issues/53);
-  follows #51/#52. PR backfilled post-merge.
+  follows #51/#52. PR [#54](https://github.com/benoit-bremaud/feedback-widget/pull/54).
 
 ---
 
@@ -985,7 +985,8 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   (core 62, web 132); `pnpm audit` clean.
 - **Why:** The widget will be embedded across many projects on arbitrary,
   possibly hostile hosts — harden before wider rollout.
-- **Ref:** PR for `fix/v0.5.2-hardening` (number backfilled).
+- **Ref:** PR [#59](https://github.com/benoit-bremaud/feedback-widget/pull/59),
+  merge commit [`a110358`](https://github.com/benoit-bremaud/feedback-widget/commit/a110358).
 
 ## 2026-06-05
 
@@ -1014,8 +1015,8 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   origin must be added to the Worker's `ALLOWED_ORIGINS` before
   `POST /ingest` accepts requests — flags this is today still a
   manual operator action in `feedback-pipeline-worker/wrangler.toml`.
-- **Ref:** PR for branch `docs/widget-embed-script-c2` (number
-  backfilled post-merge).
+- **Ref:** PR [#61](https://github.com/benoit-bremaud/feedback-widget/pull/61),
+  merge commit [`4bd7c4c`](https://github.com/benoit-bremaud/feedback-widget/commit/4bd7c4c).
 
 ### C.3 — Versioned bundle URLs + retroactive close on C.1
 
@@ -1045,5 +1046,81 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   resolve; companion brief delivered alongside this PR. Until the
   Worker companion ships, the new versioned URL returns 404 — the
   unversioned `/widget.js` keeps serving the latest deployed bundle.
-- **Ref:** PR for branch `feat/widget-versioned-bundle-c3` (number
-  backfilled post-merge).
+- **Ref:** PR [#63](https://github.com/benoit-bremaud/feedback-widget/pull/63),
+  merge commit [`9dacfb9`](https://github.com/benoit-bremaud/feedback-widget/commit/9dacfb9).
+
+## 2026-09-23
+
+### PR #66 merged — verification moved to a local gate
+
+- **What:** Added `scripts/verify.sh` (`pnpm verify`: format → lint →
+  gitleaks → build → typecheck → tests+coverage → SonarQube) wired as a
+  pre-push hook through `.githooks/`. Removed the SonarCloud, CodeQL and
+  Dependency Review workflows, which failed or skipped on every PR because
+  the repo is private on the free plan.
+- **Why:** A check that is red on every PR teaches reviewers to ignore red
+  checks. The local gate gives the same coverage before the push, with
+  skipped checks announced rather than silently passed.
+- **Ref:** PR [#66](https://github.com/benoit-bremaud/feedback-widget/pull/66),
+  merge commit [`02ac022`](https://github.com/benoit-bremaud/feedback-widget/commit/02ac022).
+
+### PR #65 merged — AI attribution policy aligned
+
+- **What:** CONTRIBUTING § AI attribution rewritten from "forbidden" to
+  "allowed, sober, never replacing authorship of decisions", matching the
+  2026-07-02 reversal of the global policy.
+- **Why:** Transparency about AI assistance matters more than hiding it;
+  the repo text had to stop contradicting the global rule.
+- **Ref:** PR [#65](https://github.com/benoit-bremaud/feedback-widget/pull/65),
+  merge commit [`6779997`](https://github.com/benoit-bremaud/feedback-widget/commit/6779997).
+
+### PR #64 merged — BREAKING feedback taxonomy rework (v0.6.0 code)
+
+- **What:** Categories now name the reporter's intent, not the technical
+  nature of the defect: `bug` · `content` · `unclear` · `suggestion` ·
+  `praise` (13 sub-categories, down from 25). `typo`, `error`, `ambiguous`,
+  `other` removed; `praise` is the only `null` sub-category. Package versions
+  and `WIDGET_VERSION` bumped to 0.6.0 in the same change because the
+  version is a payload field.
+- **Why:** The old table overlapped (`bug/visual-glitch` vs `error`), mixed
+  wrong content with technical failures, and exposed developer vocabulary
+  in the UI. Technical detail is now derived downstream from the auto-captured
+  context instead of being asked of the user.
+- **Worker-breaking:** `feedback-pipeline-worker` duplicates the tables; it
+  must be updated and deployed before any consumer loads the new bundle.
+  Tracked in [#83](https://github.com/benoit-bremaud/feedback-widget/issues/83).
+- **Ref:** PR [#64](https://github.com/benoit-bremaud/feedback-widget/pull/64),
+  merge commit [`10be9fe`](https://github.com/benoit-bremaud/feedback-widget/commit/10be9fe).
+
+### PR #67 opened — release v0.6.0 (CHANGELOG + README)
+
+- **What:** Cuts `[Unreleased]` into `[0.6.0] - 2026-09-23`, points the README
+  embed snippet at `widget-0.6.0.js`. Still open on 2026-10-15; merge, tag and
+  the deployment order are tracked in [#82](https://github.com/benoit-bremaud/feedback-widget/issues/82).
+- **Ref:** PR [#67](https://github.com/benoit-bremaud/feedback-widget/pull/67).
+
+## 2026-10-15
+
+### Backlog audit — epics restored, working method embedded
+
+- **What:** Audit of the backlog found 4 stale issues, a board with no
+  statuses, a PROJECT_LOG stopped on 2026-06-05 and the whole roadmap living
+  only in session memory. Six epics now carry it: release process (#76),
+  dashboard V1 (#77), staging-gated distribution (#78), client review loop
+  (#79), V2 resolution loop (#80), backlog hygiene (#81). This change
+  (issue #89, under epic #81) adds a root `CLAUDE.md` (project specifics, pointer to the global
+  rules), a `SECURITY.md`, a CONTRIBUTING § Working method (conception gate,
+  pre-push review gate, PR-review Q&A), explicit least-privilege
+  `permissions` in `ci.yml` / `lint.yml`, `.github/dependabot.yml` replacing
+  the never-activated `renovate.json` (#43), Dependabot alerts + security
+  updates enabled on the repo, and the five pending "backfilled post-merge"
+  markers above resolved.
+- **Security review:** Gitleaks clean on the full history, all actions
+  SHA-pinned, zero production advisories, user strings HTML-escaped. 29
+  dev-only advisories were all patchable within the declared ranges
+  (`pnpm update`, separate commit); `node-forge` via `sonarqube-scanner` has
+  no fixed version and is recorded as an accepted risk in `SECURITY.md`.
+- **Why:** The method the global rules require was nowhere in git; an agent
+  or a human opening the repo had to rely on memory. Dependabot gives the
+  repo its first automated CVE signal.
+- **Ref:** issue [#89](https://github.com/benoit-bremaud/feedback-widget/issues/89), PR number to follow.

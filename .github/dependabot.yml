@@ -1,0 +1,31 @@
+# Dependabot — replaces renovate.json (the Renovate app was never installed, #43).
+# Security updates bypass the schedule once alerts are enabled on the repo.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Paris
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    labels: [type:task, area:ci]
+    assignees: [benoit-bremaud]
+    commit-message:
+      prefix: 'chore(deps)'
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Paris
+    labels: [type:task, area:ci]
+    assignees: [benoit-bremaud]
+    commit-message:
+      prefix: 'chore(ci)'
