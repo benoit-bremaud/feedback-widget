@@ -4,7 +4,7 @@
 - Commit: 1e554c9 (reviewed; fixes applied in the follow-up commit)
 - Scope: `git diff origin/main...HEAD` — 1 file: PROJECT_LOG.md (entries for PR #103 and the backlog hygiene pass #86/#87)
 - Checks run: docs · correctness (design · tests · security assessed inline as not applicable: no code, no dependency, no workflow change)
-- Verdict: ship · Must 1 · Should 2 · Nice 2 — Must and both Nice resolved in-branch; one Should deferred to PR creation
+- Verdict: ship · Must 1 · Should 2 · Nice 2 — Must and both Nice resolved in-branch; the "PR #TBD" placeholder filled once the PR number was known
 
 ## 🔴 Must Have
 

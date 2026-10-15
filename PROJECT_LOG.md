@@ -1178,4 +1178,4 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   and epics remain open, which is epic #81's definition of done for these
   two children.
 - **Ref:** issues [#86](https://github.com/benoit-bremaud/feedback-widget/issues/86), [#87](https://github.com/benoit-bremaud/feedback-widget/issues/87),
-  PR #TBD (number filled at merge).
+  PR [#104](https://github.com/benoit-bremaud/feedback-widget/pull/104).
