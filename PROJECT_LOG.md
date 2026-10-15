@@ -1123,4 +1123,25 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **Why:** The method the global rules require was nowhere in git; an agent
   or a human opening the repo had to rely on memory. Dependabot gives the
   repo its first automated CVE signal.
-- **Ref:** issue [#89](https://github.com/benoit-bremaud/feedback-widget/issues/89), PR [#90](https://github.com/benoit-bremaud/feedback-widget/pull/90).
+- **Ref:** issue [#89](https://github.com/benoit-bremaud/feedback-widget/issues/89), PR [#90](https://github.com/benoit-bremaud/feedback-widget/pull/90),
+  merge commit [`1a64276`](https://github.com/benoit-bremaud/feedback-widget/commit/1a64276).
+
+### PR #67 merged — v0.6.0 released, tag pushed
+
+- **What:** Merged the release PR (CHANGELOG `[0.6.0] - 2026-09-23`, README
+  embed snippet on `widget-0.6.0.js`) and tagged `v0.6.0` on the merge commit;
+  `publish.yml` publishes both packages to GitHub Packages. The root
+  `package.json` (private, never published) still said 0.1.0 and is aligned to
+  0.6.0 in the follow-up PR that carries this entry, which also completes
+  CONTRIBUTING § Release workflow (deployment order Worker → bundle →
+  consumers with a coordinated cutover on contract changes, consumer
+  notification, version bump rule, hotfix flow without backports) and
+  closes #13.
+- **Why:** The code had been at 0.6.0 on `main` since 2026-09-23 (#64) with no
+  tag; consumers could not pin the release and the Worker lockstep (#83) needs
+  a tagged bundle to copy. Tagging deploys nothing to any site — only the
+  Worker update (#83) and the bundle load are production-affecting, in that
+  order.
+- **Ref:** issue [#82](https://github.com/benoit-bremaud/feedback-widget/issues/82), PR [#67](https://github.com/benoit-bremaud/feedback-widget/pull/67),
+  merge commit [`ac6c677`](https://github.com/benoit-bremaud/feedback-widget/commit/ac6c677),
+  tag [`v0.6.0`](https://github.com/benoit-bremaud/feedback-widget/releases/tag/v0.6.0).
