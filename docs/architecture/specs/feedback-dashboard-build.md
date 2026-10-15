@@ -28,19 +28,26 @@ but out of scope here.
 Matches [`04-class.md`](../diagrams/feedback-dashboard/04-class.md). camelCase
 payload fields map to snake_case columns.
 
+> **Executable source of truth**: `feedback-pipeline-worker/migrations/`
+> (`0001_init.sql`, applied 2026-05-24; `0002_remap_legacy_taxonomy.sql`, see
+> [`legacy-taxonomy-remap.md`](./legacy-taxonomy-remap.md)). The implementation
+> refined this DDL: the whole validated payload is stored verbatim in one
+> `payload` JSON column (the real `target` is a 5-field object, not a single
+> string) instead of a flat `targeted_element` + a `context` blob. The DDL below
+> is the as-built one.
+
 ```sql
 CREATE TABLE IF NOT EXISTS feedback (
-  id               TEXT PRIMARY KEY,          -- UUID
-  project_id       TEXT NOT NULL,
-  category         TEXT NOT NULL,
-  sub_category     TEXT,                       -- NULL only for 'praise'
-  message          TEXT NOT NULL,
-  reporter_name    TEXT,
-  url              TEXT,
-  targeted_element TEXT,
-  context          TEXT,                       -- JSON: referrer, userAgent, viewportW, viewportH, locale, scrollDepth, sessionId
-  status           TEXT NOT NULL DEFAULT 'new',-- new | read | handled | issue_created(V2) | refused(V2)
-  created_at       TEXT NOT NULL               -- ISO 8601
+  id            TEXT PRIMARY KEY NOT NULL,  -- UUID v4
+  project_id    TEXT NOT NULL,              -- payload.projectId
+  category      TEXT NOT NULL,              -- v0.6.0 projection of payload.category (see legacy-taxonomy-remap.md)
+  sub_category  TEXT,                       -- v0.6.0 projection of payload.subCategory (NULL for 'praise')
+  message       TEXT NOT NULL,
+  reporter_name TEXT,
+  url           TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'new',-- new | read | handled | issue_created(V2) | refused(V2)
+  created_at    TEXT NOT NULL,              -- server ingestion time, ISO 8601
+  payload       TEXT NOT NULL               -- full FeedbackPayload JSON — source of truth
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_project_created ON feedback(project_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_feedback_status         ON feedback(status);
