@@ -16,12 +16,7 @@ export interface SubmitFeedbackInput {
 }
 
 export type SubmitFeedbackReason =
-  | 'rate-limited'
-  | 'too-fast'
-  | 'honeypot'
-  | 'network'
-  | 'server'
-  | 'invalid'
+  'rate-limited' | 'too-fast' | 'honeypot' | 'network' | 'server' | 'invalid'
 
 export type SubmitFeedbackResult =
   | { ok: true }

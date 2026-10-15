@@ -365,9 +365,7 @@ recommended pattern uses the bundler's build-time env:
 
 ```ts
 if (import.meta.env.DEV) {
-  mountFeedbackWidget({
-    /* ... */
-  })
+  mountFeedbackWidget({/* ... */})
 }
 ```
 
@@ -375,9 +373,7 @@ Or via an explicit flag (Vite-style):
 
 ```ts
 if (import.meta.env.VITE_FEEDBACK_WIDGET_ENABLED === 'true') {
-  mountFeedbackWidget({
-    /* ... */
-  })
+  mountFeedbackWidget({/* ... */})
 }
 ```
 

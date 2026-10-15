@@ -29,8 +29,7 @@ const viewRender = vi.fn()
 const viewShowConfirmation = vi.fn()
 const viewShowMailtoFallback = vi.fn()
 let onUserActionCallback:
-  | ((action: { kind: string; [k: string]: unknown }) => void)
-  | null = null
+  ((action: { kind: string; [k: string]: unknown }) => void) | null = null
 
 // Captured from the (mocked) adapter factories to assert wiring.
 let rateLimiterKey: string | undefined
