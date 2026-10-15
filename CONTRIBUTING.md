@@ -845,20 +845,35 @@ Releases are **tag-driven**. The canonical reference is
    The Worker _code_ update is needed only when the release changed the
    payload shape, the category tables or the bounds; the bundle copy and
    deploy are needed on every release.
+   **When the contract changed, the cutover is coordinated**: the Worker
+   deploy and every consumer's bump happen in the same window, because a
+   Worker that knows only the new tables rejects the still-pinned
+   consumers just as surely. Consumers on the unversioned `widget.js`
+   switch with the Worker deploy; pinned consumers must bump in that
+   window. If one of them cannot, the Worker **must accept both tables**
+   (old and new vocabulary) until it has migrated — plan that
+   compatibility in the Worker PR before deploying.
 7. **Notify consumers.** The repo owner, right after the tag is pushed,
    opens the Worker PR of step 6 and one `chore(deps)` issue (or PR) on
    each consumer repo that embeds the widget, pointing at the CHANGELOG
-   section and the new `widget-X.Y.Z.js` URL. Consumers bump when they
-   choose; the pinned URL means nothing changes for them until they do.
+   section and the new `widget-X.Y.Z.js` URL. On a compatible release,
+   consumers bump when they choose; on a contract change, the issue names
+   the cutover window of step 6.
 
 **Version bump rule.** Conventional Commits decide the bump: a `!` or
 `BREAKING CHANGE` footer → MAJOR (MINOR while the project is `0.y.z`, as
 `v0.6.0` was for the taxonomy rework), `feat` → MINOR, `fix` / `chore` /
 `docs` → PATCH.
 
-**Hotfix.** Same flow, smaller: branch `release/vX.Y.(Z+1)` from `main`,
-cherry-pick or fix, run steps 1–7 with a PATCH bump. Never tag from the
-hotfix branch itself — merge to `main` first, then tag.
+**Hotfix.** Same flow, smaller: fix on a branch from `main`, run steps 1–7.
+The bump is **PATCH only when `main` is still at the last tag**; if `main`
+already carries unreleased work, that work ships too and the version follows
+the rule above for everything embarked (a `feat` on `main` makes the hotfix a
+MINOR, not a PATCH). **Backports are not supported**: `publish.yml` refuses a
+tag that is not on `main`, and every stable tag is published as `latest`, so
+a `v0.6.1` cut after `v0.7.0` would downgrade `pnpm add` consumers. When an
+urgent fix meets a loaded `main`, either release `main` under its honest
+bump or keep the unreleased feature behind a flag until then.
 
 **Never tag a commit that is not on `main`.** The publish workflow
 enforces this — do not try to work around the check.

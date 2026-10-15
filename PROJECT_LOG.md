@@ -1134,7 +1134,8 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   `package.json` (private, never published) still said 0.1.0 and is aligned to
   0.6.0 in the follow-up PR that carries this entry, which also completes
   CONTRIBUTING § Release workflow (deployment order Worker → bundle →
-  consumers, consumer notification, version bump rule, hotfix flow) and
+  consumers with a coordinated cutover on contract changes, consumer
+  notification, version bump rule, hotfix flow without backports) and
   closes #13.
 - **Why:** The code had been at 0.6.0 on `main` since 2026-09-23 (#64) with no
   tag; consumers could not pin the release and the Worker lockstep (#83) needs
