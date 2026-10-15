@@ -1150,9 +1150,10 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 
 - **What:** Adds the decision spec and sequence diagram for the D1 rows that
   still carried the taxonomy retired by #64. Option C was chosen: remap the
-  legacy rows once with a D1 migration instead of a tolerant read path. Codex
-  P2 fixed by aligning the DDL in `feedback-dashboard-build.md` with the
-  as-built schema. The implementation lives in `feedback-pipeline-worker#39`,
+  legacy rows once with a D1 migration instead of a tolerant read path. Review
+  finding (Codex, P2) fixed: the DDL in `feedback-dashboard-build.md` now
+  matches the as-built schema. The implementation lives in
+  [feedback-pipeline-worker#39](https://github.com/benoit-bremaud/feedback-pipeline-worker/pull/39),
   deployed as Version `e1e79acd`, D1 migration `0002` applied, 0 legacy rows
   left.
 - **Why:** A tolerant read would have kept two taxonomies alive in every
@@ -1173,7 +1174,7 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   the widget bug reports #68–#75 and #88 are attached to the board. This PR
   carries this entry plus the #103 entry above; no code change.
 - **Why:** The board could not pilot the project while 68 items had no
-  Status and four milestones pointed at shipped work. Only live milestones
+  Status and three milestones pointed at shipped work. Only live milestones
   and epics remain open, which is epic #81's definition of done for these
   two children.
 - **Ref:** issues [#86](https://github.com/benoit-bremaud/feedback-widget/issues/86), [#87](https://github.com/benoit-bremaud/feedback-widget/issues/87),

@@ -1,29 +1,29 @@
 # Local review — feedback-widget (branch diff main...HEAD)
 
 - Date: 2026-10-15
-- Commit: 3b638d6 (after fixes; reviewed at 0b69cdf)
-- Scope: `git diff origin/main...HEAD` — 3 files: root `package.json` version, CONTRIBUTING § Release workflow (steps 6–7, bump rule, hotfix), PROJECT_LOG (#90 SHA, v0.6.0 release entry)
+- Commit: 1e554c9 (reviewed; fixes applied in the follow-up commit)
+- Scope: `git diff origin/main...HEAD` — 1 file: PROJECT_LOG.md (entries for PR #103 and the backlog hygiene pass #86/#87)
 - Checks run: docs · correctness (design · tests · security assessed inline as not applicable: no code, no dependency, no workflow change)
-- Verdict: ship · Must 0 · Should 1 · Nice 3 — all resolved in-branch
+- Verdict: ship · Must 1 · Should 2 · Nice 2 — Must and both Nice resolved in-branch; one Should deferred to PR creation
 
 ## 🔴 Must Have
 
-_None._
+- `PROJECT_LOG.md:1175` `[docs]` · The Why line said "four milestones" while the What line names three closed milestones (v0.2.0 was already closed) · Fixed: "three milestones".
 
 ## 🟡 Should Have
 
-- commit message / `PROJECT_LOG.md:1137` `[correctness|docs]` · "Closes #13" overclaimed: #13's DoD asks for a hotfix procedure and who/when notifies consumers, neither present · **Fixed**: step 7 (notify consumers), version bump rule and hotfix paragraph added to CONTRIBUTING § Release workflow; log sentence aligned.
+- `PROJECT_LOG.md:1180` `[docs]` · Ref line reads "PR #TBD" · Filled with the PR number as soon as the PR is opened (same commit flow as earlier bundled entries).
+- `PROJECT_LOG.md:1153` `[docs]` · "Codex P2 fixed by …" is reviewer jargon · Fixed: "Review finding (Codex, P2) fixed: …".
 
 ## 🔵 Nice to Have
 
-- `CONTRIBUTING.md:844-846` `[correctness]` · "Skip (a) … the bundle copy is still needed" contradicted itself since (a) includes the copy · **Fixed**: Worker code update conditional, bundle copy + deploy on every release.
-- `PROJECT_LOG.md:1129` `[docs]` · heading did not lead with the PR like its neighbours · **Fixed**.
-- `PROJECT_LOG.md:1143-1145` `[docs]` · Ref line layout (issue first, commas) · **Fixed**.
+- `PROJECT_LOG.md:1157` `[docs]` · `feedback-pipeline-worker#39` was plain text while every other reference is a link · Fixed: linked to the Worker PR.
+- `PROJECT_LOG.md:1171` `[docs]` · Board attachments listed one by one · Kept as an audit trail (the log's purpose).
 
 ## ⚪ Disagree / Intentional
 
-- `PROJECT_LOG.md:1136` `[correctness]` · entry describes the CONTRIBUTING change carried by the same PR · Intentional per the log cadence rule (entry bundled into the next substantive PR).
+_None._
 
 ## Per-dimension summary
 
-- Design: n/a (docs + version string) · Docs: SHAs, tag, headings and links all verified; one overclaim fixed · Tests: n/a; `pnpm verify` green (68 + 134) · Security: n/a; root version read by nothing, lockfile untouched · Correctness: ordered list valid, link targets resolve, `Closes #82` legitimate.
+- Design: not applicable (no code) · Docs: format consistent with earlier entries, one internal contradiction fixed · Tests: not applicable · Security: no secrets, no sensitive data in the entries · Correctness: cross-references checked against GitHub (#43 closed 2026-10-15 by the Dependabot decision, #103 squash `468a0df`, milestones 2/3/4 closed with 0 open issues).
