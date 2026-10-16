@@ -1,10 +1,9 @@
 name: Gitleaks
 
+# Manual only: GitHub Actions minutes are unavailable (billing); `pnpm verify`
+# runs gitleaks locally (CONTRIBUTING § Local verification gate).
 on:
-  push:
-  pull_request:
-  schedule:
-    - cron: '0 6 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -43,7 +43,7 @@ Issue (Conventional Commits title)
   └─► Branch (<type>/T-<issue-number>-<kebab-description>)
         └─► Commits (Conventional Commits)
               └─► Pull Request (metadata + template + linked issue)
-                    └─► Review (automated reviewer + any human reviewer) + CI green
+                    └─► Review (local `review-local` report + any human reviewer) + `pnpm verify` green
                           └─► Explicit merge approval from the owner
                                 └─► Squash merge to main + branch deletion
                                       └─► Post-merge cleanup + PROJECT_LOG update
@@ -104,7 +104,12 @@ invariants tested), and the Worker contract coupling described in
 
 ### 3. PR-review gate — one comment at a time
 
-Reviewer comments (Copilot, Codex, humans) are handled one distinct issue
+There is no hosted automated reviewer: the review of record is the
+`review-local` report, run again on the PR head before the merge. A PR
+merges when CI is green, that report has no open Must Have, and every
+human comment is answered.
+
+Reviewer comments (local agents, humans) are handled one distinct issue
 at a time: **verify each claim against the code** before relaying it, let
 the owner decide, reply inline per comment. Before any merge, **re-fetch
 all reviews** — later batches count. The step-by-step procedure lives in
@@ -329,7 +334,7 @@ Every PR must carry the full GitHub sidebar populated:
 | Field         | Value                                                              |
 | ------------- | ------------------------------------------------------------------ |
 | **Assignees** | `benoit-bremaud` (always)                                          |
-| **Reviewers** | `copilot-pull-request-reviewer` (automated reviewer)               |
+| **Reviewers** | None hosted: review-local report (see § PR-review gate)            |
 | **Labels**    | Same triptych as the linked issue — `type:*` + `area:*` + `prio:*` |
 | **Project**   | `feedback-widget` (node ID `PVT_kwHOB8rwIc4BVJlN`)                 |
 | **Milestone** | **Set explicitly** to match the linked issue's milestone           |
@@ -353,13 +358,6 @@ gh api graphql -f query='mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{pro
 # 2. Set the milestone explicitly (replace <N> with the milestone number)
 gh api repos/benoit-bremaud/feedback-widget/issues/$PR_NUMBER \
   -X PATCH -F milestone=<N>
-
-# 3. Request the automated reviewer
-#    (best-effort — 422 if the bot is not yet a collaborator; add via UI then retry)
-gh api repos/benoit-bremaud/feedback-widget/pulls/$PR_NUMBER/requested_reviewers \
-  -X POST --input - <<'EOF'
-{"reviewers": ["copilot-pull-request-reviewer"]}
-EOF
 ```
 
 **Why this much metadata.** Future-you will scan closed PRs through the
@@ -479,8 +477,9 @@ Run locally from the repo root:
 pnpm test:coverage
 ```
 
-CI runs `pnpm test:coverage` on every push and PR and uploads the
-LCOV files as a `coverage-lcov` workflow artifact.
+The hosted CI workflow (manual trigger only, see § Local verification
+gate) runs `pnpm test:coverage` and uploads the LCOV files as a
+`coverage-lcov` workflow artifact.
 
 The coverage percentage itself is read **locally**: `pnpm verify`
 hands the same LCOV reports to the self-hosted SonarQube instance.
@@ -621,14 +620,17 @@ red — use `git push --no-verify`. That is a conscious choice, not a
 default: `main` is not branch-protected on this repo, so the hook is the
 last thing between a broken tree and a shared branch.
 
-**Two checks announce themselves as skipped rather than passing quietly:**
-secret detection when `gitleaks` is not installed, and static analysis
-when `SONAR_TOKEN` is unset or no instance answers. A check that is
-skipped in silence is worse than one that is absent.
+**Two checks fail the gate when they cannot run:** secret detection when
+`gitleaks` is not installed, and static analysis when `SONAR_TOKEN` is
+unset or no instance answers. `VERIFY_ALLOW_SKIP=1` turns them into a
+printed skip, for emergencies only. A red SonarQube quality gate also
+fails `pnpm verify` (`sonar.qualitygate.wait=true`).
 
-**What stays in CI.** Build, typecheck, tests, lint, and Gitleaks still
-run on every PR. The local gate is the fast feedback loop, not a
-replacement — it cannot be trusted to have run on someone else's machine.
+**The local gate is the CI of record.** GitHub Actions minutes are not
+available on this repo (billing), so `ci.yml`, `lint.yml` and
+`gitleaks.yml` only run on a manual `workflow_dispatch`. Every PR body
+states that `pnpm verify` passed on its head, and the `review-local`
+report records the gate. `publish.yml` still needs Actions to release.
 
 ### Static analysis
 
@@ -706,8 +708,8 @@ them, and skipping it is not a licence to push a red suite.
   but its GitHub App was never installed; it was replaced on 2026-10-15,
   tracked in #43.)
 - **Auto-merge is disabled** — every dependency PR requires manual review
-  and the same merge gate as any other PR (CI green, automated review
-  posted, explicit owner approval). This matches the global "never merge
+  and the same merge gate as any other PR (`pnpm verify` green, `review-local`
+  report with no open Must Have, explicit owner approval). This matches the global "never merge
   autonomously" rule.
 - `pnpm audit` runs on demand; findings without an upstream fix are recorded
   as accepted risks in [SECURITY.md](./SECURITY.md) with a review trigger,
