@@ -5,6 +5,7 @@ import {
   type ViewportDetector,
 } from '@benoit-bremaud/feedback-widget-core'
 
+/** Dependencies of `createIntersectionViewportDetector`. `doc` and `win` are injected for tests; the selector and class options default to built-in values. */
 export interface IntersectionViewportDetectorDeps {
   rootSelector?: string
   targetSelectors?: string
@@ -55,6 +56,11 @@ const LABEL_MAX_LENGTH = 120
 // Cap on the depth of a generated CSS selector path.
 const SELECTOR_MAX_DEPTH = 5
 
+/**
+ * `ViewportDetector` built on `IntersectionObserver`: tracks the most visible block under the root element and offers a pointing mode to pick any element.
+ *
+ * Targets never carry form-field values and the widget's own element is never targetable. `destroy` removes every listener, the observer and the injected style node.
+ */
 export function createIntersectionViewportDetector(
   deps: IntersectionViewportDetectorDeps,
 ): ViewportDetector {

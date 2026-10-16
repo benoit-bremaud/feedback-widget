@@ -4,6 +4,7 @@ import type {
   TransportResult,
 } from '@benoit-bremaud/feedback-widget-core'
 
+/** Dependencies of `createHttpTransport`; `fetchImpl` and `sleep` are injected so retries are testable without network or real delays. */
 export interface HttpTransportDeps {
   endpoint: string
   token?: string
@@ -16,6 +17,11 @@ export interface HttpTransportDeps {
 
 const hasAbortController = typeof AbortController !== 'undefined'
 
+/**
+ * `Transport` that POSTs the JSON payload to the endpoint, sending the optional token as `X-Feedback-Token`.
+ *
+ * Each attempt has a timeout. 2xx succeeds; 429 and other 4xx stop immediately (`rate-limited` / `invalid`); network errors and any other non-2xx response (5xx in practice) are retried with backoff up to `maxAttempts`, then reported as `network` / `server`.
+ */
 export function createHttpTransport(deps: HttpTransportDeps): Transport {
   return {
     async send(payload: FeedbackPayload): Promise<TransportResult> {
@@ -85,6 +91,7 @@ function buildHeaders(token: string | undefined): HeadersInit {
   return headers
 }
 
+/** Exponential backoff: 1s, 2s, 4s, ... for attempts 1, 2, 3, ... */
 export function defaultBackoff(attempt: number): number {
   return 1000 * Math.pow(2, attempt - 1)
 }

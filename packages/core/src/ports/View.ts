@@ -4,6 +4,7 @@ import type {
   FeedbackTarget,
 } from '../domain/Feedback'
 
+/** Steps of the widget flow, in the order a report normally goes through them (`closed` to `confirmed`, or `error`). */
 export type WidgetStep =
   | 'closed'
   | 'target-confirm'
@@ -15,6 +16,7 @@ export type WidgetStep =
   | 'confirmed'
   | 'error'
 
+/** Complete UI state handed to `View.render`. The view is a pure function of it. */
 export interface WidgetState {
   step: WidgetStep
   target: FeedbackTarget | null
@@ -25,6 +27,7 @@ export interface WidgetState {
   errorMessage: string | null
 }
 
+/** Intents emitted by the view; the controller turns them into `WidgetState` transitions. */
 export type UserAction =
   | { kind: 'open' }
   | { kind: 'close' }
@@ -40,6 +43,7 @@ export type UserAction =
   | { kind: 'submit' }
   | { kind: 'reset' }
 
+/** Port for the widget presentation layer. It renders state and reports user intents; it holds no business logic. */
 export interface View {
   render(state: WidgetState): void
   onUserAction(cb: (action: UserAction) => void): void

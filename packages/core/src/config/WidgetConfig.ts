@@ -1,12 +1,15 @@
 import type { TopLevelCategory } from '../domain/Feedback'
 import { isValidCategory } from '../domain/Feedback'
 
-// Bounds for the free-text message, part of the v0.3.0 payload
-// contract (10–2000 chars). Shared between the view (inline
-// validation) and resolveConfig, which clamps maxMessageLength into
-// [MIN, MAX] so an integrator can neither lock users out with a
-// ceiling below the floor nor emit payloads above the contract cap.
+/**
+ * Bounds for the free-text message, part of the v0.3.0 payload
+ * contract (10–2000 chars). Shared between the view (inline
+ * validation) and resolveConfig, which clamps maxMessageLength into
+ * [MIN, MAX] so an integrator can neither lock users out with a
+ * ceiling below the floor nor emit payloads above the contract cap.
+ */
 export const MIN_MESSAGE_LENGTH = 10
+/** Upper bound (inclusive) for the message length, in characters. Part of the Worker payload contract. */
 export const MAX_MESSAGE_LENGTH = 2000
 
 /** Widget colour scheme. */
@@ -47,6 +50,7 @@ export function normalizeLocale(
     : fallback
 }
 
+/** Host-supplied widget configuration, as passed to `mountFeedbackWidget`. Only `endpoint` and `projectId` are required; every other field is optional, validated and clamped by `resolveConfig`. */
 export interface WidgetConfig {
   endpoint: string
   projectId: string
@@ -83,6 +87,7 @@ export interface WidgetConfig {
   storageNamespace?: string
 }
 
+/** `WidgetConfig` after `resolveConfig`: every field is present and within bounds. Optional values with no default are `null` rather than `undefined`. */
 export interface ResolvedWidgetConfig extends Required<
   Omit<
     WidgetConfig,
@@ -164,6 +169,13 @@ function resolveCategories(
   return known.length > 0 ? known : null
 }
 
+/**
+ * Validate and normalise a host config into a `ResolvedWidgetConfig`.
+ *
+ * This is the runtime boundary for untyped hosts (script embed, JSON): numeric fields are clamped to safe integer ranges, unknown categories/themes/positions are dropped or defaulted, and the locale is normalised.
+ *
+ * @throws Error when `endpoint` is not an absolute http(s) URL.
+ */
 export function resolveConfig(input: WidgetConfig): ResolvedWidgetConfig {
   return {
     ...DEFAULTS,
