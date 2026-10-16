@@ -619,10 +619,11 @@ red — use `git push --no-verify`. That is a conscious choice, not a
 default: `main` is not branch-protected on this repo, so the hook is the
 last thing between a broken tree and a shared branch.
 
-**Two checks announce themselves as skipped rather than passing quietly:**
-secret detection when `gitleaks` is not installed, and static analysis
-when `SONAR_TOKEN` is unset or no instance answers. A check that is
-skipped in silence is worse than one that is absent.
+**Two checks fail the gate when they cannot run:** secret detection when
+`gitleaks` is not installed, and static analysis when `SONAR_TOKEN` is
+unset or no instance answers. `VERIFY_ALLOW_SKIP=1` turns them into a
+printed skip, for emergencies only. A red SonarQube quality gate also
+fails `pnpm verify` (`sonar.qualitygate.wait=true`).
 
 **What stays in CI.** Build, typecheck, tests, lint, and Gitleaks still
 run on every PR. The local gate is the fast feedback loop, not a
@@ -704,8 +705,8 @@ them, and skipping it is not a licence to push a red suite.
   but its GitHub App was never installed; it was replaced on 2026-10-15,
   tracked in #43.)
 - **Auto-merge is disabled** — every dependency PR requires manual review
-  and the same merge gate as any other PR (CI green, automated review
-  posted, explicit owner approval). This matches the global "never merge
+  and the same merge gate as any other PR (CI green, `review-local`
+  report with no open Must Have, explicit owner approval). This matches the global "never merge
   autonomously" rule.
 - `pnpm audit` runs on demand; findings without an upstream fix are recorded
   as accepted risks in [SECURITY.md](./SECURITY.md) with a review trigger,
