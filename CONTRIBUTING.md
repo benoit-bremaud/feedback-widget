@@ -517,6 +517,15 @@ coverage measurement because it is exercised indirectly through the
 public API tests, so direct unit coverage would double-count. This
 mirrors the existing `sonar.coverage.exclusions` entry.
 
+#### Documentation coverage
+
+`scripts/doc-coverage.sh` counts the exported declarations of
+`packages/*/src` (tests, bare re-exports and `typeof` companion types
+excluded) that carry a `/** */` block right above them. The floor is
+**90 %**; `pnpm verify` fails below it and the script lists every
+undocumented export. A block states the contract or the why, never a
+restatement of the name.
+
 ---
 
 ## Linting and formatting

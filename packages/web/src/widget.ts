@@ -25,10 +25,13 @@ import type { Messages } from './i18n'
 
 const TAG_NAME = 'feedback-widget'
 const OUTBOX_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
-// Must track packages/web/package.json version. The version.test.ts
-// node-env test guards against drift on future bumps.
+/**
+ * Must track packages/web/package.json version. The version.test.ts
+ * node-env test guards against drift on future bumps.
+ */
 export const WIDGET_VERSION = '0.6.0'
 
+/** Handle returned by `mountFeedbackWidget`. */
 export interface FeedbackWidgetHandle {
   // Rescans observed blocks. Call this after a SPA navigation or any DOM
   // mutation that replaces the content area, so viewport detection and
@@ -38,6 +41,13 @@ export interface FeedbackWidgetHandle {
 
 const NOOP_HANDLE: FeedbackWidgetHandle = { refresh: () => {} }
 
+/**
+ * Single public entry point: validate the config, then mount (once) the `<feedback-widget>` element in `document.body`.
+ *
+ * Idempotent: a second call refreshes and returns the existing handle. Outside a browser it returns a no-op handle.
+ *
+ * @throws Error when the config is invalid (bad endpoint); nothing is added to the DOM in that case.
+ */
 export function mountFeedbackWidget(
   config: WidgetConfig,
 ): FeedbackWidgetHandle {

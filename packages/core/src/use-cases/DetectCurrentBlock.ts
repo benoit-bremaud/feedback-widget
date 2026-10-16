@@ -1,3 +1,4 @@
+/** Geometry of a candidate block, in viewport coordinates. */
 export interface CandidateRect {
   id: string
   top: number
@@ -5,18 +6,21 @@ export interface CandidateRect {
   height: number
 }
 
+/** Geometry of the visible viewport, in the same coordinates as `CandidateRect`. */
 export interface ViewportRect {
   top: number
   bottom: number
   height: number
 }
 
+/** Score of a candidate: fraction of it that is visible, and distance of its centre from the viewport centre. */
 export interface BlockScore {
   id: string
   visibleRatio: number
   centerDistance: number
 }
 
+/** Compute the `BlockScore` of a candidate against the viewport. A zero-height candidate gets a visible ratio of 0. */
 export function scoreCandidate(
   candidate: CandidateRect,
   viewport: ViewportRect,
@@ -34,6 +38,7 @@ export function scoreCandidate(
   return { id: candidate.id, visibleRatio, centerDistance }
 }
 
+/** Pick the most visible candidate, breaking ties by closeness to the viewport centre. Returns null when none is visible. */
 export function pickBestCandidate(
   candidates: CandidateRect[],
   viewport: ViewportRect,
@@ -56,6 +61,7 @@ export function pickBestCandidate(
   return scored[0] ?? null
 }
 
+/** Collapse whitespace and truncate to `maxChars`, appending an ellipsis when cut. */
 export function extractExcerpt(text: string, maxChars = 150): string {
   const trimmed = text.replace(/\s+/g, ' ').trim()
   if (trimmed.length <= maxChars) return trimmed

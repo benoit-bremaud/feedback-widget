@@ -46,6 +46,7 @@ const SUB_CATEGORY_ICONS: Record<SubCategory, string> = {
   accessibility: '♿',
 }
 
+/** Presentation options derived from the resolved config, applied through `setOptions`. */
 export interface WidgetViewOptions {
   maxMessageLength: number
   categories: readonly TopLevelCategory[]
@@ -62,6 +63,7 @@ const DEFAULT_VIEW_OPTIONS: WidgetViewOptions = {
   messages: LOCALES.fr,
 }
 
+/** Public surface of the `<feedback-widget>` custom element, used by the controller without depending on the concrete class. */
 export interface FeedbackWidgetElement extends HTMLElement {
   setActionHandler(cb: (action: UserAction) => void): void
   setOptions(options: Partial<WidgetViewOptions>): void
@@ -71,6 +73,7 @@ export interface FeedbackWidgetElement extends HTMLElement {
   setDisconnectHandler(cb: () => void): void
 }
 
+/** Build the `<feedback-widget>` custom element class (Shadow DOM). Rendering goes through one `innerHTML` in which every user-provided string is escaped. The caller registers it with `customElements.define`. */
 export function defineFeedbackWidgetElement(): CustomElementConstructor {
   class FeedbackWidgetElementImpl
     extends HTMLElement
@@ -565,6 +568,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
   return FeedbackWidgetElementImpl
 }
 
+/** Adapt a `FeedbackWidgetElement` to the core `View` port. */
 export function createWebComponentView(element: FeedbackWidgetElement): View {
   let handler: ((action: UserAction) => void) | null = null
   let lastState: WidgetState = {

@@ -4,15 +4,17 @@ import type {
   Locale,
 } from '@benoit-bremaud/feedback-widget-core'
 
-// All user-facing widget strings. Icons live in the view (locale-neutral);
-// only text is translated here. Static strings may contain HTML entities
-// (e.g. `&nbsp;`) because the view interpolates titles/labels without escaping
-// — they never carry user input.
-//
-// Translations are kept in a single source (`SOURCE`) where each message
-// carries every locale's value together (`t('fr', 'en')`), and the per-locale
-// `Messages` bundle is derived. This makes drift between locales impossible and
-// avoids two parallel, structurally-identical objects.
+/**
+ * All user-facing widget strings. Icons live in the view (locale-neutral);
+ * only text is translated here. Static strings may contain HTML entities
+ * (e.g. `&nbsp;`) because the view interpolates titles/labels without escaping
+ * — they never carry user input.
+ *
+ * Translations are kept in a single source (`SOURCE`) where each message
+ * carries every locale's value together (`t('fr', 'en')`), and the per-locale
+ * `Messages` bundle is derived. This makes drift between locales impossible and
+ * avoids two parallel, structurally-identical objects.
+ */
 export interface Messages {
   categoryLabels: Record<TopLevelCategory, string>
   subCategoryLabels: Record<SubCategory, string>
@@ -248,6 +250,7 @@ function buildMessages(locale: Locale): Messages {
   return localize(SOURCE, locale) as Messages
 }
 
+/** Per-locale message bundles, derived from the single translation source. */
 export const LOCALES: Record<Locale, Messages> = {
   fr: buildMessages('fr'),
   en: buildMessages('en'),

@@ -27,6 +27,9 @@ else
   skip 'gitleaks is not installed (https://github.com/gitleaks/gitleaks)'
 fi
 
+step 'Doc coverage'
+./scripts/doc-coverage.sh
+
 step 'Build'
 pnpm build
 

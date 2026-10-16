@@ -1,6 +1,7 @@
 import type { FeedbackPayload } from '@benoit-bremaud/feedback-widget-core'
 import type { OutboxQueue } from '@benoit-bremaud/feedback-widget-core'
 
+/** Dependencies of `createLocalStorageOutbox`; `now` and `generateId` are injectable for tests. */
 export interface LocalStorageOutboxDeps {
   storage: Storage
   key: string
@@ -18,6 +19,11 @@ interface OutboxEntry {
 // origin's localStorage. When exceeded, the oldest entries are dropped (FIFO).
 const MAX_OUTBOX_ENTRIES = 50
 
+/**
+ * `OutboxQueue` persisted in `localStorage`. Bounded (50 entries, oldest dropped first) and tolerant: unavailable or corrupt storage reads as empty and writes are skipped silently.
+ *
+ * `drain` removes only the entries it confirmed sent, so payloads enqueued meanwhile are kept.
+ */
 export function createLocalStorageOutbox(
   deps: LocalStorageOutboxDeps,
 ): OutboxQueue {

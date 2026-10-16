@@ -3,6 +3,7 @@ import type {
   ContextCollector,
 } from '@benoit-bremaud/feedback-widget-core'
 
+/** Options for `createBrowserContextCollector`. `win` and `doc` exist so tests can inject fakes. */
 export interface BrowserContextCollectorOptions {
   projectId: string
   widgetVersion: string
@@ -14,11 +15,13 @@ export interface BrowserContextCollectorOptions {
   sessionId: string
 }
 
-// Reads the 10 auto-capture fields from the browser environment.
-// Every individual read is defensive: a missing or throwing global
-// degrades to a safe default rather than aborting the whole
-// collection, because losing one context field must never block a
-// user's feedback from being sent.
+/**
+ * Reads the 10 auto-capture fields from the browser environment.
+ * Every individual read is defensive: a missing or throwing global
+ * degrades to a safe default rather than aborting the whole
+ * collection, because losing one context field must never block a
+ * user's feedback from being sent.
+ */
 export function createBrowserContextCollector(
   options: BrowserContextCollectorOptions,
 ): ContextCollector {

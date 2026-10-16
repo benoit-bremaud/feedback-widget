@@ -7,11 +7,13 @@ import type {
 } from '../domain/Feedback'
 import { isValidSubCategory } from '../domain/Feedback'
 
-// Loosely-typed input matching how the UI tracks state: the
-// auto-captured BrowserContext, plus a top-level category and a
-// nullable sub-category held independently, plus the free-text
-// message. `buildFeedbackPayload` validates the category/sub-category
-// pairing at runtime and produces the strictly-typed FeedbackPayload.
+/**
+ * Loosely-typed input matching how the UI tracks state: the
+ * auto-captured BrowserContext, plus a top-level category and a
+ * nullable sub-category held independently, plus the free-text
+ * message. `buildFeedbackPayload` validates the category/sub-category
+ * pairing at runtime and produces the strictly-typed FeedbackPayload.
+ */
 export type BuildPayloadInput = BrowserContext & {
   category: TopLevelCategory
   subCategory: SubCategory | null
@@ -21,11 +23,13 @@ export type BuildPayloadInput = BrowserContext & {
   target: FeedbackTarget | null
 }
 
-// Builds the canonical FeedbackPayload from its constituent parts and
-// enforces the core invariant: `praise` carries no sub-category, every
-// other category carries a sub-category valid for that category.
-// Throws on violation — these are programming errors the view layer is
-// expected to prevent, not user-facing validation.
+/**
+ * Builds the canonical FeedbackPayload from its constituent parts and
+ * enforces the core invariant: `praise` carries no sub-category, every
+ * other category carries a sub-category valid for that category.
+ * Throws on violation — these are programming errors the view layer is
+ * expected to prevent, not user-facing validation.
+ */
 export function buildFeedbackPayload(
   input: BuildPayloadInput,
 ): FeedbackPayload {

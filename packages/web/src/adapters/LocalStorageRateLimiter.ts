@@ -1,5 +1,6 @@
 import type { RateLimiter } from '@benoit-bremaud/feedback-widget-core'
 
+/** Dependencies of `createLocalStorageRateLimiter`, which allows at most `maxAttempts` submissions per sliding window. */
 export interface LocalStorageRateLimiterDeps {
   storage: Storage
   key: string
@@ -8,6 +9,7 @@ export interface LocalStorageRateLimiterDeps {
   now: () => number
 }
 
+/** `RateLimiter` backed by `localStorage` timestamps in a sliding window. If storage is unavailable it degrades silently and does not block submissions. */
 export function createLocalStorageRateLimiter(
   deps: LocalStorageRateLimiterDeps,
 ): RateLimiter {
