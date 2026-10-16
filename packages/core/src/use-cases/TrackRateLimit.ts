@@ -1,6 +1,6 @@
 import type { RateLimiter } from '../ports/RateLimiter'
 
-/** Result of `checkRateLimit`. */
+/** Result of `checkRateLimit`, kept as an object so the view can grow it (e.g. a retry delay) without changing call sites. */
 export interface TrackRateLimitResult {
   allowed: boolean
 }

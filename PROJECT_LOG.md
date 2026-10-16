@@ -1227,3 +1227,31 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   epics [#81](https://github.com/benoit-bremaud/feedback-widget/issues/81),
   [#107](https://github.com/benoit-bremaud/feedback-widget/issues/107),
   PR [#106](https://github.com/benoit-bremaud/feedback-widget/pull/106).
+
+### Everything local — doc coverage 100 %, hosted CI and reviewer retired (#110, #109)
+
+- **What:** PR #112 documents all 70 exported declarations of
+  `packages/*/src` (2 % → 100 %, comment-only diff) and adds
+  `scripts/doc-coverage.sh` as a `pnpm verify` step with a 90 % floor. PR
+  #113 makes `pnpm verify` the CI of record: a frozen-lockfile step, a
+  missing scanner fails the gate unless `VERIFY_ALLOW_SKIP=1`,
+  `sonar.qualitygate.wait=true` turns a red SonarQube gate into a failure,
+  the `review-local` report replaces the hosted Copilot review, and
+  `ci.yml` / `lint.yml` / `gitleaks.yml` only run on `workflow_dispatch`.
+  New epic #107 groups the widget hardening issues and #114 (33 legacy
+  SonarQube issues). This PR closes the last child of epic #81 (#111):
+  sharper TSDoc on thin blocks, the counter now requires a `/**` opener and
+  skips `.d.ts`, the strict-mode failure line goes to stderr.
+- **Why:** No hosted reviewer is available (Copilot credits exhausted,
+  Codex quota hit) and GitHub Actions refuses to start jobs on this account
+  (billing). The owner's 2026-10-16 pre-merge gate (tests, test and doc
+  coverage, SonarQube, secrets, QA pass) therefore runs entirely on the
+  developer machine.
+- **Ref:** issues [#109](https://github.com/benoit-bremaud/feedback-widget/issues/109),
+  [#110](https://github.com/benoit-bremaud/feedback-widget/issues/110),
+  [#111](https://github.com/benoit-bremaud/feedback-widget/issues/111),
+  PRs [#112](https://github.com/benoit-bremaud/feedback-widget/pull/112) `da53f4d`,
+  [#108](https://github.com/benoit-bremaud/feedback-widget/pull/108) `d01a278`,
+  [#113](https://github.com/benoit-bremaud/feedback-widget/pull/113) `c426c10`,
+  epics [#81](https://github.com/benoit-bremaud/feedback-widget/issues/81),
+  [#107](https://github.com/benoit-bremaud/feedback-widget/issues/107).
