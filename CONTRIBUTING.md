@@ -494,10 +494,10 @@ Each `vitest.config.ts` declares minimum coverage thresholds under
 `test.coverage.thresholds`. `pnpm test:coverage` exits non-zero if
 any metric falls below its threshold, which fails CI.
 
-| Package         | Statements | Branches | Functions | Lines |
-| --------------- | ---------- | -------- | --------- | ----- |
-| `packages/core` | 90         | 85       | 80        | 90    |
-| `packages/web`  | 80         | 70       | 80        | 80    |
+The source of truth for the threshold values is
+[`packages/core/vitest.config.ts`](packages/core/vitest.config.ts) and
+[`packages/web/vitest.config.ts`](packages/web/vitest.config.ts). They
+are deliberately not copied here, so this guide cannot drift from them.
 
 Thresholds are set a few points below the current baseline to catch
 real regressions without flapping on small refactors. Baselines at

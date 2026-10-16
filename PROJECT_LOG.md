@@ -1208,3 +1208,22 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   PRs [#91](https://github.com/benoit-bremaud/feedback-widget/pull/91)–[#95](https://github.com/benoit-bremaud/feedback-widget/pull/95)
   merged, [#96](https://github.com/benoit-bremaud/feedback-widget/pull/96)–[#99](https://github.com/benoit-bremaud/feedback-widget/pull/99)
   closed, Dependabot alert [#1](https://github.com/benoit-bremaud/feedback-widget/security/dependabot/1).
+
+### Epic #81 wrap-up — #85 closed, orphan issues routed, coverage doc points at vitest (#101)
+
+- **What:** #85 closed as completed after checking its DoD on main
+  (`73ed160`): #64–#67 are logged and the only `backfilled` hit is the
+  narrative sentence in the #90 entry. The audit for #81's last DoD box
+  found ten open issues without an epic: #68–#75 and #88 now sit under the
+  new epic #107 (widget pick-mode and outbox hardening), and #102 under
+  #78 (distribution). CONTRIBUTING § Coverage drops its copy of the
+  threshold table and names the two `vitest.config.ts` files as the
+  source of truth. This PR also bundles the Ref of the #105 entry above:
+  combined PR #106, squash commit `73ed160`.
+- **Why:** A duplicated threshold table drifts at the first ratchet, and
+  #81 cannot close while open issues have no epic.
+- **Ref:** issues [#85](https://github.com/benoit-bremaud/feedback-widget/issues/85),
+  [#101](https://github.com/benoit-bremaud/feedback-widget/issues/101),
+  epics [#81](https://github.com/benoit-bremaud/feedback-widget/issues/81),
+  [#107](https://github.com/benoit-bremaud/feedback-widget/issues/107),
+  PR [#106](https://github.com/benoit-bremaud/feedback-widget/pull/106).
