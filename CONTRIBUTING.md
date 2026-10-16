@@ -43,7 +43,7 @@ Issue (Conventional Commits title)
   └─► Branch (<type>/T-<issue-number>-<kebab-description>)
         └─► Commits (Conventional Commits)
               └─► Pull Request (metadata + template + linked issue)
-                    └─► Review (local `review-local` report + any human reviewer) + CI green
+                    └─► Review (local `review-local` report + any human reviewer) + `pnpm verify` green
                           └─► Explicit merge approval from the owner
                                 └─► Squash merge to main + branch deletion
                                       └─► Post-merge cleanup + PROJECT_LOG update
@@ -477,8 +477,9 @@ Run locally from the repo root:
 pnpm test:coverage
 ```
 
-CI runs `pnpm test:coverage` on every push and PR and uploads the
-LCOV files as a `coverage-lcov` workflow artifact.
+The hosted CI workflow (manual trigger only, see § Local verification
+gate) runs `pnpm test:coverage` and uploads the LCOV files as a
+`coverage-lcov` workflow artifact.
 
 The coverage percentage itself is read **locally**: `pnpm verify`
 hands the same LCOV reports to the self-hosted SonarQube instance.
@@ -625,9 +626,11 @@ unset or no instance answers. `VERIFY_ALLOW_SKIP=1` turns them into a
 printed skip, for emergencies only. A red SonarQube quality gate also
 fails `pnpm verify` (`sonar.qualitygate.wait=true`).
 
-**What stays in CI.** Build, typecheck, tests, lint, and Gitleaks still
-run on every PR. The local gate is the fast feedback loop, not a
-replacement — it cannot be trusted to have run on someone else's machine.
+**The local gate is the CI of record.** GitHub Actions minutes are not
+available on this repo (billing), so `ci.yml`, `lint.yml` and
+`gitleaks.yml` only run on a manual `workflow_dispatch`. Every PR body
+states that `pnpm verify` passed on its head, and the `review-local`
+report records the gate. `publish.yml` still needs Actions to release.
 
 ### Static analysis
 
@@ -705,7 +708,7 @@ them, and skipping it is not a licence to push a red suite.
   but its GitHub App was never installed; it was replaced on 2026-10-15,
   tracked in #43.)
 - **Auto-merge is disabled** — every dependency PR requires manual review
-  and the same merge gate as any other PR (CI green, `review-local`
+  and the same merge gate as any other PR (`pnpm verify` green, `review-local`
   report with no open Must Have, explicit owner approval). This matches the global "never merge
   autonomously" rule.
 - `pnpm audit` runs on demand; findings without an upstream fix are recorded

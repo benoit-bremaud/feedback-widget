@@ -38,7 +38,8 @@ Conception (skill `uml-diagram-new`) → pre-push review (skill `review-local`,
 then `pnpm verify`) → PR review (skill `pr-review-procedure`). No hosted
 reviewer (no Copilot / Codex credits): the `review-local` report on the PR
 head stands in for the automated review in the merge gate. `pnpm verify`
-fails on a missing scanner unless `VERIFY_ALLOW_SKIP=1`. Procedure:
+fails on a missing scanner unless `VERIFY_ALLOW_SKIP=1`. GitHub Actions does not run
+(billing): `pnpm verify` is the CI of record, hosted workflows are manual only. Procedure:
 [CONTRIBUTING § Working method](CONTRIBUTING.md#working-method--the-three-gates).
 
 ## Repo-specific traps
