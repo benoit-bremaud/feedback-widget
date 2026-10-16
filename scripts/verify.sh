@@ -24,7 +24,10 @@ skip() {
 }
 
 step 'Lockfile'
-pnpm install --frozen-lockfile --offline --silent
+# Offline first (fast, no network); a cold pnpm store (fresh clone, pruned
+# store) falls back to a networked install. Both fail on a lockfile drift.
+pnpm install --frozen-lockfile --offline --silent 2>/dev/null ||
+  pnpm install --frozen-lockfile --silent
 
 step 'Formatting'
 pnpm format:check
