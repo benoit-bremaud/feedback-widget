@@ -43,7 +43,7 @@ Issue (Conventional Commits title)
   └─► Branch (<type>/T-<issue-number>-<kebab-description>)
         └─► Commits (Conventional Commits)
               └─► Pull Request (metadata + template + linked issue)
-                    └─► Review (automated reviewer + any human reviewer) + CI green
+                    └─► Review (local `review-local` report + any human reviewer) + CI green
                           └─► Explicit merge approval from the owner
                                 └─► Squash merge to main + branch deletion
                                       └─► Post-merge cleanup + PROJECT_LOG update
@@ -104,7 +104,12 @@ invariants tested), and the Worker contract coupling described in
 
 ### 3. PR-review gate — one comment at a time
 
-Reviewer comments (Copilot, Codex, humans) are handled one distinct issue
+There is no hosted automated reviewer: the review of record is the
+`review-local` report, run again on the PR head before the merge. A PR
+merges when CI is green, that report has no open Must Have, and every
+human comment is answered.
+
+Reviewer comments (local agents, humans) are handled one distinct issue
 at a time: **verify each claim against the code** before relaying it, let
 the owner decide, reply inline per comment. Before any merge, **re-fetch
 all reviews** — later batches count. The step-by-step procedure lives in
@@ -329,7 +334,7 @@ Every PR must carry the full GitHub sidebar populated:
 | Field         | Value                                                              |
 | ------------- | ------------------------------------------------------------------ |
 | **Assignees** | `benoit-bremaud` (always)                                          |
-| **Reviewers** | `copilot-pull-request-reviewer` (automated reviewer)               |
+| **Reviewers** | None hosted: review-local report (see § PR-review gate)            |
 | **Labels**    | Same triptych as the linked issue — `type:*` + `area:*` + `prio:*` |
 | **Project**   | `feedback-widget` (node ID `PVT_kwHOB8rwIc4BVJlN`)                 |
 | **Milestone** | **Set explicitly** to match the linked issue's milestone           |
@@ -353,13 +358,6 @@ gh api graphql -f query='mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{pro
 # 2. Set the milestone explicitly (replace <N> with the milestone number)
 gh api repos/benoit-bremaud/feedback-widget/issues/$PR_NUMBER \
   -X PATCH -F milestone=<N>
-
-# 3. Request the automated reviewer
-#    (best-effort — 422 if the bot is not yet a collaborator; add via UI then retry)
-gh api repos/benoit-bremaud/feedback-widget/pulls/$PR_NUMBER/requested_reviewers \
-  -X POST --input - <<'EOF'
-{"reviewers": ["copilot-pull-request-reviewer"]}
-EOF
 ```
 
 **Why this much metadata.** Future-you will scan closed PRs through the

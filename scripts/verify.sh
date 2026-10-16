@@ -6,12 +6,25 @@
 # stop and fix, not to collect a list.
 #
 # Usage: pnpm verify        (or ./scripts/verify.sh)
+#
+# A missing scanner (gitleaks, SonarQube) fails the gate. To push anyway in an
+# emergency, run with VERIFY_ALLOW_SKIP=1: the skip is still printed.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 step() { printf '\n\033[1m▶ %s\033[0m\n' "$1"; }
-skip() { printf '\033[33m⚠ skipped — %s\033[0m\n' "$1"; }
+skip() {
+  if [ "${VERIFY_ALLOW_SKIP:-}" = 1 ]; then
+    printf '\033[33m⚠ skipped — %s\033[0m\n' "$1"
+  else
+    printf '\033[31m✘ %s (set VERIFY_ALLOW_SKIP=1 to skip on purpose)\033[0m\n' "$1"
+    exit 1
+  fi
+}
+
+step 'Lockfile'
+pnpm install --frozen-lockfile --offline --silent
 
 step 'Formatting'
 pnpm format:check
