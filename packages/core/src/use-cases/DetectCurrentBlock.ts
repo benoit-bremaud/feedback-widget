@@ -1,4 +1,4 @@
-/** Geometry of a candidate block, in viewport coordinates. */
+/** Vertical extent of a candidate block in CSS pixels, relative to the viewport top (as `getBoundingClientRect` reports it), so the scorer stays DOM-free. */
 export interface CandidateRect {
   id: string
   top: number
@@ -6,7 +6,7 @@ export interface CandidateRect {
   height: number
 }
 
-/** Geometry of the visible viewport, in the same coordinates as `CandidateRect`. */
+/** Visible viewport in the same frame as `CandidateRect`: `top` is 0 and `height` is the window inner height. */
 export interface ViewportRect {
   top: number
   bottom: number

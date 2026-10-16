@@ -8,7 +8,7 @@
 # Usage: pnpm verify        (or ./scripts/verify.sh)
 #
 # A missing scanner (gitleaks, SonarQube) fails the gate. To push anyway in an
-# emergency, run with VERIFY_ALLOW_SKIP=1: the skip is still printed.
+# emergency, run with VERIFY_ALLOW_SKIP=1 (exactly `1`): the skip is still printed.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -18,7 +18,7 @@ skip() {
   if [ "${VERIFY_ALLOW_SKIP:-}" = 1 ]; then
     printf '\033[33m⚠ skipped — %s\033[0m\n' "$1"
   else
-    printf '\033[31m✘ %s (set VERIFY_ALLOW_SKIP=1 to skip on purpose)\033[0m\n' "$1"
+    printf '\033[31m✘ %s (set VERIFY_ALLOW_SKIP=1 to skip on purpose)\033[0m\n' "$1" >&2
     exit 1
   fi
 }

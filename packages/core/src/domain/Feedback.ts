@@ -32,7 +32,7 @@ export const SUB_CATEGORIES_BY_CATEGORY = {
 export type TopLevelCategory = keyof typeof SUB_CATEGORIES_BY_CATEGORY
 
 export type BugSubCategory = (typeof SUB_CATEGORIES_BY_CATEGORY)['bug'][number]
-/** Sub-categories allowed under `content`. */
+/** Sub-categories allowed under `content`; derived from `SUB_CATEGORIES_BY_CATEGORY`, so the Worker allowlist must change with it. */
 export type ContentSubCategory =
   (typeof SUB_CATEGORIES_BY_CATEGORY)['content'][number]
 /** Sub-categories allowed under `unclear`. */
