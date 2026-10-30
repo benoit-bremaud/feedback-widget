@@ -8,13 +8,13 @@
 
 ## Pre-merge gate (head SHA `03c8fc5`, `--push` mode)
 
-| Step        | Result                                                                                                                                                                 |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 Tests     | ✅ core 68/68 (6 files) · ✅ web 134/134 (10 files) · no E2E suite in the repo                                                                                         |
+| Step        | Result                                                                                                                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Tests     | ✅ core 68/68 (6 files) · ✅ web 134/134 (10 files) · no E2E suite in the repo                                                                                                               |
 | 2 Coverage  | core 96.29 % stmts / 93.93 % branches / 91.3 % funcs / 96 % lines · web 88.8 % / 77.97 % / 85.71 % / 91.93 % (runner floors enforced, unchanged by this diff) · docs 100 % (70/70, floor 90) |
-| 3 SonarQube | ⚠️ not run — `SONAR_TOKEN` not exported in the agent shell · **owner waiver 2026-10-30**: docs-only diff (Markdown), outside the Sonar sources                         |
-| 4 Secrets   | ✅ gitleaks clean (`main..HEAD`, 2 commits) · no tracked `.env*` · diff read: field names only, no token, no personal data                                             |
-| 5 QA pass   | — skipped (`--push` mode, docs-only diff)                                                                                                                              |
+| 3 SonarQube | ✅ `QUALITY GATE STATUS: PASSED` (local SonarQube, project `feedback-widget`, global analysis token)                                                                                         |
+| 4 Secrets   | ✅ gitleaks clean (`main..HEAD`, 2 commits) · no tracked `.env*` · diff read: field names only, no token, no personal data                                                                   |
+| 5 QA pass   | — skipped (`--push` mode, docs-only diff)                                                                                                                                                    |
 
 - Gate: **GREEN for push** (merge gate step 5 not required for a docs PR).
 
