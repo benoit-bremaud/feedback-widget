@@ -185,6 +185,12 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       // would leave pointing mode enabled with an orphan document-level
       // capture listener).
       const showTrigger = this.state.step === 'closed'
+      // Record the opener BEFORE innerHTML replaces the trigger: once the
+      // focused trigger is removed, `document.activeElement` is <body>.
+      if (this.previousStep === 'closed' && !showTrigger) {
+        this.lastFocusedBeforeOpen =
+          (document.activeElement as HTMLElement | null) ?? null
+      }
       this.shadowRoot.innerHTML = `
         <style>${STYLES}</style>
         ${showTrigger ? this.renderButton() : ''}
@@ -581,15 +587,8 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
     private manageFocusOnStepChange(): void {
       if (!this.shadowRoot) return
       const stepChanged = this.state.step !== this.previousStep
-      const justOpened =
-        this.previousStep === 'closed' && this.state.step !== 'closed'
       const justClosed =
         this.previousStep !== 'closed' && this.state.step === 'closed'
-
-      if (justOpened) {
-        this.lastFocusedBeforeOpen =
-          (document.activeElement as HTMLElement | null) ?? null
-      }
 
       if (stepChanged && this.state.step !== 'closed') {
         queueMicrotask(() => {
@@ -601,8 +600,16 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       }
 
       if (justClosed && this.lastFocusedBeforeOpen) {
-        const toRestore = this.lastFocusedBeforeOpen
-        queueMicrotask(() => toRestore.focus())
+        const opener = this.lastFocusedBeforeOpen
+        // Opened from our own trigger, `document.activeElement` is this
+        // shadow host, and the trigger was re-rendered: focus the new one.
+        queueMicrotask(() => {
+          const target =
+            opener === this
+              ? this.shadowRoot?.querySelector<HTMLElement>('.fw-trigger')
+              : opener
+          target?.focus()
+        })
         this.lastFocusedBeforeOpen = null
       }
 

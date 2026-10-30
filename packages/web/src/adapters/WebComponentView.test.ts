@@ -1211,6 +1211,32 @@ describe('focus management', () => {
     expect(el.shadowRoot!.activeElement).toBeNull()
   })
 
+  it('returns focus to the re-rendered trigger when opened from it', async () => {
+    const { el, render } = mountView()
+    el.shadowRoot!.querySelector<HTMLElement>('.fw-trigger')!.focus()
+
+    render({ step: 'type' })
+    await flushMicrotasks()
+    render({ step: 'closed' })
+    await flushMicrotasks()
+
+    const trigger = el.shadowRoot!.querySelector('.fw-trigger')
+    expect(el.shadowRoot!.activeElement).toBe(trigger)
+    expect(document.activeElement).toBe(el)
+  })
+
+  it('leaves focus alone on close when nothing was focused before opening', async () => {
+    const { el, render } = mountView()
+    ;(document.activeElement as HTMLElement | null)?.blur()
+
+    render({ step: 'type' })
+    await flushMicrotasks()
+    render({ step: 'closed' })
+    await flushMicrotasks()
+
+    expect(el.shadowRoot!.activeElement).toBeNull()
+  })
+
   it('does not re-focus any control when the same step is re-rendered', async () => {
     const { el, render } = mountView()
     render({ step: 'precision', selectedCategory: 'praise' })
