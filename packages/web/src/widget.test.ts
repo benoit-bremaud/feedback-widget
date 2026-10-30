@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { LOCALES } from './i18n'
 import { mountFeedbackWidget, WIDGET_VERSION } from './widget'
 
 /**
@@ -17,6 +18,7 @@ const rateLimiterRecord = vi.fn()
 const rateLimiterCanSubmit = vi.fn(() => true)
 const outboxEnqueue = vi.fn()
 const outboxDrain = vi.fn()
+const outboxPurgeExpired = vi.fn(async (): Promise<void> => undefined)
 const detectorStart = vi.fn()
 const detectorStop = vi.fn()
 const detectorRefresh = vi.fn()
@@ -26,8 +28,6 @@ const detectorDisablePointing = vi.fn()
 const detectorClearHighlight = vi.fn()
 const detectorDestroy = vi.fn()
 const viewRender = vi.fn()
-const viewShowConfirmation = vi.fn()
-const viewShowMailtoFallback = vi.fn()
 let onUserActionCallback:
   ((action: { kind: string; [k: string]: unknown }) => void) | null = null
 
@@ -35,15 +35,28 @@ let onUserActionCallback:
 let rateLimiterKey: string | undefined
 let outboxKey: string | undefined
 let detectorRootSelector: string | undefined
+let rateLimiterNow: (() => number) | undefined
+let outboxNow: (() => number) | undefined
+let transportDeps:
+  | {
+      token?: string
+      fetchImpl: typeof fetch
+      sleep: (ms: number) => Promise<void>
+    }
+  | undefined
 
 vi.mock('./adapters/HttpTransport', () => ({
-  createHttpTransport: () => ({ send: transportSend }),
+  createHttpTransport: (deps: NonNullable<typeof transportDeps>) => {
+    transportDeps = deps
+    return { send: transportSend }
+  },
   defaultBackoff: (n: number) => n * 100,
 }))
 
 vi.mock('./adapters/LocalStorageRateLimiter', () => ({
-  createLocalStorageRateLimiter: (deps: { key: string }) => {
+  createLocalStorageRateLimiter: (deps: { key: string; now: () => number }) => {
     rateLimiterKey = deps.key
+    rateLimiterNow = deps.now
     return {
       canSubmit: rateLimiterCanSubmit,
       recordSubmission: rateLimiterRecord,
@@ -52,12 +65,13 @@ vi.mock('./adapters/LocalStorageRateLimiter', () => ({
 }))
 
 vi.mock('./adapters/LocalStorageOutbox', () => ({
-  createLocalStorageOutbox: (deps: { key: string }) => {
+  createLocalStorageOutbox: (deps: { key: string; now: () => number }) => {
     outboxKey = deps.key
+    outboxNow = deps.now
     return {
       enqueue: outboxEnqueue,
       drain: outboxDrain,
-      purgeExpired: vi.fn(async () => undefined),
+      purgeExpired: outboxPurgeExpired,
       size: vi.fn(async () => 0),
     }
   },
@@ -89,8 +103,6 @@ vi.mock('./adapters/WebComponentView', () => ({
   defineFeedbackWidgetElement: () => FakeFeedbackWidgetElement,
   createWebComponentView: () => ({
     render: viewRender,
-    showConfirmation: viewShowConfirmation,
-    showMailtoFallback: viewShowMailtoFallback,
     onUserAction: (cb: typeof onUserActionCallback) => {
       onUserActionCallback = cb
     },
@@ -105,6 +117,9 @@ beforeEach(() => {
   rateLimiterKey = undefined
   outboxKey = undefined
   detectorRootSelector = undefined
+  rateLimiterNow = undefined
+  outboxNow = undefined
+  transportDeps = undefined
   document.body.innerHTML = ''
   // Reset the customElements registry where possible.
   // happy-dom allows (re)definition of the same name across tests if we
@@ -115,6 +130,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
 })
 
 // ---- Minimal valid config -------------------------------------------------
@@ -404,6 +421,114 @@ describe('controller — user-action state transitions', () => {
     expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('type')
   })
 
+  it('back keeps the typed message and name (spec D5)', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    onUserActionCallback?.({
+      kind: 'select-sub-category',
+      subCategory: 'crash',
+    })
+    onUserActionCallback?.({ kind: 'update-message', value: 'draft text' })
+    onUserActionCallback?.({ kind: 'update-reporter', value: 'Léa' })
+
+    onUserActionCallback?.({ kind: 'back' })
+    onUserActionCallback?.({ kind: 'back' })
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('type')
+    expect(rendered?.selectedSubCategory).toBeNull()
+    expect(rendered?.userMessage).toBe('draft text')
+    expect(rendered?.reporterName).toBe('Léa')
+  })
+
+  it.each([
+    ['type', []],
+    ['sub-category', [{ kind: 'select-category', category: 'bug' }]],
+    [
+      'precision',
+      [
+        { kind: 'select-category', category: 'bug' },
+        { kind: 'select-sub-category', subCategory: 'crash' },
+      ],
+    ],
+  ] as const)(
+    'close on %s with a draft asks to discard, keep-editing returns there',
+    (step, path) => {
+      mountFeedbackWidget(validConfig)
+      onUserActionCallback?.({ kind: 'open' })
+      onUserActionCallback?.({ kind: 'confirm-target' })
+      onUserActionCallback?.({ kind: 'update-message', value: 'draft text' })
+      for (const action of path) onUserActionCallback?.(action)
+
+      onUserActionCallback?.({ kind: 'close' })
+      const asked = viewRender.mock.calls.at(-1)?.[0]
+      onUserActionCallback?.({ kind: 'keep-editing' })
+      const resumed = viewRender.mock.calls.at(-1)?.[0]
+
+      expect(asked?.step).toBe('discard-confirm')
+      expect(resumed?.step).toBe(step)
+      expect(resumed?.userMessage).toBe('draft text')
+    },
+  )
+
+  const askToDiscard = (): void => {
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+    onUserActionCallback?.({ kind: 'update-message', value: 'draft text' })
+    onUserActionCallback?.({ kind: 'close' })
+  }
+
+  it('close inside discard-confirm means keep editing (Escape, ✕, backdrop)', () => {
+    mountFeedbackWidget(validConfig)
+    askToDiscard()
+
+    onUserActionCallback?.({ kind: 'close' })
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('precision')
+    expect(rendered?.userMessage).toBe('draft text')
+  })
+
+  it('discard inside discard-confirm closes and clears the draft', () => {
+    mountFeedbackWidget(validConfig)
+    askToDiscard()
+
+    onUserActionCallback?.({ kind: 'discard' })
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('closed')
+    expect(rendered?.userMessage).toBe('')
+  })
+
+  it.each(['keep-editing', 'discard'] as const)(
+    'ignores a stray %s outside discard-confirm',
+    (kind) => {
+      mountFeedbackWidget(validConfig)
+      onUserActionCallback?.({ kind: 'open' })
+      onUserActionCallback?.({ kind: 'confirm-target' })
+      onUserActionCallback?.({ kind: 'update-message', value: 'draft text' })
+      viewRender.mockClear()
+
+      onUserActionCallback?.({ kind })
+
+      expect(viewRender).not.toHaveBeenCalled()
+    },
+  )
+
+  it('close with a blank draft closes at once', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'update-message', value: '   ' })
+
+    onUserActionCallback?.({ kind: 'close' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('closed')
+  })
+
   it('update-message silently updates state while no validation error is visible', () => {
     mountFeedbackWidget(validConfig)
     onUserActionCallback?.({ kind: 'open' })
@@ -508,7 +633,98 @@ describe('handleSubmit — result branches', () => {
     await Promise.resolve()
 
     expect(transportSend).toHaveBeenCalled()
-    expect(viewShowConfirmation).toHaveBeenCalled()
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('confirmed')
+    expect(rendered?.userMessage).toBe('')
+  })
+
+  it('close during sending is ignored, so a late success cannot re-open a closed widget', async () => {
+    let resolveSend: (value: { ok: true; status: number }) => void = () => {}
+    transportSend.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSend = resolve
+      }),
+    )
+    rateLimiterCanSubmit.mockReturnValue(true)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('sending')
+
+    onUserActionCallback?.({ kind: 'close' })
+    const stepAfterClose = viewRender.mock.calls.at(-1)?.[0]?.step
+    resolveSend({ ok: true, status: 204 })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(stepAfterClose).toBe('sending')
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('confirmed')
+  })
+
+  it('closing the error step after the draft was queued closes without asking', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 503,
+      reason: 'server',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockResolvedValue(undefined)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('error')
+
+    onUserActionCallback?.({ kind: 'close' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('closed')
+  })
+
+  it('closing the error step asks when the draft could not be queued', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 503,
+      reason: 'server',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    outboxEnqueue.mockRejectedValue(new Error('no crypto'))
+    mountFeedbackWidget(validConfig)
+    openToType()
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    onUserActionCallback?.({ kind: 'close' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('discard-confirm')
+  })
+
+  it('error with a draft asks to discard, keep-editing returns to precision', async () => {
+    transportSend.mockResolvedValue({
+      ok: false,
+      status: 400,
+      reason: 'invalid',
+    })
+    rateLimiterCanSubmit.mockReturnValue(true)
+    mountFeedbackWidget(validConfig)
+    openToType()
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('error')
+
+    onUserActionCallback?.({ kind: 'close' })
+    onUserActionCallback?.({ kind: 'keep-editing' })
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('precision')
+    expect(rendered?.errorMessage).toBeNull()
   })
 
   it('builds a flat payload carrying category, sub-category, message, and the 10 auto-capture fields', async () => {
@@ -587,7 +803,6 @@ describe('handleSubmit — result branches', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(viewShowConfirmation).not.toHaveBeenCalled()
     const rendered = viewRender.mock.calls.at(-1)?.[0]
     expect(rendered?.step).toBe('error')
     expect(rendered?.errorMessage).toBeTruthy()
@@ -653,10 +868,10 @@ describe('handleSubmit — result branches', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(viewShowMailtoFallback).toHaveBeenCalledOnce()
-    const [url, message] = viewShowMailtoFallback.mock.calls.at(-1) ?? []
-    expect(url).toContain('mailto:ops@example.test')
-    expect(message).toMatch(/renvoyé automatiquement/)
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toContain('mailto:ops@example.test')
+    expect(rendered?.errorMessage).toMatch(/renvoyé automatiquement/)
   })
 
   it('does not promise auto-resend when enqueue itself fails', async () => {
@@ -716,4 +931,395 @@ describe('mountFeedbackWidget — v0.5.0 wiring', () => {
 
     expect(detectorRootSelector).toBeUndefined()
   })
+})
+
+// ---- Tests: controller edge transitions ----------------------------------
+
+describe('controller — additional transitions', () => {
+  beforeEach(() => {
+    detectorGetCurrentTarget.mockReturnValue(null)
+  })
+
+  const target = {
+    tag: 'p',
+    label: null,
+    selector: null,
+    headingText: 'Heading',
+    excerpt: 'picked excerpt',
+  }
+
+  it('reset after a report restarts at target-confirm with a clean draft and a fresh target', () => {
+    detectorGetCurrentTarget.mockReturnValue(target)
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'bug' })
+    onUserActionCallback?.({
+      kind: 'select-sub-category',
+      subCategory: 'crash',
+    })
+    onUserActionCallback?.({ kind: 'update-message', value: 'draft text' })
+    onUserActionCallback?.({ kind: 'update-reporter', value: 'Léa' })
+
+    onUserActionCallback?.({ kind: 'reset' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]).toEqual({
+      step: 'target-confirm',
+      target,
+      selectedCategory: null,
+      selectedSubCategory: null,
+      userMessage: '',
+      reporterName: '',
+      errorMessage: null,
+    })
+  })
+
+  it('a target picked in pointing mode ends pointing and returns to target-confirm with it', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'reject-target' })
+    const onPick = detectorEnablePointing.mock.calls[0]?.[0] as (
+      picked: typeof target,
+    ) => void
+    detectorDisablePointing.mockClear()
+
+    onPick(target)
+
+    expect(detectorDisablePointing).toHaveBeenCalledOnce()
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('target-confirm')
+    expect(rendered?.target).toEqual(target)
+  })
+
+  it('discard from the confirmation closes the widget and clears the pointing highlight', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'update-message', value: 'draft text' })
+    onUserActionCallback?.({ kind: 'close' })
+    detectorClearHighlight.mockClear()
+
+    onUserActionCallback?.({ kind: 'discard' })
+
+    expect(detectorClearHighlight).toHaveBeenCalledOnce()
+    expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('closed')
+  })
+
+  it('ignores an unknown action without rendering', () => {
+    mountFeedbackWidget(validConfig)
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'not-an-action' })
+
+    expect(viewRender).not.toHaveBeenCalled()
+  })
+
+  it('update-message re-renders to clear a visible validation error', () => {
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+    onUserActionCallback?.({ kind: 'update-message', value: 'short' })
+    onUserActionCallback?.({ kind: 'submit' })
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'update-message', value: 'short but fixed' })
+
+    expect(viewRender.mock.calls.at(-1)?.[0]?.errorMessage).toBeNull()
+  })
+
+  it('update-reporter stays silent for a name within the limit', () => {
+    mountFeedbackWidget(validConfig)
+    viewRender.mockClear()
+
+    onUserActionCallback?.({ kind: 'update-reporter', value: 'Léa' })
+
+    expect(viewRender).not.toHaveBeenCalled()
+  })
+
+  it('a second mount over an element the widget did not create mounts a fresh controller', () => {
+    const orphan = document.createElement('feedback-widget')
+    document.body.appendChild(orphan)
+
+    const handle = mountFeedbackWidget(validConfig)
+
+    expect(handle).toHaveProperty('refresh')
+    expect(detectorStart).toHaveBeenCalledOnce()
+    expect(document.querySelectorAll('feedback-widget')).toHaveLength(2)
+  })
+})
+
+// ---- Tests: honeypot / too-fast silent success ----------------------------
+
+describe('handleSubmit — bot traps', () => {
+  const fillPraise = (): void => {
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+    onUserActionCallback?.({
+      kind: 'update-message',
+      value: 'A meaningful ten-char-plus message.',
+    })
+  }
+
+  beforeEach(() => {
+    detectorGetCurrentTarget.mockReturnValue(null)
+    rateLimiterCanSubmit.mockReturnValue(true)
+  })
+
+  it('pretends success and sends nothing when the honeypot is filled', async () => {
+    mountFeedbackWidget(validConfig)
+    const el =
+      document.querySelector<FakeFeedbackWidgetElement>('feedback-widget')!
+    el.isHoneypotFilled.mockReturnValue(true)
+    fillPraise()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await vi.waitFor(() =>
+      expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('confirmed'),
+    )
+
+    expect(transportSend).not.toHaveBeenCalled()
+  })
+
+  it('pretends success when the form was submitted faster than minFormOpenMs', async () => {
+    mountFeedbackWidget({ ...validConfig, minFormOpenMs: 60_000 })
+    fillPraise()
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await vi.waitFor(() =>
+      expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('confirmed'),
+    )
+
+    expect(transportSend).not.toHaveBeenCalled()
+  })
+})
+
+// ---- Tests: payload build failure -----------------------------------------
+
+describe('handleSubmit — payload build failure', () => {
+  it('shows a build error instead of a stuck spinner when the context cannot be collected', async () => {
+    detectorGetCurrentTarget.mockReturnValue(null)
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+    onUserActionCallback?.({
+      kind: 'update-message',
+      value: 'A meaningful ten-char-plus message.',
+    })
+    vi.spyOn(Date.prototype, 'toISOString').mockImplementation(() => {
+      throw new Error('clock unavailable')
+    })
+
+    onUserActionCallback?.({ kind: 'submit' })
+    await Promise.resolve()
+
+    const rendered = viewRender.mock.calls.at(-1)?.[0]
+    expect(rendered?.step).toBe('error')
+    expect(rendered?.errorMessage).toBe(LOCALES.fr.validation.buildError)
+    expect(transportSend).not.toHaveBeenCalled()
+  })
+})
+
+// ---- Tests: failure branches with and without mailto ----------------------
+
+describe('handleSubmit — transport failure messages', () => {
+  const t = LOCALES.fr.transport
+  const MAILTO = 'ops@example.test'
+
+  beforeEach(() => {
+    detectorGetCurrentTarget.mockReturnValue(null)
+    rateLimiterCanSubmit.mockReturnValue(true)
+  })
+
+  it.each([
+    ['network', true, `${t.networkBase}${t.mailtoSuffixEnqueued}`],
+    ['network', false, `${t.networkBase}${t.mailtoSuffixNotEnqueued}`],
+    ['server', true, `${t.serverBase}${t.mailtoSuffixEnqueued}`],
+    ['server', false, `${t.serverBase}${t.mailtoSuffixNotEnqueued}`],
+  ] as const)(
+    '%s failure (enqueued=%s) with a mailto fallback shows the matching copy',
+    async (reason, enqueued, expectedStart) => {
+      transportSend.mockResolvedValue({ ok: false, status: null, reason })
+      if (enqueued) outboxEnqueue.mockResolvedValue(undefined)
+      else outboxEnqueue.mockRejectedValue(new Error('no crypto'))
+      mountFeedbackWidget({ ...validConfig, mailtoFallback: MAILTO })
+      onUserActionCallback?.({ kind: 'open' })
+      onUserActionCallback?.({ kind: 'confirm-target' })
+      onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+      onUserActionCallback?.({
+        kind: 'update-message',
+        value: 'A meaningful ten-char-plus message.',
+      })
+
+      onUserActionCallback?.({ kind: 'submit' })
+      await vi.waitFor(() =>
+        expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('error'),
+      )
+
+      const message = viewRender.mock.calls.at(-1)?.[0]?.errorMessage as string
+      expect(message.startsWith(expectedStart)).toBe(true)
+      expect(message).toContain(`mailto:${MAILTO}?subject=`)
+    },
+  )
+
+  it.each([
+    ['network', t.noMailtoEnqueuedNetwork],
+    ['server', t.noMailtoEnqueuedServer],
+  ] as const)(
+    '%s failure that was queued and has no mailto says it will be resent',
+    async (reason, expected) => {
+      transportSend.mockResolvedValue({ ok: false, status: null, reason })
+      outboxEnqueue.mockResolvedValue(undefined)
+      mountFeedbackWidget(validConfig)
+      onUserActionCallback?.({ kind: 'open' })
+      onUserActionCallback?.({ kind: 'confirm-target' })
+      onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+      onUserActionCallback?.({
+        kind: 'update-message',
+        value: 'A meaningful ten-char-plus message.',
+      })
+
+      onUserActionCallback?.({ kind: 'submit' })
+      await vi.waitFor(() =>
+        expect(viewRender.mock.calls.at(-1)?.[0]?.step).toBe('error'),
+      )
+
+      expect(viewRender.mock.calls.at(-1)?.[0]?.errorMessage).toBe(expected)
+    },
+  )
+})
+
+// ---- Tests: composition-root wiring ---------------------------------------
+
+describe('mountFeedbackWidget — adapter wiring', () => {
+  it('omits the transport token and keeps default categories when the config has none', () => {
+    const bare = { ...validConfig, token: undefined, categories: undefined }
+
+    mountFeedbackWidget(bare)
+
+    const el =
+      document.querySelector<FakeFeedbackWidgetElement>('feedback-widget')
+    expect(transportDeps?.token).toBeUndefined()
+    expect(el?.setOptions.mock.calls[0]?.[0].categories).toBeUndefined()
+  })
+
+  it('forwards the token to the transport when configured', () => {
+    mountFeedbackWidget(validConfig)
+
+    expect(transportDeps?.token).toBe('test-token')
+  })
+
+  it('feeds the wall clock to the rate limiter and the outbox', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-30T10:00:00Z'))
+    mountFeedbackWidget(validConfig)
+
+    expect(rateLimiterNow?.()).toBe(Date.parse('2026-10-30T10:00:00Z'))
+    expect(outboxNow?.()).toBe(Date.parse('2026-10-30T10:00:00Z'))
+  })
+
+  it('gives the transport a sleep that resolves after the requested delay', async () => {
+    vi.useFakeTimers()
+    mountFeedbackWidget(validConfig)
+    let slept = false
+
+    const pending = transportDeps?.sleep(250).then(() => {
+      slept = true
+    })
+    await vi.advanceTimersByTimeAsync(249)
+    const earlySlept = slept
+    await vi.advanceTimersByTimeAsync(1)
+    await pending
+
+    expect(earlySlept).toBe(false)
+    expect(slept).toBe(true)
+  })
+
+  it('gives the transport the window fetch', async () => {
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }))
+    mountFeedbackWidget(validConfig)
+
+    const response = await transportDeps?.fetchImpl('https://example.test/x')
+
+    expect(fetchSpy).toHaveBeenCalledWith('https://example.test/x')
+    expect(response?.status).toBe(204)
+  })
+
+  it('logs a warning instead of failing the mount when the outbox drain rejects', async () => {
+    const failure = new Error('storage gone')
+    outboxPurgeExpired.mockRejectedValueOnce(failure)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    expect(() => mountFeedbackWidget(validConfig)).not.toThrow()
+    await vi.waitFor(() =>
+      expect(warn).toHaveBeenCalledWith(
+        'feedback-widget: outbox drain failed',
+        failure,
+      ),
+    )
+  })
+
+  it('renders the widget in English when the locale is en', () => {
+    mountFeedbackWidget({ ...validConfig, locale: 'en' })
+
+    const el =
+      document.querySelector<FakeFeedbackWidgetElement>('feedback-widget')
+    expect(el?.setOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ messages: LOCALES.en }),
+    )
+  })
+})
+
+// ---- Tests: session id generation -----------------------------------------
+
+describe('session id', () => {
+  const submitPraise = async (): Promise<string> => {
+    detectorGetCurrentTarget.mockReturnValue(null)
+    rateLimiterCanSubmit.mockReturnValue(true)
+    transportSend.mockResolvedValue({ ok: true, status: 204 })
+    mountFeedbackWidget(validConfig)
+    onUserActionCallback?.({ kind: 'open' })
+    onUserActionCallback?.({ kind: 'confirm-target' })
+    onUserActionCallback?.({ kind: 'select-category', category: 'praise' })
+    onUserActionCallback?.({
+      kind: 'update-message',
+      value: 'A meaningful ten-char-plus message.',
+    })
+    onUserActionCallback?.({ kind: 'submit' })
+    await vi.waitFor(() => expect(transportSend).toHaveBeenCalled())
+    return transportSend.mock.calls.at(-1)?.[0].sessionId as string
+  }
+
+  it('uses crypto.randomUUID when available', async () => {
+    vi.stubGlobal('crypto', { randomUUID: () => 'uuid-from-crypto' })
+
+    expect(await submitPraise()).toBe('uuid-from-crypto')
+  })
+
+  it('builds a timestamp + random-hex id when only getRandomValues exists', async () => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: (bytes: Uint8Array) => {
+        bytes.fill(255)
+        return bytes
+      },
+    })
+
+    expect(await submitPraise()).toMatch(/^fw-sess-[0-9a-z]+-f{16}$/)
+  })
+
+  it.each([
+    ['no crypto at all', undefined],
+    ['a crypto object without any usable method', {}],
+  ] as const)(
+    'degrades to a timestamp-only id with %s',
+    async (_name, cryptoStub) => {
+      vi.stubGlobal('crypto', cryptoStub)
+
+      expect(await submitPraise()).toMatch(/^fw-sess-[0-9a-z]+$/)
+    },
+  )
 })

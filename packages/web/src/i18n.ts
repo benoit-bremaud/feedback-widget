@@ -1,8 +1,15 @@
 import type {
+  CategoryPair,
   TopLevelCategory,
   SubCategory,
   Locale,
 } from '@benoit-bremaud/feedback-widget-core'
+
+/** Guided question and placeholder shown on the precision step (spec D4). */
+export interface Prompt {
+  question: string
+  placeholder: string
+}
 
 /**
  * All user-facing widget strings. Icons live in the view (locale-neutral);
@@ -23,6 +30,8 @@ export interface Messages {
   close: string
   cancel: string
   back: string
+  /** aria-label of the `family › sub-family` breadcrumb. */
+  breadcrumb: string
   pointing: { text: string }
   targetConfirm: {
     title: string
@@ -33,12 +42,20 @@ export interface Messages {
   type: { title: string; subtitle: string; aria: string }
   subCategory: { subtitle: string; aria: string }
   precision: {
-    subtitle: string
+    /** Per pair first, then per family, then `defaultPrompt` (see `promptFor`). */
+    prompts: Partial<Record<CategoryPair, Prompt>>
+    familyPrompts: Partial<Record<TopLevelCategory, Prompt>>
+    defaultPrompt: Prompt
     descriptionLabel: string
-    placeholder: string
     reporterLabel: string
     submit: string
     privacy: string
+  }
+  discardConfirm: {
+    title: string
+    subtitle: string
+    keepEditing: string
+    discard: string
   }
   sending: string
   confirmed: { title: string; subtitle: string; reset: string }
@@ -69,28 +86,69 @@ type DeepLocalized<T> = T extends string
   ? Localized
   : { [K in keyof T]: DeepLocalized<T[K]> }
 
+// Prompts shared by two pairs (spec D4 table).
+const WRONG_INFO_PROMPT = {
+  question: t(
+    'Qu’est-ce qui est faux ou dépassé ?',
+    'What is wrong or out of date?',
+  ),
+  placeholder: t('Il est écrit … mais …', 'It says … but …'),
+}
+const EXPECTED_TEXT_PROMPT = {
+  question: t('Qu’aurais-tu voulu lire ?', 'What did you expect to read?'),
+  placeholder: t('Je m’attendais à trouver …', 'I expected to find …'),
+}
+
+// One guided prompt across every locale.
+const prompt = (question: Localized, placeholder: Localized) => ({
+  question,
+  placeholder,
+})
+
 const SOURCE: DeepLocalized<Messages> = {
   categoryLabels: {
     bug: t('Ça ne marche pas', 'Something is broken'),
+    display: t('C’est mal affiché', 'It looks wrong'),
     content: t('Erreur dans le contenu', 'Wrong content'),
-    unclear: t('Je n’ai pas compris', 'I didn’t understand'),
+    unclear: t(
+      'Je n’ai pas compris ou j’ai une question',
+      'I didn’t understand or I have a question',
+    ),
     suggestion: t('J’ai une idée', 'I have an idea'),
     praise: t('J’aime bien', 'I like it'),
   },
   subCategoryLabels: {
-    crash: t('Plantage', 'Crash'),
+    // bug
     'no-effect': t('Rien ne se passe', 'Nothing happens'),
-    'broken-display': t('Affichage cassé', 'Broken display'),
+    crash: t('Plantage', 'Crash'),
+    'form-rejected': t('Formulaire refusé', 'Form rejected'),
+    'wrong-data': t('Résultat faux', 'Wrong result'),
+    'personal-data': t(
+      'Données qui ne devraient pas être visibles',
+      'Data that should not be visible',
+    ),
+    // display
+    'broken-layout': t('Mise en page cassée', 'Broken layout'),
+    mobile: t('Problème sur mobile', 'Problem on mobile'),
+    'missing-media': t('Image ou vidéo manquante', 'Missing image or video'),
     'too-slow': t('Trop lent', 'Too slow'),
+    // content
     typo: t('Faute de frappe', 'Typo'),
-    'wrong-info': t('Info fausse ou périmée', 'Wrong or outdated info'),
-    'dead-link': t('Lien ou image mort', 'Dead link or image'),
+    'wrong-info': t('Information fausse', 'Wrong information'),
+    outdated: t('Information périmée', 'Outdated information'),
+    'dead-link': t('Lien mort ou mauvais lien', 'Dead or wrong link'),
+    // unclear
     wording: t('Formulation', 'Wording'),
     'missing-info': t('Information manquante', 'Missing information'),
     navigation: t('Je me perds dans le site', 'I get lost on the site'),
+    question: t('J’ai une question', 'I have a question'),
+    // suggestion
     'new-feature': t('Nouvelle fonction', 'New feature'),
     improvement: t('Amélioration', 'Improvement'),
+    design: t('Design', 'Design'),
     accessibility: t('Accessibilité', 'Accessibility'),
+    // every family but praise
+    other: t('Autre', 'Other'),
   },
   trigger: {
     aria: t(
@@ -102,6 +160,7 @@ const SOURCE: DeepLocalized<Messages> = {
   close: t('Fermer', 'Close'),
   cancel: t('Annuler', 'Cancel'),
   back: t('Retour', 'Back'),
+  breadcrumb: t('Ta sélection', 'Your selection'),
   pointing: {
     text: t(
       'Tape sur le passage que tu veux signaler.',
@@ -133,21 +192,121 @@ const SOURCE: DeepLocalized<Messages> = {
     aria: t('Sous-catégorie', 'Sub-category'),
   },
   precision: {
-    subtitle: t(
-      'Décris le problème (obligatoire), et ton prénom si tu veux.',
-      'Describe the problem (required), and your name if you like.',
+    prompts: {
+      'bug/no-effect': prompt(
+        t('Qu’as-tu essayé de faire ?', 'What were you trying to do?'),
+        t(
+          'J’ai cliqué sur … et rien ne s’est passé',
+          'I clicked … and nothing happened',
+        ),
+      ),
+      'bug/crash': prompt(
+        t('Que faisais-tu juste avant ?', 'What were you doing just before?'),
+        t('La page s’est figée quand …', 'The page froze when …'),
+      ),
+      'bug/form-rejected': prompt(
+        t(
+          'Quel champ est refusé, avec quelle valeur ?',
+          'Which field is rejected, with which value?',
+        ),
+        t('Le champ … refuse …', 'The … field rejects …'),
+      ),
+      'bug/wrong-data': prompt(
+        t(
+          'Qu’est-ce qui est affiché, et qu’attendais-tu ?',
+          'What is shown, and what did you expect?',
+        ),
+        t('Il affiche … alors que …', 'It shows … but …'),
+      ),
+      'bug/personal-data': prompt(
+        t(
+          'Qu’as-tu vu qui ne devrait pas l’être ?',
+          'What did you see that should not be visible?',
+        ),
+        t('Je vois …', 'I can see …'),
+      ),
+      'display/broken-layout': prompt(
+        t(
+          'Qu’est-ce qui déborde ou se chevauche ?',
+          'What overflows or overlaps?',
+        ),
+        t('Le bouton … passe sous …', 'The … button goes under …'),
+      ),
+      'display/mobile': prompt(
+        t(
+          'Que se passe-t-il sur ton appareil ?',
+          'What happens on your device?',
+        ),
+        t('Sur mon téléphone, …', 'On my phone, …'),
+      ),
+      'display/missing-media': prompt(
+        t('Quelle image ou vidéo manque ?', 'Which image or video is missing?'),
+        t('L’image de … ne s’affiche pas', 'The image of … does not show'),
+      ),
+      'display/too-slow': prompt(
+        t('Quelle action est lente ?', 'Which action is slow?'),
+        t('Le chargement de … prend …', 'Loading … takes …'),
+      ),
+      'content/typo': prompt(
+        t('Recopie la faute.', 'Copy the mistake.'),
+        t('« … » devrait être « … »', '“…” should be “…”'),
+      ),
+      'content/wrong-info': WRONG_INFO_PROMPT,
+      'content/outdated': WRONG_INFO_PROMPT,
+      'content/dead-link': prompt(
+        t(
+          'Où mène le lien, et où devrait-il mener ?',
+          'Where does the link go, and where should it go?',
+        ),
+        t('Le lien « … » mène à …', 'The “…” link goes to …'),
+      ),
+      'unclear/wording': EXPECTED_TEXT_PROMPT,
+      'unclear/missing-info': EXPECTED_TEXT_PROMPT,
+      'unclear/navigation': prompt(
+        t('Que cherchais-tu ?', 'What were you looking for?'),
+        t(
+          'Je cherchais … et je n’ai pas trouvé',
+          'I was looking for … and could not find it',
+        ),
+      ),
+      'unclear/question': prompt(
+        t('Pose ta question.', 'Ask your question.'),
+        t('Comment … ?', 'How …?'),
+      ),
+    },
+    familyPrompts: {
+      suggestion: prompt(
+        t('Décris ton idée.', 'Describe your idea.'),
+        t('Ce serait bien de …', 'It would be nice to …'),
+      ),
+      praise: prompt(
+        t('Qu’est-ce qui t’a plu ?', 'What did you like?'),
+        t('J’ai aimé …', 'I liked …'),
+      ),
+    },
+    defaultPrompt: prompt(
+      t('Explique-nous.', 'Tell us more.'),
+      t(
+        'Décris ce que tu as vu (10 caractères minimum)',
+        'Describe what you saw (10 characters minimum)',
+      ),
     ),
     descriptionLabel: t('Description', 'Description'),
-    placeholder: t(
-      'Décris ce que tu as vu (10 caractères minimum)',
-      'Describe what you saw (10 characters minimum)',
-    ),
     reporterLabel: t('Prénom (optionnel)', 'First name (optional)'),
     submit: t('Envoyer', 'Send'),
     privacy: t(
       'Les retours sont envoyés anonymement. Le prénom n’est utilisé que pour identifier ton feedback.',
       'Feedback is sent anonymously. Your name is only used to identify your report.',
     ),
+  },
+  discardConfirm: {
+    title: t('Abandonner ton message ?', 'Discard your message?'),
+    subtitle: t(
+      'Ce que tu as écrit sera perdu.',
+      'What you wrote will be lost.',
+    ),
+    keepEditing: t('Continuer', 'Keep editing'),
+    discard: t('Abandonner', 'Discard'),
   },
   sending: t('Envoi en cours…', 'Sending…'),
   confirmed: {
@@ -233,16 +392,12 @@ function isLocalized(value: unknown): value is Localized {
 // Recursively replace every Localized leaf with its value for `locale`.
 function localize(node: unknown, locale: Locale): unknown {
   if (isLocalized(node)) return node[locale]
-  if (typeof node === 'object' && node !== null) {
-    const out: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(
-      node as Record<string, unknown>,
-    )) {
-      out[key] = localize(value, locale)
-    }
-    return out
+  // Every non-leaf of `SOURCE` is an object (`DeepLocalized<Messages>`).
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    out[key] = localize(value, locale)
   }
-  return node
+  return out
 }
 
 function buildMessages(locale: Locale): Messages {
@@ -254,4 +409,25 @@ function buildMessages(locale: Locale): Messages {
 export const LOCALES: Record<Locale, Messages> = {
   fr: buildMessages('fr'),
   en: buildMessages('en'),
+}
+
+/**
+ * The guided prompt for a selection (spec D4): the pair, then the family
+ * fallback, then `defaultPrompt`. The pair key matters because `other`
+ * exists in five families.
+ */
+export function promptFor(
+  messages: Messages,
+  category: TopLevelCategory | null,
+  subCategory: SubCategory | null,
+): Prompt {
+  const p = messages.precision
+  if (category === null) return p.defaultPrompt
+  // Every (category, sub-category) pair reaching here was validated by
+  // the domain table, so the template literal is a `CategoryPair`.
+  const byPair =
+    subCategory === null
+      ? undefined
+      : p.prompts[`${category}/${subCategory}` as CategoryPair]
+  return byPair ?? p.familyPrompts[category] ?? p.defaultPrompt
 }

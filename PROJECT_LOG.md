@@ -1255,3 +1255,24 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   [#113](https://github.com/benoit-bremaud/feedback-widget/pull/113) `c426c10`,
   epics [#81](https://github.com/benoit-bremaud/feedback-widget/issues/81),
   [#107](https://github.com/benoit-bremaud/feedback-widget/issues/107).
+
+## 2026-10-30
+
+### Richer feedback taxonomy — conception, Worker, widget (#128)
+
+- **What:** PR #129 (`26d7fb0`) merged the spec
+  `docs/architecture/specs/feedback-taxonomy.md` and its class and state
+  diagrams: six families, 26 sub-families, guided prompts, draft-preserving
+  navigation. `feedback-pipeline-worker` PR #44 (`dc2ae2c`) added a v0.6.x
+  compatibility tier and migration `0003`; it was deployed and `0003` applied
+  in production the same day (0 rows touched). The widget PR implements the
+  spec, moves the success and mailto outcomes into the controller and fixes
+  a closed widget re-opening after a late send result.
+- **Why:** Production data (16 rows) showed 75 % of reports filed as
+  `suggestion/improvement` or `unclear/missing-info` and none as `bug` or
+  `content`: testers lacked precise slots and an `other` escape.
+- **Ref:** issue [#128](https://github.com/benoit-bremaud/feedback-widget/issues/128),
+  PR [#129](https://github.com/benoit-bremaud/feedback-widget/pull/129) `26d7fb0`,
+  follow-ups [#130](https://github.com/benoit-bremaud/feedback-widget/issues/130),
+  [#131](https://github.com/benoit-bremaud/feedback-widget/issues/131),
+  [#132](https://github.com/benoit-bremaud/feedback-widget/issues/132) (coverage floor 95 %).

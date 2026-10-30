@@ -6,11 +6,11 @@
  *
  * A category names the reporter's INTENT, not the technical nature of
  * the defect — the latter is derived downstream from the auto-captured
- * context. The former `typo`/`error`/`ambiguous` trio overlapped and
- * leaked developer vocabulary; `other` was dropped as `unclear` and
- * `suggestion` already absorb the vague cases; `praise` was added
- * because the widget was defect-only, with no way to report that
- * something works.
+ * context. Since v0.7.0 (#128, spec docs/architecture/specs/
+ * feedback-taxonomy.md) there are six families: `display` splits visual
+ * defects off `bug`, every family but `praise` ends with an `other`
+ * escape, so a reporter never files a defect under the wrong slot for
+ * lack of a precise one.
  *
  * Two contracts ride on this table:
  * - Array order IS the on-screen button order, so reordering is a
@@ -20,10 +20,24 @@
  *   update there or valid submissions get rejected.
  */
 export const SUB_CATEGORIES_BY_CATEGORY = {
-  bug: ['crash', 'no-effect', 'broken-display', 'too-slow'],
-  content: ['typo', 'wrong-info', 'dead-link'],
-  unclear: ['wording', 'missing-info', 'navigation'],
-  suggestion: ['new-feature', 'improvement', 'accessibility'],
+  bug: [
+    'no-effect',
+    'crash',
+    'form-rejected',
+    'wrong-data',
+    'personal-data',
+    'other',
+  ],
+  display: ['broken-layout', 'mobile', 'missing-media', 'too-slow', 'other'],
+  content: ['typo', 'wrong-info', 'outdated', 'dead-link', 'other'],
+  unclear: ['wording', 'missing-info', 'navigation', 'question', 'other'],
+  suggestion: [
+    'new-feature',
+    'improvement',
+    'design',
+    'accessibility',
+    'other',
+  ],
   // Free text only — the sole category carrying a null sub-category.
   praise: [],
 } as const satisfies Record<string, readonly string[]>
@@ -31,7 +45,11 @@ export const SUB_CATEGORIES_BY_CATEGORY = {
 /** Top-level feedback category, derived from the taxonomy table. */
 export type TopLevelCategory = keyof typeof SUB_CATEGORIES_BY_CATEGORY
 
+/** Sub-categories allowed under `bug`. */
 export type BugSubCategory = (typeof SUB_CATEGORIES_BY_CATEGORY)['bug'][number]
+/** Sub-categories allowed under `display`. */
+export type DisplaySubCategory =
+  (typeof SUB_CATEGORIES_BY_CATEGORY)['display'][number]
 /** Sub-categories allowed under `content`; derived from `SUB_CATEGORIES_BY_CATEGORY`, so the Worker allowlist must change with it. */
 export type ContentSubCategory =
   (typeof SUB_CATEGORIES_BY_CATEGORY)['content'][number]
@@ -50,6 +68,7 @@ export type SuggestionSubCategory =
  */
 export type SubCategory =
   | BugSubCategory
+  | DisplaySubCategory
   | ContentSubCategory
   | UnclearSubCategory
   | SuggestionSubCategory
@@ -60,10 +79,22 @@ export type SubCategory =
  */
 export type CategorizedFeedback =
   | { category: 'bug'; subCategory: BugSubCategory }
+  | { category: 'display'; subCategory: DisplaySubCategory }
   | { category: 'content'; subCategory: ContentSubCategory }
   | { category: 'unclear'; subCategory: UnclearSubCategory }
   | { category: 'suggestion'; subCategory: SuggestionSubCategory }
   | { category: 'praise'; subCategory: null }
+
+/**
+ * A `family/sub-family` key, e.g. `bug/crash`. Mapped over each family's
+ * own sub-families, so a pair that cannot exist (`praise/crash`) does
+ * not type-check. Needed because `other` exists in several families.
+ */
+export type CategoryPair = {
+  [
+    C in TopLevelCategory
+  ]: `${C}/${(typeof SUB_CATEGORIES_BY_CATEGORY)[C][number]}`
+}[TopLevelCategory]
 
 /**
  * Viewport size in CSS pixels. Replaces the v0.2.0 device-aware

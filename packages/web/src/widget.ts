@@ -7,6 +7,7 @@ import {
   resolveConfig,
   type FeedbackPayload,
   type WidgetState,
+  type WidgetStep,
   type ViewportDetector,
   type WidgetConfig,
 } from '@benoit-bremaud/feedback-widget-core'
@@ -160,6 +161,12 @@ function attachController(
 
   let state: WidgetState = initialState()
   let formOpenedAt = 0
+  // Step to restore on `keep-editing`: the one left when `close` asked to
+  // discard a draft (UML history re-entry, 05-state-widget-session.md).
+  let returnTo: DraftStep = 'precision'
+  // True once a failed send was queued in the outbox: the draft is then
+  // safe, so closing the error step must not warn that it will be lost.
+  let draftQueued = false
 
   // setState renders by default. Pass { silent: true } to update the
   // controller's state without re-rendering the shadow DOM — used while
@@ -176,6 +183,35 @@ function attachController(
     }
   }
 
+  const closeWidget = (): void => {
+    detector.disablePointingMode()
+    detector.clearHighlight()
+    setState(initialState())
+  }
+
+  // `close` is ignored while sending (the late result would re-open a
+  // closed widget) and answers "keep editing" inside the discard question;
+  // with an unsaved typed draft it asks before throwing it away (spec D5).
+  const requestClose = (): void => {
+    if (state.step === 'sending') return
+    if (state.step === 'discard-confirm') {
+      keepEditing()
+      return
+    }
+    const leftFrom = DISCARD_RETURN[state.step]
+    const queued = state.step === 'error' && draftQueued
+    if (leftFrom && !queued && state.userMessage.trim() !== '') {
+      returnTo = leftFrom
+      setState({ step: 'discard-confirm' })
+      return
+    }
+    closeWidget()
+  }
+
+  const keepEditing = (): void => {
+    setState({ step: returnTo, errorMessage: null })
+  }
+
   view.render(state)
 
   view.onUserAction((action) => {
@@ -190,9 +226,16 @@ function attachController(
         break
 
       case 'close':
-        detector.disablePointingMode()
-        detector.clearHighlight()
-        setState(initialState())
+        requestClose()
+        break
+
+      // Both only exist on the discard question (05 state diagram).
+      case 'keep-editing':
+        if (state.step === 'discard-confirm') keepEditing()
+        break
+
+      case 'discard':
+        if (state.step === 'discard-confirm') closeWidget()
         break
 
       case 'reset':
@@ -378,6 +421,7 @@ function attachController(
       return
     }
 
+    draftQueued = false
     setState({ step: 'sending' })
 
     const result = await submitFeedback(
@@ -390,14 +434,14 @@ function attachController(
       { payload, formOpenedAt, honeypotFilled },
     )
 
-    if (result.ok) {
-      view.showConfirmation()
-      return
-    }
-
-    if (result.reason === 'honeypot' || result.reason === 'too-fast') {
-      // Silently pretend success to avoid giving feedback to bots.
-      view.showConfirmation()
+    // Silently pretend success on honeypot / too-fast to avoid giving
+    // feedback to bots.
+    if (
+      result.ok ||
+      result.reason === 'honeypot' ||
+      result.reason === 'too-fast'
+    ) {
+      setState({ ...initialState(), step: 'confirmed' })
       return
     }
 
@@ -426,6 +470,7 @@ function attachController(
     } catch {
       enqueued = false
     }
+    draftQueued = enqueued
 
     const mailto = buildMailto(config.mailtoFallback, payload, messages.mailto)
     if (mailto) {
@@ -434,7 +479,10 @@ function attachController(
       const suffix = enqueued
         ? t.mailtoSuffixEnqueued
         : t.mailtoSuffixNotEnqueued
-      view.showMailtoFallback(mailto, `${base}${suffix}${t.mailtoLinkPrefix}`)
+      setState({
+        step: 'error',
+        errorMessage: `${base}${suffix}${t.mailtoLinkPrefix}${mailto}`,
+      })
       return
     }
 
@@ -460,6 +508,18 @@ function attachController(
       detector.refresh()
     },
   }
+}
+
+// Steps a user can return to with `keep-editing` (spec D5).
+type DraftStep = 'type' | 'sub-category' | 'precision'
+
+// Step `keep-editing` returns to, per step `close` was asked from (UML
+// history re-entry; the error step returns to precision).
+const DISCARD_RETURN: Partial<Record<WidgetStep, DraftStep>> = {
+  type: 'type',
+  'sub-category': 'sub-category',
+  precision: 'precision',
+  error: 'precision',
 }
 
 function initialState(): WidgetState {
