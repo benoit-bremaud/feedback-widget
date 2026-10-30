@@ -2,6 +2,7 @@
 
 > **Feature**: issue #128 — richer feedback families and guided sub-families
 > **Source spec**: [`../../specs/feedback-taxonomy.md`](../../specs/feedback-taxonomy.md) §D5
+> **Decisions captured**: D5 · **Realises**: the existing report use case (unchanged)
 > **See also**: [`04-class.md`](./04-class.md)
 
 ## Context
@@ -33,11 +34,10 @@ stateDiagram-v2
     SubCategory --> Type: back / clear sub-family, keep draft
     Precision --> SubCategory: back [requiresSubCategory] / keep draft
     Precision --> Type: back [else] / keep draft
-    Precision --> Sending: submit [trim(message).length >= MIN_MESSAGE_LENGTH]
-    Precision --> Type: submit [no category]
     Precision --> SubCategory: submit [requiresSubCategory and no sub-family]
-    Precision --> Error: submit [payload build fails] / show build error
   }
+  Precision --> Sending: submit [trim(message).length >= MIN_MESSAGE_LENGTH]
+  Precision --> Error: submit [payload build fails] / show build error
   note right of Precision
     submit [trim(message).length < MIN_MESSAGE_LENGTH] / show error
     (internal transition, no exit or entry)
@@ -47,7 +47,7 @@ stateDiagram-v2
   Reporting --> Closed: close [else] / reset
   DiscardConfirm --> Type: keep-editing [left from Type]
   DiscardConfirm --> SubCategory: keep-editing [left from SubCategory]
-  DiscardConfirm --> Precision: keep-editing [left from Precision]
+  DiscardConfirm --> Precision: keep-editing [left from Precision or Error]
   DiscardConfirm --> Closed: discard / reset
   note right of DiscardConfirm
     close / ignored
@@ -78,7 +78,8 @@ stateDiagram-v2
 - `back` never clears `userMessage` or `reporterName` (D5); only `selectedSubCategory` is cleared when the user returns to `Type`.
 - The too-short message is an internal transition (note on `Precision`): the step does not change, only `errorMessage`. The code re-renders the shadow DOM in that case; focus restoration is a view concern, not a state one.
 - `Error → Sending` is the real retry path: the retry button emits `submit`, and `preparePayload` re-routes to `Type` / `SubCategory` first when a selection is missing (same guards as from `Precision`).
-- Today `Confirmed` and `Error` (after transport) are set by the view (`showConfirmation`, `showMailtoFallback`) while the controller's `step` stays `sending`; that split is what lets a late result re-open a closed widget. The change moves both transitions into the controller so `WidgetState.step` is the single source, and `close` during `Sending` is ignored.
+- Today the success, honeypot, too-fast and mailto-fallback outcomes are view-driven (`showConfirmation`, `showMailtoFallback`) while the controller's `step` stays `sending`; the other error outcomes already go through `setState({ step: 'error' })`. That split is what lets a late result re-open a closed widget. The change moves the view-driven outcomes into the controller so `WidgetState.step` is the single source, and `close` during `Sending` is ignored.
+- `Sending` and `Error` sit outside `Reporting` on purpose: the composite's `close` rules must not apply to them.
 - `open` and `reset` are only emitted by the view in `Closed` / `Confirmed`; the controller does not guard them. Documented as view-gated, unchanged.
 - There is no final state: the session machine lives as long as the element is mounted; unmount is outside it.
 - Enum alignment: `WidgetStep` gains `discard-confirm`; `UserAction` gains `keep-editing` and `discard`. Every other state and trigger already exists under the same name.
