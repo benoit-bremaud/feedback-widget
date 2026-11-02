@@ -17,7 +17,7 @@ export interface IntersectionViewportDetectorDeps {
 
 const DEFAULT_SELECTORS =
   'p, li, h1, h2, h3, h4, h5, h6, blockquote, figure, table, pre'
-const DEFAULT_ROOT = 'main'
+const DEFAULT_ROOT = 'body'
 const HIGHLIGHT_CLASS = 'fw-highlight'
 const POINTING_CLASS = 'fw-pointing'
 
@@ -243,15 +243,16 @@ export function createIntersectionViewportDetector(
       // Never intercept the widget's own UI (its cancel button lives in
       // the host element's shadow DOM; clicks on it retarget to the host).
       if (raw.closest(WIDGET_HOST_TAG)) return
-      if (!root.contains(raw)) return
 
       // preventDefault stops the default action (navigation, submit);
       // stopImmediatePropagation stops every other listener too — including
       // app-level capture handlers delegated on `document` — so nothing the
       // page wired up runs while the user is merely selecting an element.
+      // Swallowed everywhere, not only under the root: a click outside it
+      // (header, footer) must not navigate away and drop the draft (#135).
       ev.preventDefault()
       ev.stopImmediatePropagation()
-      if (ev.type !== 'click') return
+      if (ev.type !== 'click' || !root.contains(raw)) return
 
       // Prefer the nearest interactive ancestor when the click lands on a
       // descendant (e.g. an icon inside a button) — but only if that

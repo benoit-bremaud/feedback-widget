@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The pointing-mode root now defaults to `body` (was `main`), so the header,
+  hero, aside and footer are pickable without configuration. Set
+  `rootSelector: 'main'` to keep the previous scope (#135).
+
+### Fixed
+
+- In pointing mode, a click outside the pick root no longer reaches the host
+  page: links no longer navigate away (dropping the draft) and page actions no
+  longer run; the click is swallowed without picking anything (#135).
+
 ## [0.7.0] - 2026-11-02
 
 **Deploy the consumer pipeline first**: `feedback-pipeline-worker` accepts the

@@ -14,7 +14,7 @@ defaults, each field is wired to exactly one collaborator:
 - `theme` → passed to the view, which reflects it as a `data-theme` attribute
   that drives the Shadow-DOM CSS variables (absent/`null` = light, unchanged).
 - `rootSelector` → passed to the viewport detector, which still owns the default
-  (`?? 'main'`), so the default lives in one place.
+  (`?? 'body'`, `'main'` until v0.7.0), so the default lives in one place.
 - `storageNamespace` → prefixes the rate-limiter and outbox localStorage keys
   (default `'feedback-widget'`, configurable per host). No legacy/branded
   namespace remains in the code.

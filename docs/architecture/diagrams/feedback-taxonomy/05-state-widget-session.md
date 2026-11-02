@@ -22,6 +22,7 @@ stateDiagram-v2
   TargetConfirm --> Pointing: reject-target / enable pointing
   Pointing --> TargetConfirm: pick-target / store target
   Pointing --> TargetConfirm: cancel-pointing
+  Pointing --> Pointing: activate outside root / swallow, no pick
   TargetConfirm --> Closed: close / reset
   Pointing --> Closed: close / disable pointing, reset
   TargetConfirm --> Reporting: confirm-target
