@@ -36,7 +36,7 @@ pin a version and bump deliberately; only the latest release receives fixes.
   the **full feedback payload** is queued in `localStorage` for retry: free-text
   message, optional reporter name, page URL and referrer, user agent, viewport,
   session id, widget version and the targeted element's descriptor (never a
-  form field's value). The outbox keeps at most 50 entries for up to 7 days,
+  form field's content, typed, prefilled or editable). The outbox keeps at most 50 entries for up to 7 days,
   then purges them; the rate limiter stores only timestamps. Both are
   namespaced per project and readable by any script on the same origin, as all
   `localStorage` is. Integrators who collect feedback on pages with sensitive

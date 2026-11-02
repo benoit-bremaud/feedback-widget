@@ -730,6 +730,97 @@ describe('enablePointingMode / disablePointingMode', () => {
     expect(arg.label).not.toContain('secret')
   })
 
+  describe('form field content never leaks into label or excerpt (#136)', () => {
+    const pick = (html: string, id: string) => {
+      installFakeIntersectionObserver(window)
+      makeDocumentWithContent(html)
+      const detector = createIntersectionViewportDetector({
+        doc: document,
+        win: window,
+      })
+      const onPick = vi.fn()
+      detector.enablePointingMode(onPick)
+      document
+        .getElementById(id)!
+        .dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
+      return onPick.mock.calls[0]?.[0]
+    }
+
+    it('drops a prefilled textarea text and falls back to its placeholder', () => {
+      const arg = pick(
+        '<textarea id="t" placeholder="Notes">PREFILLED-SECRET</textarea>',
+        't',
+      )
+
+      expect(arg.label).toBe('Notes')
+      expect(arg.excerpt).toBe('')
+    })
+
+    const RICH =
+      '<div id="rich" contenteditable="true"><p id="inner">RICH-SECRET</p></div>'
+
+    it('drops the text of a picked contenteditable field', () => {
+      expect(pick(RICH, 'rich').label).toBeNull()
+    })
+
+    it('drops the text of a node inside a contenteditable field', () => {
+      const arg = pick(RICH, 'inner')
+
+      expect(arg.label).toBeNull()
+      expect(arg.excerpt).toBe('')
+    })
+
+    it('keeps the text of a contenteditable="false" element', () => {
+      const arg = pick(
+        '<p id="ro" contenteditable="false">Public text</p>',
+        'ro',
+      )
+
+      expect(arg.label).toBe('Public text')
+    })
+
+    it('does not glue select options into the label', () => {
+      const arg = pick(
+        '<select id="s"><option>Commande</option><option>Livraison</option></select>',
+        's',
+      )
+
+      expect(arg.label).toBeNull()
+    })
+
+    it('strips every field from a picked form container but keeps its own text', () => {
+      const arg = pick(
+        '<form id="f"><h2>Contact</h2><textarea>TA-SECRET</textarea>' +
+          '<select><option>OPT-SECRET</option></select>' +
+          '<div contenteditable="">CE-SECRET</div>' +
+          '<div role="textbox">ROLE-SECRET</div></form>',
+        'f',
+      )
+
+      expect(arg.label).toBe('Contact')
+      expect(arg.excerpt).toBe('Contact')
+      expect(JSON.stringify(arg)).not.toMatch(/SECRET/)
+    })
+
+    it('strips field text from the heading context', () => {
+      const arg = pick(
+        '<h2>Title <input value="x" /><span contenteditable="true">HEAD-SECRET</span></h2><p id="p">Body</p>',
+        'p',
+      )
+
+      expect(arg.headingText).toBe('Title')
+    })
+
+    it('gives a null heading context when the heading is an editable field', () => {
+      const arg = pick(
+        '<h1 contenteditable="true">HEAD-SECRET</h1><p id="p">Body</p>',
+        'p',
+      )
+
+      expect(arg.headingText).toBeNull()
+    })
+  })
+
   it('returns a null label when the element exposes no accessible name', () => {
     installFakeIntersectionObserver(window)
     makeDocumentWithContent('<button id="empty"></button>')

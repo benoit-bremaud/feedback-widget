@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>QA mock - field privacy #136</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        background: #123;
+        color: #fff;
+        padding: 12px;
+        display: flex;
+        gap: 16px;
+      }
+      header a {
+        color: #fff;
+      }
+      main {
+        padding: 16px;
+        max-width: 900px;
+      }
+      section {
+        margin: 24px 0;
+        padding: 12px;
+        border: 1px solid #ccc;
+      }
+      textarea,
+      select,
+      input,
+      [contenteditable] {
+        display: block;
+        margin: 6px 0;
+        min-width: 300px;
+        padding: 6px;
+        border: 1px solid #888;
+      }
+      .tall {
+        height: 300px;
+      }
+      form {
+        padding: 16px;
+        border: 1px dashed #999;
+      }
+      #card-box {
+        padding: 12px;
+        border: 1px dotted #999;
+      }
+    </style>
+  </head>
+  <body>
+    <header id="site-header">
+      <a id="logo" href="/page2.html">Atelier Lumen</a
+      ><a id="nav" href="/page2.html">Produits</a
+      ><button id="cta" type="button">Essai gratuit</button>
+    </header>
+    <main id="main">
+      <section id="intro">
+        <h2 id="h-intro">Introduction</h2>
+        <p id="p1">Une lumière précise pour chaque pièce de la maison.</p>
+        <a id="link1" href="/page2.html">Voir le catalogue</a>
+        <button id="btn1" type="button">Ajouter au panier</button>
+        <p id="ce-false" contenteditable="false">
+          Texte public en lecture seule.
+        </p>
+        <p id="xss">
+          &lt;img src=x onerror="window.__xss=1"&gt; "&gt;&lt;svg
+          onload="window.__xss=2"&gt;
+        </p>
+      </section>
+      <section id="contact">
+        <h2 id="h-contact">Nous écrire</h2>
+        <form id="f" action="/submit" method="post">
+          <label for="inp">Référence</label
+          ><input id="inp" type="text" value="VALUE-SECRET" />
+          <label for="typed">Nom</label
+          ><input id="typed" type="text" placeholder="Votre nom" />
+          <label for="ta">Notes</label
+          ><textarea id="ta" placeholder="Vos notes">PREFILLED-SECRET</textarea>
+          <label for="sel">Sujet</label
+          ><select id="sel">
+            <option>OPT-SECRET-A</option>
+            <option>OPT-SECRET-B</option>
+          </select>
+          <div id="ce" contenteditable="true">
+            <p id="ce-inner">
+              RICH-SECRET <b id="ce-deep">RICH-DEEP-SECRET</b>
+            </p>
+          </div>
+          <div id="ce-empty-attr" contenteditable="">CEATTR-SECRET</div>
+          <div id="ce-pt" contenteditable="plaintext-only">
+            PLAINTEXT-SECRET
+          </div>
+          <div id="rt" role="textbox">ROLE-TEXTBOX-SECRET</div>
+          <div id="cb" role="combobox">ROLE-COMBO-SECRET</div>
+          <button id="submit" type="submit">Envoyer</button>
+        </form>
+      </section>
+      <section id="headings">
+        <h2 id="h-ce" contenteditable="true">HEADING-SECRET</h2>
+        <p id="after-ce">Paragraphe après un titre éditable.</p>
+        <h2 id="h-mixed">
+          Titre mixte <span contenteditable="true">HEADMIX-SECRET</span
+          ><input value="HEADINPUT-SECRET" />
+        </h2>
+        <p id="after-mixed">Paragraphe après un titre mixte.</p>
+      </section>
+      <section id="card">
+        <h3 id="h-card">Carte avec champ</h3>
+        <div id="card-box">
+          <p id="card-p">Texte de la carte.</p>
+          <textarea id="card-ta">CARD-SECRET</textarea>
+        </div>
+      </section>
+      <section id="long">
+        <h2>Long</h2>
+        <p id="long-p"></p>
+      </section>
+      <div class="tall"></div>
+    </main>
+    <footer id="foot"><a id="ft" href="/page2.html">Mentions</a></footer>
+    <script type="module">
+      window.__events = []
+      const log = (e) => window.__events.push(e)
+      document
+        .getElementById('cta')
+        .addEventListener('click', () => log('PAGE:cta'))
+      document
+        .getElementById('btn1')
+        .addEventListener('click', () => log('PAGE:btn1'))
+      document.getElementById('f').addEventListener('submit', (e) => {
+        e.preventDefault()
+        log('PAGE:submit')
+      })
+      document.getElementById('long-p').textContent = 'Lorem ipsum '.repeat(
+        1000,
+      )
+      const q = new URLSearchParams(location.search)
+      const rs = { body: 'body', main: 'main' }[q.get('root')]
+      const ep = q.get('ep') === 'fail' ? '/ingest-fail' : '/ingest'
+      const mod = await import('/feedback-widget.js')
+      mod.mountFeedbackWidget({
+        endpoint: 'http://127.0.0.1:4173' + ep,
+        projectId: 'qa-field-privacy',
+        minFormOpenMs: 0,
+        rateLimitMaxAttempts: 100,
+        ...(rs ? { rootSelector: rs } : {}),
+      })
+    </script>
+  </body>
+</html>

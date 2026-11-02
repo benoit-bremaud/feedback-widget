@@ -151,8 +151,9 @@ export type FeedbackPayload = BrowserContext &
  * FeedbackPayload contract since v0.4.0 — the consumer relies on it to
  * attribute feedback to a specific element.
  *
- * Privacy: never carries a form field's entered value (only its
- * accessible label / placeholder / text), so no user input leaks here.
+ * Privacy: never carries a form field's content — entered value, prefilled
+ * textarea text, contenteditable text or select options, including fields
+ * inside a picked container — only labels, placeholders and non-field text.
  */
 export interface FeedbackTarget {
   // Lowercased tag name of the element (e.g. 'button', 'p', 'a').

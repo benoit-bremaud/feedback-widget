@@ -122,13 +122,13 @@ export function createIntersectionViewportDetector(
 
   const elementToTarget = (element: Element): FeedbackTarget => {
     const heading = findParentHeading(element)
-    const text = element.textContent ?? ''
+    const text = safeText(element)
 
     return {
       tag: element.tagName.toLowerCase(),
       label: accessibleLabel(element),
       selector: computeSelector(element),
-      headingText: heading?.textContent?.trim() ?? null,
+      headingText: heading ? safeText(heading).trim() || null : null,
       excerpt: extractExcerpt(text),
     }
   }
@@ -343,16 +343,29 @@ function truncate(value: string): string {
     : trimmed
 }
 
+// Form fields whose text is user data (typed, prefilled or editable).
+const FIELD_CONTENT =
+  'textarea, select, input, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]'
+
+// Visible text without the content of form fields (#136): a field, or a node
+// inside one, yields ''; a container is read from a clone with its fields removed.
+function safeText(element: Element): string {
+  if (element.closest(FIELD_CONTENT)) return ''
+  const clone = element.cloneNode(true) as Element
+  clone.querySelectorAll(FIELD_CONTENT).forEach((field) => field.remove())
+  return clone.textContent ?? ''
+}
+
 // Human-readable accessible name. Privacy: deliberately never reads an
-// input's entered `value` — only its declared label-like attributes or
-// visible text — so user-entered data never leaks into the payload.
+// input's entered `value` nor any field's text — only its declared label-like
+// attributes or visible non-field text — so user data never leaks.
 function accessibleLabel(element: Element): string | null {
   const sources = [
     element.getAttribute('aria-label'),
     element.getAttribute('alt'),
     element.getAttribute('placeholder'),
     element.getAttribute('title'),
-    element.textContent,
+    safeText(element),
   ]
   for (const source of sources) {
     const value = source?.trim()
