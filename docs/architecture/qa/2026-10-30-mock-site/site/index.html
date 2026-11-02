@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atelier Lumen — mock site</title>
+    <link rel="icon" href="data:," />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        color: #1d2433;
+        background: #f7f8fb;
+        padding-top: 64px;
+      }
+      #site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #fff;
+        border-bottom: 1px solid #d9dde7;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 20px;
+        z-index: 1000;
+      }
+      .logo {
+        font-weight: 800;
+        font-size: 20px;
+        text-decoration: none;
+        color: #0b1b3a;
+      }
+      nav.main-nav {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      nav.main-nav a,
+      .dd-toggle {
+        color: #1d2433;
+        text-decoration: none;
+        background: none;
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+      .dd {
+        position: relative;
+      }
+      .dd-menu {
+        display: none;
+        position: absolute;
+        top: 36px;
+        left: 0;
+        background: #fff;
+        border: 1px solid #d9dde7;
+        min-width: 180px;
+        list-style: none;
+        margin: 0;
+        padding: 6px 0;
+      }
+      .dd.open .dd-menu {
+        display: block;
+      }
+      .dd-menu a {
+        display: block;
+        padding: 8px 14px;
+      }
+      #site-search {
+        margin-left: auto;
+        padding: 7px 10px;
+        border: 1px solid #b9c0d0;
+        border-radius: 6px;
+        width: 160px;
+      }
+      .cta {
+        background: #c8102e;
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 9px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .burger {
+        display: none;
+      }
+      .hero {
+        background: linear-gradient(135deg, #0b1b3a, #27407a);
+        color: #fff;
+        padding: 72px 24px;
+        text-align: center;
+      }
+      .hero h1 {
+        font-size: 40px;
+        margin: 0 0 12px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 24px;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      main {
+        min-width: 0;
+      }
+      section {
+        margin: 0 0 36px;
+      }
+      section section {
+        margin: 20px 0 20px 8px;
+        padding-left: 14px;
+        border-left: 3px solid #d9dde7;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d9dde7;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .card img {
+        width: 100%;
+        height: 110px;
+        background: #cbd5e1;
+        display: block;
+      }
+      .card .body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .card .btn {
+        align-self: flex-start;
+        background: #1a56db;
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 12px;
+        text-decoration: none;
+      }
+      details {
+        background: #fff;
+        border: 1px solid #d9dde7;
+        border-radius: 8px;
+        margin: 8px 0;
+        padding: 10px 14px;
+      }
+      .tabs [role='tablist'] {
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid #d9dde7;
+      }
+      .tabs [role='tab'] {
+        background: none;
+        border: 0;
+        padding: 8px 14px;
+      }
+      form.contact {
+        background: #fff;
+        border: 1px solid #d9dde7;
+        border-radius: 10px;
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+      form.contact label {
+        display: grid;
+        gap: 4px;
+        font-weight: 600;
+      }
+      form.contact input,
+      form.contact textarea,
+      form.contact select {
+        padding: 8px;
+        border: 1px solid #b9c0d0;
+        border-radius: 6px;
+        font: inherit;
+      }
+      aside {
+        background: #fff;
+        border: 1px solid #d9dde7;
+        border-radius: 10px;
+        padding: 16px;
+        align-self: start;
+      }
+      footer {
+        background: #0b1b3a;
+        color: #cbd5e1;
+        padding: 32px 24px;
+      }
+      footer .cols {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 24px;
+      }
+      footer a {
+        color: #cbd5e1;
+        display: block;
+      }
+      footer h2 {
+        color: #fff;
+        font-size: 16px;
+      }
+      #log {
+        position: fixed;
+        left: 8px;
+        bottom: 8px;
+        font: 11px monospace;
+        background: #fff8;
+        z-index: 5;
+        pointer-events: none;
+      }
+      @media (max-width: 760px) {
+        nav.main-nav {
+          display: none;
+        }
+        nav.main-nav.show {
+          display: flex;
+          flex-direction: column;
+          position: absolute;
+          top: 64px;
+          left: 0;
+          right: 0;
+          background: #fff;
+          padding: 12px 20px;
+          align-items: flex-start;
+        }
+        .burger {
+          display: block;
+          margin-left: auto;
+        }
+        #site-search {
+          width: 80px;
+          margin-left: 0;
+        }
+        .logo span {
+          display: none;
+        }
+        #site-header {
+          gap: 8px;
+          padding: 0 10px;
+        }
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .hero h1 {
+          font-size: 28px;
+        }
+        .cta {
+          padding: 8px 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header id="site-header">
+      <a class="logo" id="logo" href="/page2.html?from=logo"
+        >◉ <span>Atelier Lumen</span></a
+      ><button class="burger" id="burger" aria-label="Menu">☰</button>
+      <nav class="main-nav" id="main-nav" aria-label="Principal">
+        <a href="/page2.html?from=nav" id="nav-products">Produits</a
+        ><a href="/page2.html?from=pricing">Tarifs</a>
+        <div class="dd" id="dd">
+          <button class="dd-toggle" id="dd-toggle" aria-haspopup="true">
+            Ressources ▾
+          </button>
+          <ul class="dd-menu" role="menu">
+            <li role="none">
+              <a role="menuitem" href="/page2.html?from=dd-docs" id="dd-docs"
+                >Documentation</a
+              >
+            </li>
+            <li role="none">
+              <a role="menuitem" href="/page2.html?from=dd-blog">Blog</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <button class="dd-toggle" id="lang" type="button" aria-label="Langue">
+        FR</button
+      ><input
+        id="site-search"
+        type="search"
+        placeholder="Rechercher…"
+        aria-label="Rechercher sur le site"
+      /><button class="cta" id="cta">Essai gratuit</button>
+    </header>
+    <div class="hero" id="hero">
+      <h1>Des lampes qui racontent une histoire</h1>
+      <p>Atelier Lumen conçoit des luminaires artisanaux depuis 2012.</p>
+      <button class="cta" id="hero-cta">Voir la collection</button>
+    </div>
+    <div id="page" class="layout">
+      <main id="content">
+        <section id="collections">
+          <h2>Collections</h2>
+          <p>Trois univers pour éclairer chaque pièce.</p>
+          <section id="salon">
+            <h3>Salon</h3>
+            <p>Des suspensions douces.</p>
+            <article id="suspensions">
+              <h4>Suspensions en verre soufflé</h4>
+              <p>
+                Chaque pièce est soufflée à la bouche dans notre atelier de
+                Lyon.
+              </p>
+              <p>Garantie dix ans sur le verre.</p>
+            </article>
+            <article id="lampadaires">
+              <h4>Lampadaires en chêne</h4>
+              <p>Pied en chêne massif, abat-jour en lin lavé.</p>
+              <ul>
+                <li id="li-hauteur">Hauteurs : 120, 150 et 180 cm</li>
+                <li>Finitions : naturel, noyer, noir</li>
+              </ul>
+            </article>
+          </section>
+          <section id="bureau">
+            <h3>Bureau</h3>
+            <p>Une lumière précise qui protège les yeux.</p>
+            <article id="architecte">
+              <h4>Lampes d'architecte</h4>
+              <p>Bras articulé en laiton, variateur tactile.</p>
+              <blockquote id="quote">
+                « La meilleure lampe que j'aie eue pour dessiner. » — Camille
+              </blockquote>
+            </article>
+          </section>
+        </section>
+        <section id="produits">
+          <h2>Produits vedettes</h2>
+          <div class="grid" id="cards">
+            <article class="card" id="card-1">
+              <img alt="Suspension Aube" src="data:," />
+              <div class="body">
+                <h3>Suspension Aube</h3>
+                <p>Verre opale, 40 cm. Livraison offerte.</p>
+                <a class="btn" id="card-1-link" href="/page2.html?from=card1"
+                  >Voir le produit</a
+                >
+              </div>
+            </article>
+            <article class="card" id="card-2">
+              <img alt="Applique Dune" src="data:," />
+              <div class="body">
+                <h3>Applique Dune</h3>
+                <p>Plâtre brut, lumière rasante.</p>
+                <button class="btn" id="card-2-btn" type="button">
+                  Ajouter au panier
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section id="news">
+          <header class="sec-head" id="news-head">
+            <h2>Actualités de l'atelier</h2>
+            <p id="news-lead">Les dernières nouvelles.</p>
+          </header>
+          <div class="news-list" id="news-list">
+            <p id="news-p">
+              Nouvelle collection « Aube » présentée au salon Maison &amp;
+              Objet.
+            </p>
+          </div>
+        </section>
+        <section id="faq-section">
+          <h2>Questions fréquentes</h2>
+          <div id="accordion">
+            <details id="faq-1">
+              <summary id="faq-1-sum">
+                Quels sont les délais de livraison ?
+              </summary>
+              <div>
+                <p id="faq-1-p">Comptez 3 à 5 jours ouvrés en France.</p>
+              </div>
+            </details>
+          </div>
+          <div class="tabs" id="tabs">
+            <h3>Entretien</h3>
+            <div role="tablist">
+              <button
+                role="tab"
+                id="tab-verre"
+                aria-selected="true"
+                type="button"
+              >
+                Verre</button
+              ><button
+                role="tab"
+                id="tab-bois"
+                aria-selected="false"
+                type="button"
+              >
+                Bois
+              </button>
+            </div>
+            <div role="tabpanel" id="panel-verre">
+              <p id="panel-verre-p">Essuyez avec un chiffon doux.</p>
+            </div>
+          </div>
+        </section>
+        <section id="contact">
+          <h2>Nous écrire</h2>
+          <form
+            class="contact"
+            id="contact-form"
+            action="/submit-contact"
+            method="post"
+          >
+            <label for="f-name"
+              >Nom<input
+                id="f-name"
+                name="name"
+                type="text"
+                placeholder="Votre nom" /></label
+            ><label for="f-email"
+              >E-mail<input
+                id="f-email"
+                type="email"
+                placeholder="vous@exemple.fr"
+            /></label>
+            <label for="f-topic"
+              >Sujet<select id="f-topic">
+                <option>Commande</option>
+                <option>Livraison</option>
+                <option>Autre</option>
+              </select></label
+            ><label for="f-msg"
+              >Message<textarea
+                id="f-msg"
+                rows="3"
+                placeholder="Votre message"
+              ></textarea>
+            </label>
+            <label for="f-notes"
+              >Notes<textarea id="f-notes" rows="2">
+PREFILLED-SECRET-NOTES</textarea></label
+            ><label for="f-pre"
+              >Référence<input
+                id="f-pre"
+                type="text"
+                value="PREFILLED-SECRET-VALUE"
+            /></label>
+            <div
+              id="f-rich"
+              contenteditable="true"
+              role="textbox"
+              style="
+                border: 1px solid #b9c0d0;
+                border-radius: 6px;
+                padding: 8px;
+                min-height: 36px;
+              "
+            ></div>
+            <label
+              ><span
+                ><input id="f-agree" type="checkbox" /> J'accepte d'être
+                recontacté</span
+              ></label
+            ><button type="submit" id="f-submit" class="cta">Envoyer</button>
+          </form>
+        </section>
+      </main>
+      <aside id="side" aria-label="Infos">
+        <h2>Atelier ouvert</h2>
+        <p>Du mardi au samedi, 10 h – 18 h.</p>
+        <h3>Newsletter</h3>
+        <p>Un e-mail par mois.</p>
+        <a id="aside-link" href="/page2.html?from=aside">Nous rendre visite</a>
+      </aside>
+    </div>
+    <footer id="site-footer">
+      <div class="cols">
+        <div>
+          <h2>Boutique</h2>
+          <a id="ft-1" href="/page2.html?from=ft1">Livraison</a
+          ><a href="/page2.html?from=ft2">Retours</a>
+        </div>
+        <div><p id="ft-copy">© 2026 Atelier Lumen</p></div>
+      </div>
+    </footer>
+    <div id="log"></div>
+    <script type="module">
+      window.__events = []
+      const log = (e) => {
+        window.__events.push(e)
+        document.getElementById('log').textContent = window.__events
+          .slice(-3)
+          .join(' | ')
+      }
+      const on = (id, ev, m) =>
+        document.getElementById(id).addEventListener(ev, () => log(m))
+      on('cta', 'click', 'PAGE:cta-click')
+      on('hero-cta', 'click', 'PAGE:hero-cta-click')
+      on('card-2-btn', 'click', 'PAGE:add-to-cart')
+      on('f-submit', 'click', 'PAGE:submit-click')
+      ;['pointerup', 'mouseup'].forEach((ev) =>
+        on('lang', ev, 'PAGE:lang-' + ev),
+      )
+      document.getElementById('dd-toggle').addEventListener('click', () => {
+        document.getElementById('dd').classList.toggle('open')
+        log('PAGE:dd-toggle')
+      })
+      document
+        .getElementById('burger')
+        .addEventListener('click', () =>
+          document.getElementById('main-nav').classList.toggle('show'),
+        )
+      document
+        .getElementById('contact-form')
+        .addEventListener('submit', (e) => {
+          e.preventDefault()
+          log('PAGE:form-submit')
+        })
+      const root =
+          new URLSearchParams(location.search).get('root') || 'default',
+        rs = { default: undefined, page: '#page', body: 'body' }[root]
+      const mod = await import('/feedback-widget.js')
+      mod.mountFeedbackWidget({
+        endpoint: 'http://127.0.0.1:4173/ingest',
+        projectId: 'qa-mock-site',
+        minFormOpenMs: 0,
+        rateLimitMaxAttempts: 100,
+        ...(rs ? { rootSelector: rs } : {}),
+      })
+    </script>
+  </body>
+</html>
