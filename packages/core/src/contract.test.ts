@@ -7,7 +7,9 @@ import {
   MAX_REPORTER_NAME_LENGTH,
   MIN_MESSAGE_LENGTH,
 } from './config/WidgetConfig'
+import type { SubCategory, TopLevelCategory } from './domain/Feedback'
 import { SUB_CATEGORIES_BY_CATEGORY } from './domain/Feedback'
+import { buildFeedbackPayload } from './use-cases/BuildFeedbackPayload'
 
 /**
  * Pins the widget ↔ feedback-pipeline-worker payload contract (#118).
@@ -31,6 +33,7 @@ interface Branch {
 }
 
 interface ContractSchema {
+  required: string[]
   oneOf: Branch[]
   properties: {
     category: { enum: string[] }
@@ -85,6 +88,29 @@ describe('payload contract v1', () => {
     )
   })
 
+  it('requires exactly the fields the widget builds', () => {
+    const payload = buildPayload('praise', null)
+
+    expect([...schema.required].sort()).toEqual(Object.keys(payload).sort())
+  })
+
+  it.each(
+    Object.entries(SUB_CATEGORIES_BY_CATEGORY).flatMap(([category, subs]) =>
+      subs.length === 0
+        ? [[category, null]]
+        : subs.map((sub) => [category, sub]),
+    ) as [TopLevelCategory, string | null][],
+  )('accepts the built payload %s/%s', (category, subCategory) => {
+    const payload = buildPayload(category, subCategory)
+
+    expect(validate(payload), JSON.stringify(validate.errors)).toBe(true)
+  })
+
+  it('reads both fixture folders', () => {
+    expect(fixtures('valid').length).toBeGreaterThan(0)
+    expect(fixtures('invalid').length).toBeGreaterThan(0)
+  })
+
   it.each(fixtures('valid'))('accepts %s', (_name, payload) => {
     expect(validate(payload), JSON.stringify(validate.errors)).toBe(true)
   })
@@ -93,3 +119,26 @@ describe('payload contract v1', () => {
     expect(validate(payload)).toBe(false)
   })
 })
+
+function buildPayload(
+  category: TopLevelCategory,
+  subCategory: string | null,
+): unknown {
+  return buildFeedbackPayload({
+    projectId: 'demo',
+    url: 'https://example.com/',
+    referrer: null,
+    userAgent: 'UA',
+    viewport: { w: 1280, h: 800 },
+    locale: 'fr',
+    timestamp: '2026-11-02T10:00:00.000Z',
+    widgetVersion: '0.7.0',
+    scrollDepth: 0.5,
+    sessionId: 's-1',
+    category,
+    subCategory: subCategory as SubCategory | null,
+    message: 'A message long enough.',
+    reporterName: null,
+    target: null,
+  })
+}

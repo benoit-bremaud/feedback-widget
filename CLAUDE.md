@@ -49,8 +49,10 @@ fails on a missing scanner unless `VERIFY_ALLOW_SKIP=1`. GitHub Actions does not
   any of these is a **Worker-breaking change**: flag it in the PR and ship the
   Worker first. Where they live: payload + category tables in
   `packages/core/src/domain/Feedback.ts`; `MIN_/MAX_MESSAGE_LENGTH` (10–2000) in
-  `packages/core/src/config/WidgetConfig.ts`; the reporter-name limit (50) only
-  as `maxlength` in `packages/web/src/adapters/WebComponentView.ts`.
+  `packages/core/src/config/WidgetConfig.ts`; the reporter-name limit (50) as
+  `MAX_REPORTER_NAME_LENGTH` in the same file. All of it is pinned by
+  `contract/feedback-payload.v1.schema.json` + fixtures (#118): update the
+  schema with the code, and a breaking change ships as `…v2.schema.json`.
 - **Every widget release needs a bundle refresh in the Worker repo**
   (`public/widget.js` + `public/widget-X.Y.Z.js`).
 - **`main` is not branch-protected** (free plan, private repo). The pre-push
