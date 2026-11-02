@@ -1300,3 +1300,13 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   `widgetVersion` 0.7.0, so the feature is live only once this release is
   served.
 - **Ref:** issue [#149](https://github.com/benoit-bremaud/feedback-widget/issues/149).
+
+### Pointing mode swallows outside-root clicks (#135, PR #154)
+
+- **What:** PR #154 (squash `66fcc4f`) swallows every activation outside the
+  widget in pointing mode, picks only inside the root, and makes `body` the
+  default `rootSelector`. Review follow-ups filed as #151–#153 and #155.
+- **Why:** Header and footer links navigated away mid-pick (dropping the
+  draft) and page CTAs ran their own action.
+- **Ref:** issue [#135](https://github.com/benoit-bremaud/feedback-widget/issues/135),
+  PR [#154](https://github.com/benoit-bremaud/feedback-widget/pull/154) `66fcc4f`.

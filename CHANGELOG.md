@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In pointing mode, a click outside the pick root no longer reaches the host
   page: links no longer navigate away (dropping the draft) and page actions no
   longer run; the click is swallowed without picking anything (#135).
+- The captured target no longer carries text that sits in form fields: a
+  prefilled `textarea`, a `contenteditable` editor, `select` options and the
+  fields inside a picked container are stripped from `label` and `excerpt`
+  (#136).
 
 ## [0.7.0] - 2026-11-02
 
