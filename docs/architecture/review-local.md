@@ -1,39 +1,45 @@
-# Local review — feedback-widget (release/0.7.0)
+# Local review — feedback-widget (fix/135-swallow-pointing-clicks-outside-root)
 
 - Date: 2026-11-02
-- Commit: working tree on 9d63417 (release/0.7.0)
-- Scope: branch diff origin/main...HEAD (7 files: version bumps, `WIDGET_VERSION`, README, CHANGELOG cut, PROJECT_LOG)
-- Checks run: correctness · security · docs (inline, proportional to a release-cut diff with no logic change); design and tests agents not spawned (no code path changed)
-- Verdict: ship as-is · Must 0 · Should 0 · Nice 0
+- Commit: 8dab80e
+- Scope: branch diff origin/main...HEAD (#135)
+- Checks run: design · docs · tests · security · correctness · QA
+- Verdict: ship as-is · Must 0 · Should 3 · Nice 5
 
-## Pre-merge gate
+## Pre-merge gate (head SHA 8dab80e)
 
-| Step        | Result                                                                                                                |
-| ----------- | --------------------------------------------------------------------------------------------------------------------- |
-| 1 Tests     | ✅ 71 core + 264 web unit/integration (version test guards `WIDGET_VERSION` = package version)                        |
-| 2 Coverage  | core 97.53 / 95.45 / 91.3 / 97.33 · web 97.67 / 92.8 / 99.32 / 99.7 (stmts/branches/funcs/lines) · docs 100 % (74/74) |
-| 3 SonarQube | ✅ PASSED                                                                                                             |
-| 4 Secrets   | ✅ gitleaks: no leaks · no tracked .env · diff read: nothing sensitive                                                |
-| 5 QA pass   | ✅ smoke: `build:bundle` emits `feedback-widget.js` + `widget-0.7.0.js` (48119 B); live check after the Worker deploy |
+| Step        | Result                                                                                                                                                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Tests     | ✅ core 71 · web 268 (`pnpm verify`)                                                                                                                                                                                       |
+| 2 Coverage  | web 97.93 % stmts / 93.04 % branches / 99.32 % funcs / 99.7 % lines; touched lines 100 % · docs counter green (`pnpm verify`)                                                                                              |
+| 3 SonarQube | ✅ PASSED (local, `pnpm verify`)                                                                                                                                                                                           |
+| 4 Secrets   | ✅ gitleaks clean · no tracked .env · diff read: nothing sensitive                                                                                                                                                         |
+| 5 QA pass   | ✅ pass (Chromium) · console clean · header/CTA/footer picked without navigation on default root, swallowed on `main` root · report: [2026-11-02-pointing-outside-root-135.md](qa/2026-11-02-pointing-outside-root-135.md) |
 
-- Gate: **GREEN**
+- Gate: **GREEN — merge authorised** (pending owner approval)
 
 ## 🔴 Must Have
 
-_None._
+_None._ (The stale previous report flagged by the docs check is replaced by this file.)
 
 ## 🟡 Should Have
 
-_None._
+- `packages/web/src/adapters/IntersectionViewportDetector.ts:240` `[security|correctness]` · the handler calls `raw.closest` on a target that may not be an Element (event dispatched on `document`) → TypeError; existed before · guard `if (!(ev.target instanceof Element)) return`.
+- `packages/web/src/adapters/IntersectionViewportDetector.ts:245` `[security]` · if the widget host is nested in another component's shadow root, `closest('feedback-widget')` misses and its cancel click is now swallowed · test `ev.composedPath()` for the host.
+- `packages/web/src/adapters/IntersectionViewportDetector.ts:102` `[design]` · with `body` root, the `.fw-pointing *:hover` tint/cursor also hits the widget host · `*:not(feedback-widget):hover`.
 
 ## 🔵 Nice to Have
 
-_None._
+- `IntersectionViewportDetector.ts:258` `[security|design]` · a click on empty space can pick `<body>` itself (whole-page excerpt) · skip `raw === root`.
+- `IntersectionViewportDetector.ts:26` `[correctness]` · middle-click (`auxclick`) still opens a new tab (pre-existing, QA) · add `auxclick` to `POINTING_EVENTS`.
+- `IntersectionViewportDetector.ts:154` `[design]` · body root stamps `data-fw-id` on header/footer items and may auto-propose footer list items · mention in CHANGELOG.
+- `IntersectionViewportDetector.test.ts` `[tests]` · widget-host pass-through only tested for `click`; header-pick test does not assert highlight.
+- `CHANGELOG.md` `[docs]` · add a migration hint for the default-root change.
 
 ## ⚪ Disagree / Intentional
 
-_None._
+- `IntersectionViewportDetector.ts:117` `[design]` · `?? doc.body` fallback still needed for custom selectors.
 
 ## Per-dimension summary
 
-- Design: no code change · Docs: CHANGELOG/README/PROJECT_LOG consistent with 0.7.0 · Tests: unchanged, all green · Security: nothing sensitive · Correctness: all version strings aligned
+- Design: minimal, proportionate fix · Docs: TSDoc, UML notes and CHANGELOG fresh · Tests: happy/sad/edge covered, minor gaps · Security: no Must; shadow-host and non-Element edge cases · Correctness: no regression found · QA: all #135 scenarios pass.
