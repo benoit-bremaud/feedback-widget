@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Deploy the consumer pipeline first**: `feedback-pipeline-worker` accepts the
+v0.7.0 taxonomy since its PR #44 (deployed 2026-10-30, migration `0003`
+applied). The Worker selects the allowlist from `widgetVersion`, so the new
+pairs are only accepted once this package is released as 0.7.0.
+
+### Changed
+
+- **BREAKING — six families, 26 sub-families (#128).** A new `display` family
+  (second tile) takes visual defects off `bug`; every family but `praise` ends
+  with an `other` escape; new sub-families `bug/form-rejected`,
+  `bug/wrong-data`, `bug/personal-data`, `display/mobile`,
+  `display/missing-media`, `content/outdated`, `unclear/question`,
+  `suggestion/design`. `bug/broken-display` becomes `display/broken-layout`
+  and `bug/too-slow` becomes `display/too-slow`: both leave the
+  `SubCategory` type. `bug` now lists `no-effect` first. Spec:
+  `docs/architecture/specs/feedback-taxonomy.md`.
+- The precision step asks a guided question with a matching placeholder per
+  family/sub-family pair instead of one generic prompt.
+- **BREAKING (port)** — `View.showConfirmation` and `View.showMailtoFallback`
+  are removed: the controller reaches the `confirmed` and `error` steps through
+  `render`, so `WidgetState.step` is the single source of the screen shown.
+
+### Added
+
+- Going back keeps the typed message and name. Closing (button, backdrop or
+  `Escape`) with a non-blank message asks for confirmation on a new
+  `discard-confirm` step; `Escape` there means "keep editing". New
+  `UserAction` kinds `keep-editing` and `discard`.
+- A `family › sub-family` breadcrumb on the sub-category and precision steps;
+  its last link goes back one step.
+
+### Fixed
+
+- Closing the widget while a report was sending reset it, then the late result
+  re-opened it. `close` is now ignored during `sending`.
+
+### Migration
+
+- Hosts that pass an explicit `categories` list must add `display`, otherwise
+  their reporters lose every visual-defect slot.
+- TypeScript consumers matching on `SubCategory` must replace
+  `broken-display` and `too-slow` under `bug` (see above).
+
 ## [0.6.0] - 2026-09-23
 
 Breaking release: the feedback taxonomy is reworked around what the reporter

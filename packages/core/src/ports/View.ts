@@ -12,6 +12,7 @@ export type WidgetStep =
   | 'type'
   | 'sub-category'
   | 'precision'
+  | 'discard-confirm'
   | 'sending'
   | 'confirmed'
   | 'error'
@@ -42,11 +43,11 @@ export type UserAction =
   | { kind: 'update-reporter'; value: string }
   | { kind: 'submit' }
   | { kind: 'reset' }
+  | { kind: 'keep-editing' }
+  | { kind: 'discard' }
 
-/** Port for the widget presentation layer. It renders state and reports user intents; it holds no business logic. */
+/** Port for the widget presentation layer. It renders state and reports user intents; it holds no business logic. Every outcome, success and failure alike, reaches it through `render`, so `WidgetState.step` is the single source of the screen shown. */
 export interface View {
   render(state: WidgetState): void
   onUserAction(cb: (action: UserAction) => void): void
-  showConfirmation(): void
-  showMailtoFallback(mailtoUrl: string, message: string): void
 }

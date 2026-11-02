@@ -14,12 +14,13 @@ import type {
   WidgetState,
 } from '@benoit-bremaud/feedback-widget-core'
 import type { Messages } from '../i18n'
-import { LOCALES } from '../i18n'
+import { LOCALES, promptFor } from '../i18n'
 
 // Icons are locale-neutral, so they stay here; the text labels come from
 // `Messages` (see ../i18n.ts) so the widget can render in any locale.
 const CATEGORY_ICONS: Record<TopLevelCategory, string> = {
   bug: '🐛',
+  display: '🎨',
   content: '✏️',
   unclear: '🤔',
   suggestion: '💡',
@@ -28,22 +29,33 @@ const CATEGORY_ICONS: Record<TopLevelCategory, string> = {
 
 const SUB_CATEGORY_ICONS: Record<SubCategory, string> = {
   // bug
-  crash: '💥',
   'no-effect': '🔧',
-  'broken-display': '🎨',
+  crash: '💥',
+  'form-rejected': '📋',
+  'wrong-data': '🔢',
+  'personal-data': '🔒',
+  // display
+  'broken-layout': '📐',
+  mobile: '📱',
+  'missing-media': '🖼️',
   'too-slow': '🐌',
   // content
   typo: '📝',
   'wrong-info': '❌',
+  outdated: '📅',
   'dead-link': '🔗',
   // unclear
   wording: '💬',
   'missing-info': '🧩',
   navigation: '🧭',
+  question: '❓',
   // suggestion
   'new-feature': '✨',
   improvement: '📈',
+  design: '🖌️',
   accessibility: '♿',
+  // every family but praise
+  other: '➕',
 }
 
 /** Presentation options derived from the resolved config, applied through `setOptions`. */
@@ -173,6 +185,12 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       // would leave pointing mode enabled with an orphan document-level
       // capture listener).
       const showTrigger = this.state.step === 'closed'
+      // Record the opener BEFORE innerHTML replaces the trigger: once the
+      // focused trigger is removed, `document.activeElement` is <body>.
+      if (this.previousStep === 'closed' && !showTrigger) {
+        this.lastFocusedBeforeOpen =
+          (document.activeElement as HTMLElement | null) ?? null
+      }
       this.shadowRoot.innerHTML = `
         <style>${STYLES}</style>
         ${showTrigger ? this.renderButton() : ''}
@@ -236,6 +254,8 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
           return this.renderSubCategoryStep()
         case 'precision':
           return this.renderPrecisionStep()
+        case 'discard-confirm':
+          return this.renderDiscardConfirmStep()
         case 'sending':
           return this.renderSendingStep()
         case 'confirmed':
@@ -319,8 +339,8 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         .join('')
 
       return `
-      <h2 id="fw-title" class="fw-title"><span aria-hidden="true">${CATEGORY_ICONS[cat]}</span> ${m.categoryLabels[cat]}</h2>
-      <p class="fw-subtitle">${m.subCategory.subtitle}</p>
+      ${this.renderBreadcrumb()}
+      <h2 id="fw-title" class="fw-title">${m.subCategory.subtitle}</h2>
       <div class="fw-categories" role="group" aria-label="${m.subCategory.aria}">
         ${buttons}
       </div>
@@ -334,12 +354,10 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
       const m = this.options.messages
       const cat = this.state.selectedCategory
       const sub = this.state.selectedSubCategory
-      const catLabel = cat ? (m.categoryLabels[cat] ?? '') : ''
-      const subLabel = sub ? (m.subCategoryLabels[sub] ?? '') : ''
-      const breadcrumb = subLabel ? `${catLabel} › ${subLabel}` : catLabel
+      const guide = promptFor(m, cat, sub)
       return `
-      <h2 id="fw-title" class="fw-title">${escapeHtml(breadcrumb)}</h2>
-      <p class="fw-subtitle">${m.precision.subtitle}</p>
+      ${this.renderBreadcrumb()}
+      <h2 id="fw-title" class="fw-title">${guide.question}</h2>
       <form class="fw-form" data-action="submit-form" novalidate>
         <label class="fw-label">
           <span class="fw-label-text">${m.precision.descriptionLabel}</span>
@@ -347,7 +365,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
             class="fw-textarea"
             name="message"
             maxlength="${this.options.maxMessageLength}"
-            placeholder="${m.precision.placeholder}"
+            placeholder="${guide.placeholder}"
             required
           >${escapeHtml(this.state.userMessage)}</textarea>
         </label>
@@ -370,6 +388,40 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
         </div>
         <p class="fw-privacy">${m.precision.privacy}</p>
       </form>
+    `
+    }
+
+    /**
+     * `family › sub-family` on screens ④ and ⑤. Only the last link is
+     * clickable and emits `back`, which already lands on the previous
+     * screen, so no extra `UserAction` is needed (spec D5).
+     */
+    private renderBreadcrumb(): string {
+      const m = this.options.messages
+      const cat = this.state.selectedCategory
+      if (cat === null) return ''
+      const sub = this.state.selectedSubCategory
+      const onPrecision = this.state.step === 'precision'
+      const link = (label: string): string =>
+        `<button type="button" class="fw-crumb-link" data-action="back">${label}</button>`
+      const family = m.categoryLabels[cat]
+      const parts =
+        onPrecision && sub !== null
+          ? [family, link(m.subCategoryLabels[sub])]
+          : [link(family)]
+      return `<nav class="fw-breadcrumb" aria-label="${m.breadcrumb}">${parts.join(' <span aria-hidden="true">›</span> ')}</nav>`
+    }
+
+    private renderDiscardConfirmStep(): string {
+      const m = this.options.messages.discardConfirm
+      // `keep-editing` comes first so it receives the focus.
+      return `
+      <h2 id="fw-title" class="fw-title">${m.title}</h2>
+      <p class="fw-subtitle">${m.subtitle}</p>
+      <div class="fw-actions fw-actions-center">
+        <button type="button" class="fw-btn fw-btn-primary" data-action="keep-editing">${m.keepEditing}</button>
+        <button type="button" class="fw-btn fw-btn-ghost" data-action="discard">${m.discard}</button>
+      </div>
     `
     }
 
@@ -417,6 +469,12 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
             el.addEventListener('click', () => this.emit({ kind: 'close' }))
           } else if (action === 'reset') {
             el.addEventListener('click', () => this.emit({ kind: 'reset' }))
+          } else if (action === 'keep-editing') {
+            el.addEventListener('click', () =>
+              this.emit({ kind: 'keep-editing' }),
+            )
+          } else if (action === 'discard') {
+            el.addEventListener('click', () => this.emit({ kind: 'discard' }))
           } else if (action === 'back') {
             el.addEventListener('click', () => this.emit({ kind: 'back' }))
           } else if (action === 'submit') {
@@ -529,28 +587,29 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
     private manageFocusOnStepChange(): void {
       if (!this.shadowRoot) return
       const stepChanged = this.state.step !== this.previousStep
-      const justOpened =
-        this.previousStep === 'closed' && this.state.step !== 'closed'
       const justClosed =
         this.previousStep !== 'closed' && this.state.step === 'closed'
-
-      if (justOpened) {
-        this.lastFocusedBeforeOpen =
-          (document.activeElement as HTMLElement | null) ?? null
-      }
 
       if (stepChanged && this.state.step !== 'closed') {
         queueMicrotask(() => {
           const first = this.shadowRoot?.querySelector<HTMLElement>(
-            'textarea, input:not(.fw-honeypot), button:not(.fw-close)',
+            'textarea, input:not(.fw-honeypot), button:not(.fw-close):not(.fw-crumb-link)',
           )
           first?.focus()
         })
       }
 
       if (justClosed && this.lastFocusedBeforeOpen) {
-        const toRestore = this.lastFocusedBeforeOpen
-        queueMicrotask(() => toRestore.focus())
+        const opener = this.lastFocusedBeforeOpen
+        // Opened from our own trigger, `document.activeElement` is this
+        // shadow host, and the trigger was re-rendered: focus the new one.
+        queueMicrotask(() => {
+          const target =
+            opener === this
+              ? this.shadowRoot?.querySelector<HTMLElement>('.fw-trigger')
+              : opener
+          target?.focus()
+        })
         this.lastFocusedBeforeOpen = null
       }
 
@@ -571,50 +630,14 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
 /** Adapt a `FeedbackWidgetElement` to the core `View` port. */
 export function createWebComponentView(element: FeedbackWidgetElement): View {
   let handler: ((action: UserAction) => void) | null = null
-  let lastState: WidgetState = {
-    step: 'closed',
-    target: null,
-    selectedCategory: null,
-    selectedSubCategory: null,
-    userMessage: '',
-    reporterName: '',
-    errorMessage: null,
-  }
-
   element.setActionHandler((action) => handler?.(action))
 
   return {
     render(state: WidgetState): void {
-      lastState = state
       element.updateState(state)
     },
     onUserAction(cb: (action: UserAction) => void): void {
       handler = cb
-    },
-    showConfirmation(): void {
-      const next: WidgetState = {
-        step: 'confirmed',
-        target: null,
-        selectedCategory: null,
-        selectedSubCategory: null,
-        userMessage: '',
-        reporterName: '',
-        errorMessage: null,
-      }
-      lastState = next
-      element.updateState(next)
-    },
-    showMailtoFallback(mailtoUrl: string, message: string): void {
-      // `message` already carries the localized "email us:" lead-in (composed
-      // by the controller, which holds the active locale); this adapter only
-      // appends the address so it stays language-agnostic.
-      const next: WidgetState = {
-        ...lastState,
-        step: 'error',
-        errorMessage: `${message}${mailtoUrl}`,
-      }
-      lastState = next
-      element.updateState(next)
     },
   }
 }
@@ -757,6 +780,20 @@ const STYLES = `
     margin: 0 0 4px;
     font-size: 18px;
     padding-right: 32px;
+  }
+  .fw-breadcrumb {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--fw-muted);
+  }
+  .fw-crumb-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
   }
   .fw-subtitle {
     margin: 0 0 16px;

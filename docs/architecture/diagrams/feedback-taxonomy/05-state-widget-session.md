@@ -50,7 +50,7 @@ stateDiagram-v2
   DiscardConfirm --> Precision: keep-editing [left from Precision or Error]
   DiscardConfirm --> Closed: discard / reset
   note right of DiscardConfirm
-    close / ignored
+    close / same as keep-editing
   end note
 
   Sending --> Confirmed: sent
@@ -61,7 +61,7 @@ stateDiagram-v2
   Error --> Sending: submit [payload valid] (retry)
   Error --> Type: submit [no category]
   Error --> SubCategory: submit [requiresSubCategory and no sub-family]
-  Error --> DiscardConfirm: close [trim(userMessage) not empty]
+  Error --> DiscardConfirm: close [trim(userMessage) not empty and not queued]
   Error --> Closed: close [else] / reset
   note right of Error
     submit [payload build fails] / show build error

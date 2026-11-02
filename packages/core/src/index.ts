@@ -2,11 +2,13 @@
 export type {
   TopLevelCategory,
   BugSubCategory,
+  DisplaySubCategory,
   ContentSubCategory,
   UnclearSubCategory,
   SuggestionSubCategory,
   SubCategory,
   CategorizedFeedback,
+  CategoryPair,
   ViewportSize,
   BrowserContext,
   FeedbackPayload,

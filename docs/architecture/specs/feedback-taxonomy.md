@@ -42,31 +42,31 @@ Hosts that pass an explicit `WidgetConfig.categories` list must add `display`, o
 
 Screen ⑤ shows a question and a placeholder. They live in `packages/web/src/i18n.ts` as `precision.prompts: Partial<Record<CategoryPair, Prompt>>` plus one `defaultPrompt`, never in the domain. `CategoryPair` is derived from `SUB_CATEGORIES_BY_CATEGORY` (a mapped type over each family's own sub-families, so `praise/crash` cannot be written). Lookup order: the pair, then the family fallback (`suggestion`, `praise`), then `defaultPrompt`. The pair key is required because `other` exists in five families.
 
-| Pair                                                           | Question (fr)                                   | Placeholder (fr)                         |
-| -------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------- |
-| `bug/no-effect`                                                | Qu'as-tu essayé de faire ?                      | J'ai cliqué sur … et rien ne s'est passé |
-| `bug/crash`                                                    | Que faisais-tu juste avant ?                    | La page s'est figée quand …              |
-| `bug/form-rejected`                                            | Quel champ est refusé, avec quelle valeur ?     | Le champ … refuse …                      |
-| `bug/wrong-data`                                               | Qu'est-ce qui est affiché, et qu'attendais-tu ? | Il affiche … alors que …                 |
-| `bug/personal-data`                                            | Qu'as-tu vu qui ne devrait pas l'être ?         | Je vois …                                |
-| `display/broken-layout`                                        | Qu'est-ce qui déborde ou se chevauche ?         | Le bouton … passe sous …                 |
-| `display/mobile`                                               | Que se passe-t-il sur ton appareil ?            | Sur mon téléphone, …                     |
-| `display/missing-media`                                        | Quelle image ou vidéo manque ?                  | L'image de … ne s'affiche pas            |
-| `display/too-slow`                                             | Quelle action est lente ?                       | Le chargement de … prend …               |
-| `content/typo`                                                 | Recopie la faute.                               | « … » devrait être « … »                 |
-| `content/wrong-info`, `content/outdated`                       | Qu'est-ce qui est faux ou dépassé ?             | Il est écrit … mais …                    |
-| `content/dead-link`                                            | Où mène le lien, et où devrait-il mener ?       | Le lien « … » mène à …                   |
-| `unclear/wording`, `unclear/missing-info`                      | Qu'aurais-tu voulu lire ?                       | Je m'attendais à trouver …               |
-| `unclear/navigation`                                           | Que cherchais-tu ?                              | Je cherchais … et je n'ai pas trouvé     |
-| `unclear/question`                                             | Pose ta question.                               | Comment … ?                              |
-| fallback `suggestion`                                          | Décris ton idée.                                | Ce serait bien de …                      |
-| fallback `praise`                                              | Qu'est-ce qui t'a plu ?                         | J'ai aimé …                              |
-| `defaultPrompt` (`other` under bug, display, content, unclear) | Explique-nous.                                  | (empty)                                  |
+| Pair                                                           | Question (fr)                                   | Placeholder (fr)                               |
+| -------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------- |
+| `bug/no-effect`                                                | Qu'as-tu essayé de faire ?                      | J'ai cliqué sur … et rien ne s'est passé       |
+| `bug/crash`                                                    | Que faisais-tu juste avant ?                    | La page s'est figée quand …                    |
+| `bug/form-rejected`                                            | Quel champ est refusé, avec quelle valeur ?     | Le champ … refuse …                            |
+| `bug/wrong-data`                                               | Qu'est-ce qui est affiché, et qu'attendais-tu ? | Il affiche … alors que …                       |
+| `bug/personal-data`                                            | Qu'as-tu vu qui ne devrait pas l'être ?         | Je vois …                                      |
+| `display/broken-layout`                                        | Qu'est-ce qui déborde ou se chevauche ?         | Le bouton … passe sous …                       |
+| `display/mobile`                                               | Que se passe-t-il sur ton appareil ?            | Sur mon téléphone, …                           |
+| `display/missing-media`                                        | Quelle image ou vidéo manque ?                  | L'image de … ne s'affiche pas                  |
+| `display/too-slow`                                             | Quelle action est lente ?                       | Le chargement de … prend …                     |
+| `content/typo`                                                 | Recopie la faute.                               | « … » devrait être « … »                       |
+| `content/wrong-info`, `content/outdated`                       | Qu'est-ce qui est faux ou dépassé ?             | Il est écrit … mais …                          |
+| `content/dead-link`                                            | Où mène le lien, et où devrait-il mener ?       | Le lien « … » mène à …                         |
+| `unclear/wording`, `unclear/missing-info`                      | Qu'aurais-tu voulu lire ?                       | Je m'attendais à trouver …                     |
+| `unclear/navigation`                                           | Que cherchais-tu ?                              | Je cherchais … et je n'ai pas trouvé           |
+| `unclear/question`                                             | Pose ta question.                               | Comment … ?                                    |
+| fallback `suggestion`                                          | Décris ton idée.                                | Ce serait bien de …                            |
+| fallback `praise`                                              | Qu'est-ce qui t'a plu ?                         | J'ai aimé …                                    |
+| `defaultPrompt` (`other` under bug, display, content, unclear) | Explique-nous.                                  | Décris ce que tu as vu (10 caractères minimum) |
 
 ## D5 — Navigation keeps the draft
 
 - `back` from ④ or ⑤ keeps `userMessage` and `reporterName`; only `selectedSubCategory` is cleared when returning to ③, so a stale sub-family cannot outlive a family change.
-- `close` / `Escape` from ③, ④, ⑤ or the error step with a non-blank `userMessage` moves to the new step `discard-confirm` instead of resetting; two new `UserAction` kinds, `keep-editing` (returns to the step left) and `discard` (reset). `close` inside `discard-confirm` is ignored.
+- `close` / `Escape` from ③, ④, ⑤ or the error step with a non-blank `userMessage` (the error step only when the failed send was not queued in the outbox, since a queued draft is not lost) moves to the new step `discard-confirm` instead of resetting; two new `UserAction` kinds, `keep-editing` (returns to the step left) and `discard` (reset). `close` / `Escape` inside `discard-confirm` means keep editing.
 - `close` during `sending` is ignored: today the controller resets while `handleSubmit` keeps running, and the late result re-opens the widget (bug found during review, fixed in the same change).
 - ④ and ⑤ show a clickable breadcrumb `family › sub-family`.
 

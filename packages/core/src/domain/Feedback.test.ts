@@ -5,13 +5,15 @@ import {
   isValidCategory,
   isValidSubCategory,
   requiresSubCategory,
+  type TopLevelCategory,
 } from './Feedback'
 
 describe('domain/Feedback', () => {
   describe('top-level categories', () => {
-    it('exposes all 5 canonical top-level categories in order', () => {
+    it('exposes all 6 canonical top-level categories in order', () => {
       expect(TOP_LEVEL_CATEGORIES).toEqual([
         'bug',
+        'display',
         'content',
         'unclear',
         'suggestion',
@@ -37,49 +39,54 @@ describe('domain/Feedback', () => {
       expect(SUB_CATEGORIES_BY_CATEGORY.praise).toEqual([])
     })
 
-    it('locks the canonical bug sub-categories', () => {
-      expect(SUB_CATEGORIES_BY_CATEGORY.bug).toEqual([
-        'crash',
-        'no-effect',
-        'broken-display',
-        'too-slow',
-      ])
+    it.each([
+      [
+        'bug',
+        [
+          'no-effect',
+          'crash',
+          'form-rejected',
+          'wrong-data',
+          'personal-data',
+          'other',
+        ],
+      ],
+      [
+        'display',
+        ['broken-layout', 'mobile', 'missing-media', 'too-slow', 'other'],
+      ],
+      ['content', ['typo', 'wrong-info', 'outdated', 'dead-link', 'other']],
+      [
+        'unclear',
+        ['wording', 'missing-info', 'navigation', 'question', 'other'],
+      ],
+      [
+        'suggestion',
+        ['new-feature', 'improvement', 'design', 'accessibility', 'other'],
+      ],
+    ] as const)('locks the canonical %s sub-categories', (category, subs) => {
+      expect(SUB_CATEGORIES_BY_CATEGORY[category]).toEqual(subs)
     })
 
-    it('locks the canonical content sub-categories', () => {
-      expect(SUB_CATEGORIES_BY_CATEGORY.content).toEqual([
-        'typo',
-        'wrong-info',
-        'dead-link',
-      ])
-    })
-
-    it('locks the canonical unclear sub-categories', () => {
-      expect(SUB_CATEGORIES_BY_CATEGORY.unclear).toEqual([
-        'wording',
-        'missing-info',
-        'navigation',
-      ])
-    })
-
-    it('locks the canonical suggestion sub-categories', () => {
-      expect(SUB_CATEGORIES_BY_CATEGORY.suggestion).toEqual([
-        'new-feature',
-        'improvement',
-        'accessibility',
-      ])
-    })
-
-    it('exposes 13 sub-categories in total', () => {
+    it('exposes 26 sub-categories in total', () => {
       const total = Object.values(SUB_CATEGORIES_BY_CATEGORY).reduce(
         (sum, list) => sum + list.length,
         0,
       )
-      expect(total).toBe(13)
+
+      expect(total).toBe(26)
     })
 
-    it('never reuses the same sub-category under two categories', () => {
-      const all = Object.values(SUB_CATEGORIES_BY_CATEGORY).flat()
+    it('ends every family that has sub-categories with "other"', () => {
+      for (const subs of Object.values(SUB_CATEGORIES_BY_CATEGORY)) {
+        if (subs.length > 0) expect(subs.at(-1)).toBe('other')
+      }
+    })
+
+    it('reuses no sub-category across families except "other"', () => {
+      const all = Object.values(SUB_CATEGORIES_BY_CATEGORY)
+        .flat()
+        .filter((sub) => sub !== 'other')
 
       expect(new Set(all).size).toBe(all.length)
     })
@@ -120,6 +127,13 @@ describe('domain/Feedback', () => {
     it('rejects unknown values regardless of category', () => {
       expect(isValidSubCategory('bug', 'unknown')).toBe(false)
       expect(isValidSubCategory('content', '')).toBe(false)
+    })
+
+    it('returns false (and does not throw) for a retired category name from an untyped caller', () => {
+      const retired = 'legacy-category' as unknown as TopLevelCategory
+
+      expect(isValidSubCategory(retired, 'crash')).toBe(false)
+      expect(isValidSubCategory(retired, '')).toBe(false)
     })
 
     it('always returns false for "praise" (no sub-categories allowed)', () => {
