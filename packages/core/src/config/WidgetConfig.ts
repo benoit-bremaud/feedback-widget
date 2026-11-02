@@ -66,9 +66,10 @@ export interface WidgetConfig {
   position?: 'bottom-right' | 'bottom-left' | 'bottom-center'
   /**
    * CSS selector for the root element the pointing-mode picker scans for
-   * targetable blocks. Defaults to `'main'` (the detector falls back to
-   * `document.body` when not found). Set this when the reportable content
-   * lives outside `<main>` — e.g. modals/portals rendered as siblings of it.
+   * targetable blocks. Defaults to `'body'`, so the header, hero and footer
+   * are pickable too (the detector falls back to `document.body` when the
+   * selector matches nothing). Narrow it (e.g. `'main'`) to limit picking;
+   * clicks outside the root are still swallowed while pointing.
    */
   rootSelector?: string
   /**

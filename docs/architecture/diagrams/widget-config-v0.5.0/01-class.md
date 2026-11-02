@@ -170,7 +170,7 @@ WidgetViewOptions ..> Theme : data-theme attr
 ## Notes
 
 - `rootSelector` is forwarded to `createIntersectionViewportDetector` (web) which
-  already defaults it to `'main'` — the default stays in **one** place, so the
+  already defaults it to `'body'` (`'main'` until v0.7.0, #135) — the default stays in **one** place, so the
   resolved value is `string | null` and the adapter receives `?? undefined`.
 - Icons in `categoryLabels`/`subCategoryLabels` stay hardcoded (locale-neutral);
   only the text `label` is translated.

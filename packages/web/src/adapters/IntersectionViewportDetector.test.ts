@@ -448,7 +448,7 @@ describe('enablePointingMode / disablePointingMode', () => {
     }
   })
 
-  it('adds the pointing class to the root element', () => {
+  it('adds the pointing class to the default root (body)', () => {
     installFakeIntersectionObserver(window)
     makeDocumentWithContent('<p>a</p>')
     const detector = createIntersectionViewportDetector({
@@ -458,9 +458,7 @@ describe('enablePointingMode / disablePointingMode', () => {
 
     detector.enablePointingMode(() => {})
 
-    expect(
-      document.querySelector('main')?.classList.contains('fw-pointing'),
-    ).toBe(true)
+    expect(document.body.classList.contains('fw-pointing')).toBe(true)
   })
 
   it('invokes onPick with the FeedbackTarget when a content block is clicked', () => {
@@ -534,10 +532,59 @@ describe('enablePointingMode / disablePointingMode', () => {
     expect(arg.label).toBe('Valider')
   })
 
-  it('ignores clicks on elements outside the root', () => {
+  it.each(['pointerdown', 'mousedown', 'click'])(
+    'swallows a %s outside the root without picking it (#135)',
+    (type) => {
+      installFakeIntersectionObserver(window)
+      document.body.innerHTML =
+        '<header><a id="nav" href="/page2">Nav</a></header><main><p>inside</p></main>'
+      const detector = createIntersectionViewportDetector({
+        doc: document,
+        win: window,
+        rootSelector: 'main',
+      })
+      const onPick = vi.fn()
+      const pageHandler = vi.fn()
+      const link = document.getElementById('nav')!
+      link.addEventListener(type, pageHandler)
+
+      detector.enablePointingMode(onPick)
+      const ev = new Event(type, { bubbles: true, cancelable: true })
+      link.dispatchEvent(ev)
+
+      expect(ev.defaultPrevented).toBe(true)
+      expect(pageHandler).not.toHaveBeenCalled()
+      expect(onPick).not.toHaveBeenCalled()
+      expect(link.classList.contains('fw-highlight')).toBe(false)
+    },
+  )
+
+  it('lets clicks on the widget host through untouched', () => {
     installFakeIntersectionObserver(window)
     document.body.innerHTML =
-      '<main><p>inside</p></main><p id="outside">outside the main</p>'
+      '<main><p>inside</p></main><feedback-widget id="host"></feedback-widget>'
+    const detector = createIntersectionViewportDetector({
+      doc: document,
+      win: window,
+    })
+    const onPick = vi.fn()
+    const hostHandler = vi.fn()
+    const host = document.getElementById('host')!
+    host.addEventListener('click', hostHandler)
+
+    detector.enablePointingMode(onPick)
+    const ev = new Event('click', { bubbles: true, cancelable: true })
+    host.dispatchEvent(ev)
+
+    expect(ev.defaultPrevented).toBe(false)
+    expect(hostHandler).toHaveBeenCalledOnce()
+    expect(onPick).not.toHaveBeenCalled()
+  })
+
+  it('picks a header link with the default root (body) without navigating (#135)', () => {
+    installFakeIntersectionObserver(window)
+    document.body.innerHTML =
+      '<header><a id="nav" href="/page2">Produits</a></header><main><p>inside</p></main>'
     const detector = createIntersectionViewportDetector({
       doc: document,
       win: window,
@@ -545,12 +592,12 @@ describe('enablePointingMode / disablePointingMode', () => {
     const onPick = vi.fn()
 
     detector.enablePointingMode(onPick)
-    const outside = document.getElementById('outside')!
-    outside.dispatchEvent(
-      new Event('click', { bubbles: true, cancelable: true }),
-    )
+    const ev = new Event('click', { bubbles: true, cancelable: true })
+    document.getElementById('nav')!.dispatchEvent(ev)
 
-    expect(onPick).not.toHaveBeenCalled()
+    expect(ev.defaultPrevented).toBe(true)
+    expect(onPick).toHaveBeenCalledOnce()
+    expect(onPick.mock.calls[0]?.[0].selector).toBe('#nav')
   })
 
   it('picks a non-content element (e.g. a div) — any element is targetable', () => {
@@ -584,9 +631,7 @@ describe('enablePointingMode / disablePointingMode', () => {
     detector.enablePointingMode(onPick)
     detector.disablePointingMode()
 
-    expect(
-      document.querySelector('main')?.classList.contains('fw-pointing'),
-    ).toBe(false)
+    expect(document.body.classList.contains('fw-pointing')).toBe(false)
 
     const p = document.querySelector('main p')!
     p.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }))
