@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/benoit-bremaud/feedback-widget/contract/feedback-payload.v1.schema.json",
+  "title": "FeedbackPayload v1",
+  "description": "Payload POSTed by the feedback widget (>= 0.7.0) to feedback-pipeline-worker. Shared contract: any change is Worker-breaking and bumps the file version.",
+  "type": "object",
+  "required": [
+    "projectId",
+    "url",
+    "referrer",
+    "userAgent",
+    "viewport",
+    "locale",
+    "timestamp",
+    "widgetVersion",
+    "scrollDepth",
+    "sessionId",
+    "category",
+    "subCategory",
+    "message",
+    "reporterName",
+    "target"
+  ],
+  "properties": {
+    "projectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "url": {
+      "type": "string"
+    },
+    "referrer": {
+      "type": ["string", "null"]
+    },
+    "userAgent": {
+      "type": "string"
+    },
+    "viewport": {
+      "type": "object",
+      "required": ["w", "h"],
+      "properties": {
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        }
+      }
+    },
+    "locale": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "widgetVersion": {
+      "type": "string"
+    },
+    "scrollDepth": {
+      "type": "number"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "category": {
+      "enum": ["bug", "display", "content", "unclear", "suggestion", "praise"]
+    },
+    "subCategory": {
+      "type": ["string", "null"]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2000
+    },
+    "reporterName": {
+      "type": ["string", "null"],
+      "maxLength": 50
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": ["tag", "label", "selector", "headingText", "excerpt"],
+          "properties": {
+            "tag": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "label": {
+              "type": ["string", "null"],
+              "maxLength": 300
+            },
+            "selector": {
+              "type": ["string", "null"],
+              "maxLength": 1000
+            },
+            "headingText": {
+              "type": ["string", "null"],
+              "maxLength": 300
+            },
+            "excerpt": {
+              "type": ["string", "null"],
+              "maxLength": 1000
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "category": {
+          "const": "bug"
+        },
+        "subCategory": {
+          "enum": [
+            "no-effect",
+            "crash",
+            "form-rejected",
+            "wrong-data",
+            "personal-data",
+            "other"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "category": {
+          "const": "display"
+        },
+        "subCategory": {
+          "enum": [
+            "broken-layout",
+            "mobile",
+            "missing-media",
+            "too-slow",
+            "other"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "category": {
+          "const": "content"
+        },
+        "subCategory": {
+          "enum": ["typo", "wrong-info", "outdated", "dead-link", "other"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "category": {
+          "const": "unclear"
+        },
+        "subCategory": {
+          "enum": ["wording", "missing-info", "navigation", "question", "other"]
+        }
+      }
+    },
+    {
+      "properties": {
+        "category": {
+          "const": "suggestion"
+        },
+        "subCategory": {
+          "enum": [
+            "new-feature",
+            "improvement",
+            "design",
+            "accessibility",
+            "other"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "category": {
+          "const": "praise"
+        },
+        "subCategory": {
+          "type": "null"
+        }
+      }
+    }
+  ]
+}

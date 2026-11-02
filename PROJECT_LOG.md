@@ -1310,3 +1310,24 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   draft) and page CTAs ran their own action.
 - **Ref:** issue [#135](https://github.com/benoit-bremaud/feedback-widget/issues/135),
   PR [#154](https://github.com/benoit-bremaud/feedback-widget/pull/154) `66fcc4f`.
+
+### Form field text kept out of the target descriptor (#136, PR #161)
+
+- **What:** PR #161 (squash `d16b99a`) strips form field text from the
+  captured target `label`, `excerpt` and `headingText`. Review follow-ups
+  filed as #156–#160.
+- **Why:** A reporter's typed input must never leave the page inside the
+  target descriptor.
+- **Ref:** issue [#136](https://github.com/benoit-bremaud/feedback-widget/issues/136),
+  PR [#161](https://github.com/benoit-bremaud/feedback-widget/pull/161) `d16b99a`.
+
+### Worker payload contract pinned by a shared schema (#118)
+
+- **What:** Added `contract/feedback-payload.v1.schema.json` (JSON Schema
+  2020-12) with valid / invalid fixtures, and a core test that checks the
+  schema against `SUB_CATEGORIES_BY_CATEGORY` and the message / reporter-name
+  bounds; `MAX_REPORTER_NAME_LENGTH` is now a core constant instead of a
+  literal `maxlength`. The Worker adopts the same artefact in a follow-up.
+- **Why:** The Worker re-implements the payload shape, tables and bounds;
+  a drift now fails a test instead of rejecting submissions in production.
+- **Ref:** issue [#118](https://github.com/benoit-bremaud/feedback-widget/issues/118).
