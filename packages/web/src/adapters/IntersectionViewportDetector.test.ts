@@ -801,6 +801,24 @@ describe('enablePointingMode / disablePointingMode', () => {
       expect(arg.excerpt).toBe('Contact')
       expect(JSON.stringify(arg)).not.toMatch(/SECRET/)
     })
+
+    it('strips field text from the heading context', () => {
+      const arg = pick(
+        '<h2>Title <input value="x" /><span contenteditable="true">HEAD-SECRET</span></h2><p id="p">Body</p>',
+        'p',
+      )
+
+      expect(arg.headingText).toBe('Title')
+    })
+
+    it('gives a null heading context when the heading is an editable field', () => {
+      const arg = pick(
+        '<h1 contenteditable="true">HEAD-SECRET</h1><p id="p">Body</p>',
+        'p',
+      )
+
+      expect(arg.headingText).toBeNull()
+    })
   })
 
   it('returns a null label when the element exposes no accessible name', () => {

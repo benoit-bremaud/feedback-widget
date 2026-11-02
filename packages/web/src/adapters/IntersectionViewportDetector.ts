@@ -128,7 +128,7 @@ export function createIntersectionViewportDetector(
       tag: element.tagName.toLowerCase(),
       label: accessibleLabel(element),
       selector: computeSelector(element),
-      headingText: heading?.textContent?.trim() ?? null,
+      headingText: heading ? safeText(heading).trim() || null : null,
       excerpt: extractExcerpt(text),
     }
   }
