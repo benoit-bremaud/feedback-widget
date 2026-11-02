@@ -14,7 +14,7 @@ target DOM block), and POSTs the payload to your backend.
 
 ## Status
 
-Currently at `v0.6.0`, private, `UNLICENSED`. This project is
+Currently at `v0.7.0`, private, `UNLICENSED`. This project is
 intentionally private and is **not published to the public npm
 registry**. Consumers install it from the **GitHub Packages
 private registry** under this repository — see
@@ -184,7 +184,7 @@ edit on the consumer side.
     <!-- … your site content … -->
 
     <script type="module">
-      import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget-0.6.0.js'
+      import { mountFeedbackWidget } from 'https://feedback-pipeline-worker.bbd-concept.workers.dev/widget-0.7.0.js'
       mountFeedbackWidget({
         endpoint:
           'https://feedback-pipeline-worker.bbd-concept.workers.dev/ingest',

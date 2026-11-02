@@ -1276,3 +1276,27 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   follow-ups [#130](https://github.com/benoit-bremaud/feedback-widget/issues/130),
   [#131](https://github.com/benoit-bremaud/feedback-widget/issues/131),
   [#132](https://github.com/benoit-bremaud/feedback-widget/issues/132) (coverage floor 95 %).
+
+## 2026-11-02
+
+### Six-family taxonomy shipped in the widget (#128, PR #133)
+
+- **What:** PR #133 (squash `9d63417`) implements the #128 spec: six
+  families and 26 sub-families, a guided question and placeholder per pair,
+  a `family › sub-family` breadcrumb, a `discard-confirm` step when closing
+  with a typed message, and focus return to the launcher. The QA pass filed
+  issues #135–#148 (#135 and #136 at P1).
+- **Why:** Give testers precise slots and an `other` escape so reports stop
+  piling into two catch-all sub-families.
+- **Ref:** issue [#128](https://github.com/benoit-bremaud/feedback-widget/issues/128),
+  PR [#133](https://github.com/benoit-bremaud/feedback-widget/pull/133) `9d63417`.
+
+### Release v0.7.0 (#149)
+
+- **What:** Bumped every package to 0.7.0, cut the changelog and rebuilt
+  `widget-0.7.0.js`; the bundle is then copied to `feedback-pipeline-worker`
+  (`public/widget.js` + `public/widget-0.7.0.js`) and deployed.
+- **Why:** The Worker only accepts the new taxonomy pairs from
+  `widgetVersion` 0.7.0, so the feature is live only once this release is
+  served.
+- **Ref:** issue [#149](https://github.com/benoit-bremaud/feedback-widget/issues/149).

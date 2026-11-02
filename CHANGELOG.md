@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-02
+
 **Deploy the consumer pipeline first**: `feedback-pipeline-worker` accepts the
 v0.7.0 taxonomy since its PR #44 (deployed 2026-10-30, migration `0003`
 applied). The Worker selects the allowlist from `widgetVersion`, so the new
