@@ -1,0 +1,20 @@
+{
+  "projectId": "demo",
+  "url": "https://example.com/",
+  "referrer": null,
+  "userAgent": "UA",
+  "viewport": {
+    "w": 1280,
+    "h": 800
+  },
+  "locale": "fr",
+  "timestamp": "2026-11-02T10:00:00.000Z",
+  "widgetVersion": "0.7.0",
+  "scrollDepth": 0.5,
+  "sessionId": "s-1",
+  "category": "bug",
+  "subCategory": "crash",
+  "message": "It crashed on save.",
+  "reporterName": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+  "target": null
+}

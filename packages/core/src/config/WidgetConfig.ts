@@ -11,6 +11,8 @@ import { isValidCategory } from '../domain/Feedback'
 export const MIN_MESSAGE_LENGTH = 10
 /** Upper bound (inclusive) for the message length, in characters. Part of the Worker payload contract. */
 export const MAX_MESSAGE_LENGTH = 2000
+/** Upper bound (inclusive) for the optional reporter name, in characters. Part of the Worker payload contract. */
+export const MAX_REPORTER_NAME_LENGTH = 50
 
 /** Widget colour scheme. */
 export type Theme = 'dark' | 'light'

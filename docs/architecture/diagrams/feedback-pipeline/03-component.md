@@ -59,6 +59,11 @@ flowchart TB
 
 ## Notes
 
+- **Payload contract artefact (#118).** The `Bundle -->|POST /ingest| Worker`
+  interface is pinned by `contract/feedback-payload.v1.schema.json` plus its
+  valid / invalid fixtures. The widget tests the schema against its own
+  tables and bounds; the Worker runs the same fixtures against its validator.
+  Any change bumps the file version and is Worker-breaking.
 - **Single public surface = the Worker.** Everything else the Pi does is
   **outbound** (pull, Claude, Telegram, GitHub). The Pi exposes no
   inbound port — imposed by the Tailscale-only homelab (no public

@@ -1,6 +1,7 @@
 import {
   requiresSubCategory,
   MIN_MESSAGE_LENGTH,
+  MAX_REPORTER_NAME_LENGTH,
   buildFeedbackPayload,
   submitFeedback,
   drainOutbox,
@@ -352,7 +353,7 @@ function attachController(
 
       case 'update-reporter': {
         // Same logic as update-message but without errorMessage tracking.
-        const truncated = action.value.slice(0, 50)
+        const truncated = action.value.slice(0, MAX_REPORTER_NAME_LENGTH)
         const wasTruncated = truncated !== action.value
         setState({ reporterName: truncated }, { silent: !wasTruncated })
         break

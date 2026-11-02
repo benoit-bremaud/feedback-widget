@@ -7,6 +7,7 @@ import {
   TOP_LEVEL_CATEGORIES,
   SUB_CATEGORIES_BY_CATEGORY,
   isValidSubCategory,
+  MAX_REPORTER_NAME_LENGTH,
 } from '@benoit-bremaud/feedback-widget-core'
 import type {
   UserAction,
@@ -376,7 +377,7 @@ export function defineFeedbackWidgetElement(): CustomElementConstructor {
             class="fw-input"
             type="text"
             name="reporter"
-            maxlength="50"
+            maxlength="${MAX_REPORTER_NAME_LENGTH}"
             value="${escapeHtml(this.state.reporterName)}"
             autocomplete="given-name"
           />

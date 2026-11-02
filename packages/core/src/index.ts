@@ -65,5 +65,7 @@ export type {
 export {
   resolveConfig,
   MIN_MESSAGE_LENGTH,
+  MAX_MESSAGE_LENGTH,
+  MAX_REPORTER_NAME_LENGTH,
   normalizeLocale,
 } from './config/WidgetConfig'
