@@ -145,3 +145,6 @@ packages/*/dist-bundle/
 # Local editor / agent config
 .claude/
 .vscode/
+
+# sonar-scanner-npm working directory (just gate)
+.scannerwork/

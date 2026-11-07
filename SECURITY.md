@@ -20,15 +20,19 @@ pin a version and bump deliberately; only the latest release receives fixes.
 
 ## What the project does
 
-- **No secrets in git, ever.** Gitleaks runs locally when installed
-  (`pnpm verify` announces it when missing), in CI on every push and PR, and
-  on a weekly cron. A leaked secret is rotated first, then purged from
+- **No secrets in git, ever.** Gitleaks runs on the staged diff at every
+  commit, on the full history at every push and before every merge
+  (`just secrets`, skill `local-ci`), TruffleHog nightly; a missing scanner
+  fails the tier. A leaked secret is rotated first, then purged from
   history (see CONTRIBUTING § Security).
 - **Dependencies**: GitHub Dependabot alerts + security updates are enabled;
   `.github/dependabot.yml` opens weekly grouped PRs for npm and GitHub Actions.
   Production dependencies: none (the widget has zero runtime dependencies).
-- **GitHub Actions**: every third-party action is pinned to a commit SHA and
-  every workflow declares least-privilege `permissions`.
+- **GitHub Actions**: one workflow only, `prod.yml`, on a signed `v*` tag;
+  every third-party action is pinned to a commit SHA, `permissions: {}` at
+  the top with least privilege per job, and the publish runs only after the
+  trusted `scripts/attest.sh release` of `main` verified the tag signature,
+  the gate status and the staging note.
 - **Rendering**: the widget renders inside a shadow root; every user-provided
   string is HTML-escaped before insertion. Host-provided configuration is
   trusted by design (it is the integrator's own code).
@@ -47,8 +51,8 @@ pin a version and bump deliberately; only the latest release receives fixes.
 
 ## Accepted risks (reviewed 2026-10-15)
 
-| Finding                                                                        | Why accepted                                                                                                                                     | Review trigger                                                                               |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `node-forge` ≤ 1.4.0 (RSA PKCS#1 v1.5 signature check) via `sonarqube-scanner` | No fixed upstream version. Dev-only, runs on the maintainer's machine during the local SonarQube scan; never in CI, never in the shipped bundle. | A patched `node-forge` or a scanner release without it; re-run `pnpm audit` at each release. |
-| `main` not branch-protected                                                    | GitHub Free does not offer protection on private repos. The pre-push hook (`pnpm verify`) is the gate.                                           | Repo goes public, or the plan changes.                                                       |
-| No CodeQL / Dependency Review workflows                                        | Both need GitHub Advanced Security on private repos.                                                                                             | Repo goes public (see the public release checklist).                                         |
+| Finding                                                                        | Why accepted                                                                                                                                            | Review trigger                                                                               |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `node-forge` ≤ 1.4.0 (RSA PKCS#1 v1.5 signature check) via `sonarqube-scanner` | No fixed upstream version. Dev-only, runs on the maintainer's machine during the local SonarQube scan; never in CI, never in the shipped bundle.        | A patched `node-forge` or a scanner release without it; re-run `pnpm audit` at each release. |
+| `main` not branch-protected                                                    | GitHub Free does not offer protection on private repos. The pre-push hook (`just check`) and the gate attestation `just merge` demands are the barrier. | Repo goes public, or the plan changes.                                                       |
+| No CodeQL / Dependency Review workflows                                        | Both need GitHub Advanced Security on private repos.                                                                                                    | Repo goes public (see the public release checklist).                                         |

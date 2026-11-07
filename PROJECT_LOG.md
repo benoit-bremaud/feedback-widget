@@ -1331,3 +1331,42 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
 - **Why:** The Worker re-implements the payload shape, tables and bounds;
   a drift now fails a test instead of rejecting submissions in production.
 - **Ref:** issue [#118](https://github.com/benoit-bremaud/feedback-widget/issues/118).
+
+## 2026-11-07
+
+### Every check moved to the local CI, one tag-triggered workflow left (#163)
+
+- **What:** Installed the `local-ci` layout — `justfile` (`fast` / `check` /
+  `gate` / `nightly`, plus `setup`, `merge`, `rehearse`, `attest staging`,
+  `publish`), `lefthook.yml`, `mise.toml` + `mise.lock`, `scripts/attest.sh`,
+  `scripts/check-commit-msg.sh`, the wiring tests `scripts/test-local-ci.sh`
+  and `scripts/test-attest.sh`, `.github/allowed_signers`, `typos.toml`,
+  `.semgrepignore`, `osv-scanner.toml` — and retired `scripts/verify.sh`,
+  `.githooks/` and the `prepare` script. Removed `ci.yml`, `lint.yml` and
+  `gitleaks.yml`; `publish.yml` became `prod.yml` (skill `release-tag` §
+  Prod workflow): `classify` → trusted `attest.sh release` of `main` →
+  publish `latest`, pre-release tags (`-rc.N`, dotted, #123) signed and on
+  `main` → `rc`; both channels must be ancestors of `main` and match the
+  manifest versions (`scripts/check-release-version.sh`). Release tags are
+  now signed; `.nvmrc` pins Node 22.21.1 and the root `engines` moved to
+  `>= 22` (the toolchain; the published manifests keep `>= 20`). Measured: `just fast` ≈ 3 s,
+  `just check` ≈ 25 s. Actions minutes Oct + Nov 2026: 142 + 18, the table
+  is on the issue. The pre-push review (`review-local --push`, five
+  dimensions, adversarial on Opus) found eight Must, all fixed in the second
+  commit: ESLint-ignored staged files, lockfile drift check, the fallback's
+  missing `.npmrc`, `&&` under `sh -eu`, `lefthook install
+--reset-hooks-path` for pre-#163 clones, stale `branch-protection.md`
+  contexts, `classify` tested without Docker, and the L3 timer. L3 runs on
+  this machine: `~/.config/systemd/user/feedback-widget-local-ci-nightly.*`
+  (04:20, `Persistent=true`, `notify-send` on failure).
+- **Why:** GitHub bills the personal account for Actions minutes beyond the
+  private-repo quota (agents-skills#210, model A, ADR-0004; wave 0 bis
+  agents-skills#259): the only thing GitHub still runs is the publication
+  of a signed stable tag, every other check is local and attested.
+- **Derogations:** the widget deploys nowhere by itself, so `just attest
+staging` records the QA pass of the bundle on the Worker's staging host
+  (no `deploy` recipe). osv-scanner findings in six development packages
+  waived until 2026-12-31 (#164): the laptop's TLS interception blocked
+  `pnpm update` that day (`aikidoctl certconfig`, owner-side).
+- **Ref:** issue [#163](https://github.com/benoit-bremaud/feedback-widget/issues/163),
+  follow-up [#164](https://github.com/benoit-bremaud/feedback-widget/issues/164).

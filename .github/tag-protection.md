@@ -18,7 +18,7 @@ UI. Companion doc to [branch-protection.md](./branch-protection.md).
 - Bypass: `RepositoryRole: Admin` (`actor_id: 5`), mode `always` —
   the repository owner keeps a bypass for emergency recovery, for
   routine releases (the owner cuts every tag today), and for the
-  tag-driven `publish.yml` workflow path.
+  tag-driven `prod.yml` workflow path.
 
 The admin bypass mirrors the escape-hatch pattern used on `main`
 (`enforce_admins: false` in `branch-protection.md`). The intent is
@@ -38,9 +38,10 @@ still to only touch `v*` tags through the documented release process
 - Existing tags are unaffected retroactively: the ruleset gates
   _future_ create/update/delete actions on matching refs, it does
   not retroactively enforce anything on tags that already exist.
-- The content or signature of a commit that a tag points to — that
-  is covered by branch protection on `main` and by the
-  main-ancestor check in `publish.yml`.
+- The content of a commit that a tag points to — that is covered by
+  the gate attestation `prod.yml` verifies (`scripts/attest.sh release`,
+  status `gate` + signed notes on `main`); the tag signature itself is
+  verified there too, against `.github/allowed_signers`.
 
 ## Apply / update
 

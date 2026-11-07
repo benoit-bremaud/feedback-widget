@@ -1,0 +1,30 @@
+# typos (skill local-ci, L0 on the staged files, L1 on the whole repository). No French dictionary:
+# the French UI strings, the French QA fixture site and the lockfiles are excluded, and the French
+# words quoted in the English specs and QA reports are allow-listed.
+[files]
+extend-exclude = [
+  "pnpm-lock.yaml",
+  "mise.lock",
+  "packages/web/src/i18n.ts",
+  "docs/architecture/qa/2026-10-30-mock-site/",
+]
+
+[default.extend-words]
+# French words quoted in the docs and tests (UI labels, user wording)
+sur = "sur"
+Sur = "Sur"
+projet = "projet"
+Projet = "Projet"
+mis = "mis"
+appareil = "appareil"
+ressources = "ressources"
+Ressources = "Ressources"
+cours = "cours"
+objet = "objet"
+Objet = "Objet"
+garantie = "garantie"
+Garantie = "Garantie"
+accepte = "accepte"
+architecte = "architecte"
+# valid English variant
+unparseable = "unparseable"

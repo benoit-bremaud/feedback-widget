@@ -73,7 +73,7 @@ body:
     id: version
     attributes:
       label: Version / commit
-      placeholder: 'e.g. @benoit-bremaud/feedback-widget@0.1.1-rc2 · commit abc1234'
+      placeholder: 'e.g. @benoit-bremaud/feedback-widget@0.8.0-rc.1 · commit abc1234'
 
   - type: textarea
     id: evidence

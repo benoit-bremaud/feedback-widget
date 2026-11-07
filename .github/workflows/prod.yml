@@ -1,0 +1,100 @@
+# The only GitHub workflow of this repository (#163; agents-skills ADR-0004, local-first CI/CD, skill
+# release-tag § Prod workflow). Every check runs locally (`just check` on pre-push, `just gate` before
+# merge, skill local-ci); GitHub Actions only publishes a signed release tag to GitHub Packages.
+#
+# `classify` names the channel. A stable tag (vX.Y.Z) is verified by the trusted `scripts/attest.sh
+# release` of `main` (SSH-signed tag against .github/allowed_signers, peel to the commit, status
+# `gate` = success, signed `deploy/staging` note), then published under the `latest` dist-tag. A
+# pre-release tag (vX.Y.Z-rc.N, -beta.N, -alpha.N) is verified lighter: signed by the same trust
+# store and an ancestor of `main`; it is published under `rc`, which never becomes the default
+# install. Any other tag fails. Publishing uses the run's own GITHUB_TOKEN (packages: write), no
+# long-lived token.
+name: prod
+on:
+  push:
+    tags: ['v*']
+permissions: {}
+concurrency:
+  group: prod
+  cancel-in-progress: false
+env:
+  PREFIX: v # `just rehearse` reads it for its fake tags
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      channel: ${{ steps.c.outputs.channel }}
+    steps:
+      - id: c
+        shell: bash
+        run: |
+          SEMVER='(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)'
+          if [[ "$GITHUB_REF_NAME" =~ ^"$PREFIX"$SEMVER$ ]]; then echo channel=stable >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF_NAME" =~ ^"$PREFIX"$SEMVER-(alpha|beta|rc)\.[1-9][0-9]*$ ]]; then echo channel=prerelease >> "$GITHUB_OUTPUT"
+          else echo "::error::not a release tag: $GITHUB_REF_NAME"; exit 1; fi
+
+  publish:
+    needs: classify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # fetch main, the tag and the notes refs
+      statuses: read # attest.sh reads the commit status `gate`
+      packages: write # pnpm publish to GitHub Packages
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false # the build steps run tagged code: they never get the token
+      - name: Verify the tag, and for a stable one the gate status and the staging note
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANNEL: ${{ needs.classify.outputs.channel }}
+        run: |
+          # git auth for this step only (fetches of main, the tag and the notes refs in attest.sh)
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_VALUE_0
+          echo "::add-mask::$GIT_CONFIG_VALUE_0" # the runner masks the token, not its base64 form
+          # the annotated tag object itself (checkout may leave only the commit), then the trusted
+          # attest.sh and trust store of main, never the tagged copies
+          git fetch --quiet --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME" main
+          git show origin/main:scripts/attest.sh > "$RUNNER_TEMP/attest.sh"
+          git show origin/main:.github/allowed_signers > "$RUNNER_TEMP/allowed_signers"
+          if [ "$CHANNEL" = stable ]; then
+            sha=$(sh "$RUNNER_TEMP/attest.sh" release "$GITHUB_REF_NAME")
+          else
+            git -c gpg.format=ssh -c gpg.ssh.allowedSignersFile="$RUNNER_TEMP/allowed_signers" verify-tag "$GITHUB_REF_NAME" \
+              || { echo "::error::tag $GITHUB_REF_NAME is not signed by a key of the trust store"; exit 1; }
+            sha=$(git rev-parse "$GITHUB_REF_NAME^{commit}")
+          fi
+          # both channels: cut from main (a gated PR head is pushed and gated, yet not on main)
+          git merge-base --is-ancestor "$sha" origin/main \
+            || { echo "::error::$GITHUB_REF_NAME ($sha) is not an ancestor of main"; exit 1; }
+          [ "$sha" = "$(git rev-parse HEAD)" ] || { echo "::error::checkout is not $sha"; exit 1; }
+          # tag = version of every published manifest (stable: X.Y.Z, pre-release: X.Y.Z-rc.N), from main's copy
+          git show origin/main:scripts/check-release-version.sh > "$RUNNER_TEMP/check-release-version.sh"
+          sh "$RUNNER_TEMP/check-release-version.sh" "$GITHUB_REF_NAME"
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.30.3 # = mise.toml, the version every local tier ran
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@benoit-bremaud'
+          package-manager-cache: false # a publish run never restores a cache (zizmor cache-poisoning)
+      - name: Install, build, typecheck
+        # Build before typecheck: packages/web resolves the core types from its dist/.
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -r build
+          pnpm -r typecheck
+      - name: Publish both packages
+        # stable → latest (the default install), pre-release → rc (opt-in: pnpm add …@rc)
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          DIST_TAG: ${{ needs.classify.outputs.channel == 'stable' && 'latest' || 'rc' }}
+        # GitHub Packages has no npm trusted publishing (OIDC): the run token is the only credential.
+        run: pnpm -r publish --no-git-checks --access restricted --tag "$DIST_TAG" # zizmor: ignore[use-trusted-publishing]

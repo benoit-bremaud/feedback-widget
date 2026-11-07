@@ -23,30 +23,40 @@ plan, and a future issue for the public-audit path).
 
 ## How a release is cut
 
-Tag-driven. From `main`, once the release commit is merged:
+Tag-driven. From `main`, once the release commit is merged, gated
+(`just gate`) and attested after the staging QA pass (`just attest staging`):
 
 ```sh
 git checkout main
 git pull --ff-only
-git tag v0.2.0
-git push origin v0.2.0
+git tag -s v0.8.0 -m v0.8.0
+git push origin v0.8.0
 ```
 
-The `Publish to GitHub Packages` workflow
-([`.github/workflows/publish.yml`](workflows/publish.yml)) runs on any
+The `prod` workflow ([`.github/workflows/prod.yml`](workflows/prod.yml)),
+the only one of this repository (#163, agents-skills ADR-0004), runs on any
 tag matching `v*`:
 
-1. Checkout the tagged commit (full history).
-2. **Verify the tagged commit is on `main`.**
-   `git merge-base --is-ancestor $GITHUB_SHA origin/main` — if a tag
-   is pushed on a commit that is not an ancestor of `main`, the
-   workflow fails fast and no publish happens. This defends against
-   mistagged or crafted tags on unreviewed commits.
-3. Install deps with pnpm (frozen lockfile).
-4. Typecheck + build both packages.
-5. `pnpm -r publish --no-git-checks --access restricted` with
-   `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}` — the built-in token
-   with `packages: write`. No long-lived PAT on the publisher side.
+1. `classify`: `vX.Y.Z` → stable, `vX.Y.Z-rc.N` / `-beta.N` / `-alpha.N`
+   → prerelease, anything else fails.
+2. Checkout the tagged commit (full history, no persisted credentials),
+   then fetch the annotated tag and `main`.
+3. **Verify with the trusted copies of `main`**, never the tagged ones.
+   Stable: `scripts/attest.sh release <tag>` — SSH signature against
+   `.github/allowed_signers`, peel to the commit, commit status `gate`
+   and the signed `deploy/staging` note on it. Prerelease: signature
+   against the same trust store and `git merge-base --is-ancestor`
+   on `main`. Any failure stops the job before the install.
+4. Install deps with pnpm (frozen lockfile, no cache restored on a
+   publish run), build, typecheck both packages.
+5. `pnpm -r publish --no-git-checks --access restricted --tag <dist-tag>`
+   with `NODE_AUTH_TOKEN=${{ github.token }}` — the run's token with
+   `packages: write`, given to that step only. No long-lived PAT on the
+   publisher side.
+
+When Actions cannot run, `just publish vX.Y.Z` performs the same
+checks and the publish from up-to-date `main` (skill `local-ci`); log
+it in `PROJECT_LOG.md`.
 
 ### Stable vs prerelease dist-tag
 
@@ -55,14 +65,14 @@ publishing, so a prerelease never becomes the default install:
 
 - Stable (`v0.2.0`, `v1.0.0`) → `--tag latest`. Consumers running
   `pnpm add @benoit-bremaud/feedback-widget` get this version.
-- Prerelease (`v0.2.0-rc1`, `v0.2.0-beta.2`, `v1.0.0-alpha`, …) →
+- Prerelease (`v0.8.0-rc.1`, `v0.8.0-beta.2`, `v1.0.0-alpha.1`) →
   `--tag rc`. Consumers who want the prerelease must opt in with
   `pnpm add @benoit-bremaud/feedback-widget@rc`, which never
   promotes the prerelease to the default install for anyone else.
 
-The detection is a simple `[[ "$TAG" == *-* ]]` in the `Determine
-npm dist-tag` workflow step — any hyphen in the version string
-flags it as prerelease.
+The channel comes from the `classify` job's regular expressions
+(canonical semver, dotted pre-release counter from 1); a tag that
+matches neither fails the run.
 
 ## Consumer-side installation
 
@@ -116,7 +126,9 @@ would not have `read:packages` for this private repo.
 - Consumer PATs: **90-day expiry**, rotated on calendar or whenever
   a new major release ships. Set GitHub to send expiry reminders.
 - The publisher side uses the built-in `GITHUB_TOKEN` on each run —
-  nothing to rotate.
+  nothing to rotate. The laptop fallback (`just publish <tag>`) needs a
+  fine-grained token `fw-publish-fallback-<yyyy>` (packages: write,
+  30-day expiry), exported as `NODE_AUTH_TOKEN` and revoked after the run.
 - If a consumer PAT is ever leaked, revoke it at
   `https://github.com/settings/tokens`, then update the consumer
   secret with a fresh token. No package republish needed.
@@ -126,7 +138,7 @@ would not have `read:packages` for this private repo.
 After the release tag has been pushed, confirm:
 
 1. Actions run green on the tag:
-   `gh run list --workflow publish.yml --branch v0.2.0 --limit 1`.
+   `gh run list --workflow prod.yml --branch v0.8.0 --limit 1`.
 2. Both packages are listed at
    [`https://github.com/benoit-bremaud/feedback-widget/packages`](https://github.com/benoit-bremaud/feedback-widget/packages).
 3. A fresh consumer install works:

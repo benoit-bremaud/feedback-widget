@@ -25,14 +25,15 @@ Read it once end-to-end. After that, use it as a reference.
 7. [Pull Request description template](#pull-request-description-template)
 8. [Definition of Done](#definition-of-done)
 9. [Testing requirements](#testing-requirements)
-10. [Local verification gate](#local-verification-gate)
-11. [Security](#security)
-12. [AI attribution — allowed](#ai-attribution--allowed)
-13. [Public release checklist](#public-release-checklist)
-14. [Changelog and project log](#changelog-and-project-log)
-15. [Release workflow](#release-workflow)
-16. [Tag conventions](#tag-conventions)
-17. [Cross-links](#cross-links)
+10. [Linting and formatting](#linting-and-formatting)
+11. [Local CI — the four tiers](#local-ci--the-four-tiers)
+12. [Security](#security)
+13. [AI attribution — allowed](#ai-attribution--allowed)
+14. [Public release checklist](#public-release-checklist)
+15. [Changelog and project log](#changelog-and-project-log)
+16. [Release workflow](#release-workflow)
+17. [Tag conventions](#tag-conventions)
+18. [Cross-links](#cross-links)
 
 ---
 
@@ -43,9 +44,9 @@ Issue (Conventional Commits title)
   └─► Branch (<type>/T-<issue-number>-<kebab-description>)
         └─► Commits (Conventional Commits)
               └─► Pull Request (metadata + template + linked issue)
-                    └─► Review (local `review-local` report + any human reviewer) + `pnpm verify` green
+                    └─► Review (local `review-local` report + any human reviewer) + `just gate` attested on the head
                           └─► Explicit merge approval from the owner
-                                └─► Squash merge to main + branch deletion
+                                └─► `just merge <n>` (squash to main) + branch deletion
                                       └─► Post-merge cleanup + PROJECT_LOG update
 ```
 
@@ -93,11 +94,12 @@ Before every `git push`, run a structured read-only review of
 finding **Must Have / Should Have / Nice to Have / Disagree** with a
 `file:line` anchor, and answer each one (done / deferred with reason /
 disagreed with rationale). The push is authorised only when every Must
-Have is resolved and `pnpm verify` is green. A reviewer that could not run
+Have is resolved and `just check` is green. A reviewer that could not run
 is reported, never silently skipped.
 
-`pnpm verify` is the mechanical half of this gate (format, lint, secrets,
-build, types, tests, static analysis). The review is the judgement half:
+`just check` is the mechanical half of this gate (format, lint, secrets,
+build, types, tests, SAST, lockfile vulnerabilities; the pre-push hook runs
+it). The review is the judgement half:
 reach (did the change travel everywhere it should), depth (are the new
 invariants tested), and the Worker contract coupling described in
 [CLAUDE.md](./CLAUDE.md).
@@ -106,8 +108,10 @@ invariants tested), and the Worker contract coupling described in
 
 There is no hosted automated reviewer: the review of record is the
 `review-local` report, run again on the PR head before the merge. A PR
-merges when CI is green, that report has no open Must Have, and every
-human comment is answered.
+merges when `just gate` is green **and attested** on its head SHA (commit
+status `gate` + signed note, § Local CI), that report has no open Must
+Have, and every human comment is answered. The merge itself is
+`just merge <n>`, which refuses a head without the attestation.
 
 Reviewer comments (local agents, humans) are handled one distinct issue
 at a time: **verify each claim against the code** before relaying it, let
@@ -149,7 +153,7 @@ All issue titles follow **Conventional Commits** format:
 
 - `core` — `packages/core` (pure logic, DOM-free)
 - `web` — `packages/web` (browser adapters + entry point)
-- `ci` — GitHub Actions, workflow files
+- `ci` — local CI (`justfile`, `lefthook.yml`, `mise.toml`, `scripts/attest.sh`) and the prod workflow
 - `governance` — repo policies, templates, process docs
 - `testing` — tests, coverage, test infra
 - `docs` — README, CONTRIBUTING, PROJECT_LOG, other committed docs
@@ -281,7 +285,10 @@ docs/T-5-contributing
 drives the work, without opening GitHub. When you have five branches checked
 out across two machines, that matters.
 
-**Never commit directly to `main`.** The branch is protected: direct pushes
+**Never commit directly to `main`.** GitHub does not enforce this on a
+private Free repository (see `.github/branch-protection.md`): the pre-push
+hook (`just check`) and the attestation `just merge` demands are the
+barriers. The intended policy once protection is available: direct pushes
 by collaborators are rejected, force-pushes are blocked, and deletions are
 blocked. The owner retains an emergency bypass
 (`enforce_admins: false` in the current policy — see
@@ -309,8 +316,8 @@ ci(publish): run build before typecheck to resolve workspace .d.ts
 
 **Scope granularity.** The scope is ideally one of the canonical areas
 above, but a **narrower qualifier** is acceptable when it identifies the
-precise surface being changed — e.g. `ci(publish)` for work on
-`publish.yml`, `ci(security)` for security workflows, `chore(release)` for
+precise surface being changed — e.g. `ci(prod)` for work on
+`prod.yml`, `ci(workflows)` for the workflow set, `chore(release)` for
 a version bump. The narrower form is preferred over cramming several
 commits under a generic `ci(ci):` or `chore(chore):`.
 
@@ -418,14 +425,14 @@ A PR is Done — and eligible for merge — when **all** of the following hold:
 - [ ] `tsc --noEmit` passes on all affected packages.
 - [ ] `pnpm -r build` passes.
 - [ ] All existing tests still green (`pnpm -r test`).
-- [ ] `pnpm verify` passes locally — it is the gate, and the pre-push
-      hook runs it for you.
+- [ ] `just check` passes locally — the pre-push hook runs it for you —
+      and `just gate` is green and attested on the PR head before the merge.
 - [ ] Pre-push review done (§ Working method, gate 2): every Must Have
       resolved, each finding answered.
 - [ ] New behaviour went through the conception gate (§ Working method,
       gate 1): spec + UML validated before the code was written. N/A for
       fixes and chores.
-- [ ] Gitleaks green (locally via `pnpm verify`, and in CI).
+- [ ] Gitleaks green (`just secrets`, part of every tier; there is no hosted job).
 - [ ] No `any` TypeScript type introduced. No default exports introduced.
       No inline styles introduced (if touching `packages/web`).
 - [ ] PR description follows the template and ends with `Closes #<issue>`.
@@ -477,13 +484,9 @@ Run locally from the repo root:
 pnpm test:coverage
 ```
 
-The hosted CI workflow (manual trigger only, see § Local verification
-gate) runs `pnpm test:coverage` and uploads the LCOV files as a
-`coverage-lcov` workflow artifact.
-
-The coverage percentage itself is read **locally**: `pnpm verify`
-hands the same LCOV reports to the self-hosted SonarQube instance.
-See [Local verification gate](#local-verification-gate). There is no
+The coverage percentage itself is read **locally**: `just gate`
+hands the LCOV reports to the self-hosted SonarQube instance.
+See [Local CI](#local-ci--the-four-tiers). There is no
 `SONAR_TOKEN` repository secret and no hosted Quality Gate — the
 token is personal and lives only in your shell.
 
@@ -491,7 +494,7 @@ token is personal and lives only in your shell.
 
 Each `vitest.config.ts` declares minimum coverage thresholds under
 `test.coverage.thresholds`. `pnpm test:coverage` exits non-zero if
-any metric falls below its threshold, which fails CI.
+any metric falls below its threshold, which fails `just check`.
 
 The source of truth for the threshold values is
 [`packages/core/vitest.config.ts`](packages/core/vitest.config.ts) and
@@ -521,7 +524,7 @@ mirrors the existing `sonar.coverage.exclusions` entry.
 `scripts/doc-coverage.sh` counts the exported declarations of
 `packages/*/src` (tests, bare re-exports and `typeof` companion types
 excluded) that carry a `/** */` block right above them. The floor is
-**90 %**; `pnpm verify` fails below it and the script lists every
+**90 %**; `just lint` fails below it and the script lists every
 undocumented export. A block states the contract or the why, never a
 restatement of the name.
 
@@ -530,8 +533,9 @@ restatement of the name.
 ## Linting and formatting
 
 Code style is enforced by ESLint (correctness + repo conventions) and
-Prettier (whitespace, quotes, semicolons, line wrapping). Both run on
-every push and PR via the `.github/workflows/lint.yml` workflow.
+Prettier (whitespace, quotes, semicolons, line wrapping). Both run on the
+staged files at every commit (`just fast`, L0) and on the whole repository
+at every push (`just lint`, inside `just check`, L1).
 
 ### Commands
 
@@ -594,43 +598,58 @@ To get auto-format on save:
 - **JetBrains** — enable `Prettier` and `ESLint` under Languages &
   Frameworks → JavaScript; set the actions to run on save.
 
-Git hooks used to be out of scope, on the grounds that CI was the single
-source of truth. That reversed once the checks moved local: see
-[Local verification gate](#local-verification-gate). No hook manager is
-installed — `pnpm install` points `core.hooksPath` at `.githooks/`.
+`lefthook.yml` wires the git hooks of the [Local CI](#local-ci--the-four-tiers);
+`just setup` installs them once per clone. A clone from before #163 still
+points `core.hooksPath` at the removed `.githooks/`: `just setup` resets it
+(`lefthook install --reset-hooks-path`).
 
 ---
 
-## Local verification gate
+## Local CI — the four tiers
 
-Most checks run **on your machine, before pushing** rather than in CI.
+Every check runs **on your machine**, with no GitHub Actions and no AI agent
+in the loop (skill `local-ci`; agents-skills ADR-0003/0004). Four tiers, one
+`just` recipe each; `mise.toml` pins every tool and `lefthook.yml` wires the
+git hooks. Once per clone:
 
 ```bash
-pnpm verify
+just setup   # mise install, pnpm install --frozen-lockfile, lefthook install
 ```
 
-It runs, cheapest first so an obvious mistake fails in seconds: format
-check → lint → secret detection → build → typecheck → tests with coverage
-→ SonarQube analysis. It stops at the **first** failure — the point is to
-fix it, not to collect a list.
+| Tier | Recipe         | When                                                           | Holds                                                                                                                                                                                                     |
+| ---- | -------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L0   | `just fast`    | pre-commit hook (staged files only, < 10 s)                    | gitleaks on the staged diff, eslint, prettier, typos, actionlint, shellcheck (the commit-msg hook checks the Conventional Commits subject separately)                                                     |
+| L1   | `just check`   | pre-push hook (< 3 min)                                        | `lint` (+ doc coverage ≥ 90 %) + `test` (frozen lockfile, build, typecheck, suites with coverage, the tests of the CI wiring) + `security` (Semgrep CE, osv-scanner) + `secrets` (gitleaks, full history) |
+| L2   | `just gate`    | `review-local` § 2b, on the **pushed** head before every merge | `check` + SonarQube (quality gate waited for) + `just rehearse` of a changed workflow (act), then the **attestation**                                                                                     |
+| L3   | `just nightly` | systemd user timer `feedback-widget-local-ci-nightly.timer`    | `check` + TruffleHog + `mise outdated`                                                                                                                                                                    |
 
-`pnpm install` wires a **pre-push hook** that runs it automatically. To
-push past it deliberately — a work-in-progress spike, a branch you know is
-red — use `git push --no-verify`. That is a conscious choice, not a
+Run a tier as `mise x -- just <tier>` when your shell does not activate
+mise (the hooks do). To push past L1 deliberately — a work-in-progress
+spike — use `git push --no-verify`; that is a conscious choice, not a
 default: `main` is not branch-protected on this repo, so the hook is the
 last thing between a broken tree and a shared branch.
 
-**Two checks fail the gate when they cannot run:** secret detection when
-`gitleaks` is not installed, and static analysis when `SONAR_TOKEN` is
-unset or no instance answers. `VERIFY_ALLOW_SKIP=1` turns them into a
-printed skip, for emergencies only. A red SonarQube quality gate also
-fails `pnpm verify` (`sonar.qualitygate.wait=true`).
+**Attestation.** `just gate` ends with `scripts/attest.sh write gate`: a
+signed git note (SSH, trust store `.github/allowed_signers` read from
+`origin/main`) on `refs/notes/gate` plus the commit status `gate` on the
+head SHA. `just merge <n>` refuses a PR whose head carries no valid
+attestation, and merges with `--match-head-commit`, so a push after the
+gate fails the merge. After the squash, run `just gate` again on `main`,
+then — after the QA pass of the bundle on the Worker's staging host —
+`just attest staging`: the release tag needs both notes (§ Release
+workflow).
 
-**The local gate is the CI of record.** GitHub Actions minutes are not
-available on this repo (billing), so `ci.yml`, `lint.yml` and
-`gitleaks.yml` only run on a manual `workflow_dispatch`. Every PR body
-states that `pnpm verify` passed on its head, and the `review-local`
-report records the gate. `publish.yml` still needs Actions to release.
+**What fails loudly.** `just gate` stops when `SONAR_TOKEN` is not exported
+or no SonarQube instance answers on `http://localhost:9000`; a changed
+workflow that cannot be rehearsed because Docker is down exits 3 before
+the attestation. A tool that cannot run is reported, never assumed green.
+`osv-scanner.toml` holds the waived findings, each with a reason, an
+issue and an expiry.
+
+**GitHub Actions** keeps a single workflow, `.github/workflows/prod.yml`,
+triggered by a signed `v*` tag (§ Release workflow). The old `ci`, `lint`
+and `gitleaks` workflows were removed in #163: `just check` is the CI of
+record.
 
 ### Static analysis
 
@@ -644,7 +663,8 @@ reviewers to ignore red checks, which costs more than the analysis was
 buying. Restore a hosted scan when the repo goes public; the
 [public release checklist](#public-release-checklist) already tracks it.
 
-**Running it.**
+**Running it.** `just gate` runs it after the suites (the LCOV reports of
+`pnpm test:coverage` are fresh); on its own:
 
 ```bash
 pnpm sonar
@@ -663,7 +683,7 @@ the instance first and generate a new one. See
 [If a secret is ever committed](#if-a-secret-is-ever-committed).
 
 **What it does not replace.** Lint, typecheck, and the test suite still
-run in CI and still gate every PR. The local scan adds the quality and
+run in `just check` and still gate every push. The local scan adds the quality and
 security lenses those three do not cover — it does not substitute for
 them, and skipping it is not a licence to push a red suite.
 
@@ -679,8 +699,9 @@ them, and skipping it is not a licence to push a red suite.
   at the repo root with **placeholder** values (never real values) — it
   becomes the canonical template for contributors. The project currently
   has no runtime env vars, so there is no `.env.example` yet.
-- Gitleaks runs on every push, every PR, and weekly — any finding fails the
-  build.
+- Gitleaks runs locally: on the staged diff at every commit (L0), on the
+  full history at every push (`just secrets`, L1) and before every merge;
+  TruffleHog runs nightly (L3). Any finding fails the tier.
 
 ### If a secret is ever committed
 
@@ -708,7 +729,7 @@ them, and skipping it is not a licence to push a red suite.
   but its GitHub App was never installed; it was replaced on 2026-10-15,
   tracked in #43.)
 - **Auto-merge is disabled** — every dependency PR requires manual review
-  and the same merge gate as any other PR (`pnpm verify` green, `review-local`
+  and the same merge gate as any other PR (`just gate` attested on the head, `review-local`
   report with no open Must Have, explicit owner approval). This matches the global "never merge
   autonomously" rule.
 - `pnpm audit` runs on demand; findings without an upstream fix are recorded
@@ -771,11 +792,15 @@ GitHub Packages) public, every item below must be satisfied:
 - [ ] `.env.example` exists with placeholder values only.
 - [ ] All secrets used during private development are **rotated** — bot
       tokens, OAuth credentials, API keys, passwords.
-- [ ] CI includes a secret-detection job (Gitleaks already does).
-- [ ] **Re-add the GHAS-gated workflows** removed while private — CodeQL
-      and Dependency Review — and restore a hosted SonarQube scan. They
-      were deleted because they could not run on a private free-plan
-      repo, not because they are unwanted.
+- [ ] Secret detection runs in every local tier (`just secrets`, gitleaks
+      on the full history) and nightly (TruffleHog); there is no hosted job
+      by design (ADR-0004: GitHub Actions runs the prod workflow only).
+- [ ] Decide, against ADR-0004, whether the GHAS-gated checks (CodeQL,
+      Dependency Review) and a hosted SonarQube scan come back once public,
+      or stay local (Semgrep CE, osv-scanner, self-hosted SonarQube in
+      `just gate`). Record the decision in `PROJECT_LOG.md`.
+- [ ] Every release tag since #163 is signed (`Verified` on GitHub once the
+      signing key is uploaded as a signing key).
 - [ ] The public-facing README reflects the current install flow (no
       stale references to private-only endpoints).
 
@@ -831,21 +856,28 @@ Releases are **tag-driven**. The canonical reference is
    versions in lockstep. Workspace releases stay aligned.
 3. Open a release PR (`release/vX.Y.Z`) with a `type:task` +
    `area:release` label set and the changelog diff.
-4. After merge, tag from `main`:
+4. After merge, gate and attest `main`, then cut a **signed** tag:
    ```bash
    git checkout main && git pull
-   git tag vX.Y.Z
+   just gate                 # on the squash commit (a new SHA, no attestation yet)
+   # QA pass of the bundle on the Worker's staging host (skill qa-browser-check), then:
+   just attest staging
+   git tag -s vX.Y.Z -m vX.Y.Z
    git push origin vX.Y.Z
    ```
    Matches the canonical command in
-   [.github/publish.md](./.github/publish.md). Annotated tags
-   (`git tag -a`) are also accepted — the workflow reads the tag name,
-   not the tag type.
-5. The `publish.yml` workflow fires on `v*` tags: it verifies the
-   tagged commit is on `main`, builds, typechecks, auto-detects the
-   dist-tag (`vX.Y.Z` → `latest`, `vX.Y.Z-rc*` → `rc`, etc.) and
-   publishes both packages to GitHub Packages under
-   `@benoit-bremaud`.
+   [.github/publish.md](./.github/publish.md). The tag must be signed
+   (SSH, by a key of `.github/allowed_signers`): an unsigned or
+   lightweight tag is refused by the workflow.
+5. The `prod.yml` workflow fires on `v*` tags. A stable tag goes through
+   the trusted `scripts/attest.sh release` **of `main`**: signature,
+   commit status `gate`, signed `deploy/staging` note; then build,
+   typecheck and publish both packages to GitHub Packages under
+   `@benoit-bremaud` with the `latest` dist-tag. A pre-release tag
+   (`vX.Y.Z-rc.N`) is checked lighter — signed and an ancestor of
+   `main` — and published under `rc`. Any other tag fails. When Actions
+   cannot run, `just publish vX.Y.Z` performs the same checks and the
+   publish from up-to-date `main` (log it in `PROJECT_LOG.md`).
 6. **Deploy in this order — the only production-affecting steps.** Merging
    and tagging touch no site. Then: (a) update `feedback-pipeline-worker`
    (it duplicates the category tables and the payload bounds — see
@@ -880,14 +912,18 @@ Releases are **tag-driven**. The canonical reference is
 The bump is **PATCH only when `main` is still at the last tag**; if `main`
 already carries unreleased work, that work ships too and the version follows
 the rule above for everything embarked (a `feat` on `main` makes the hotfix a
-MINOR, not a PATCH). **Backports are not supported**: `publish.yml` refuses a
-tag that is not on `main`, and every stable tag is published as `latest`, so
+MINOR, not a PATCH). **Backports are not supported**: `prod.yml` refuses a
+tag whose commit is not an ancestor of `main` (both channels), and every
+stable tag is published as `latest`, so
 a `v0.6.1` cut after `v0.7.0` would downgrade `pnpm add` consumers. When an
 urgent fix meets a loaded `main`, either release `main` under its honest
 bump or keep the unreleased feature behind a flag until then.
 
-**Never tag a commit that is not on `main`.** The publish workflow
-enforces this — do not try to work around the check.
+**Never tag a commit that is not on `main`.** The prod workflow
+enforces this: every tag must be an ancestor of `main`, a stable tag also
+needs the gate attestation and the `deploy/staging` note, and the tag must
+equal the version of both manifests (`scripts/check-release-version.sh`).
+Do not try to work around the check.
 
 **Tag protection.** Release tags matching `v*` are protected via a
 GitHub ruleset: creation, update, and deletion are blocked for
@@ -913,9 +949,10 @@ ecosystem shares.
 ### Naming — strict semver, `v` prefix
 
 - **Stable**: `vMAJOR.MINOR.PATCH` — always prefixed `v`
-- **Prereleases**: `vX.Y.Z-rcN`, `vX.Y.Z-betaN`, `vX.Y.Z-alphaN` —
-  undotted counter matching the existing `v0.1.1-rc1` and
-  `v0.1.1-rc2` tags in this repo
+- **Prereleases**: `vX.Y.Z-rc.N`, `vX.Y.Z-beta.N`, `vX.Y.Z-alpha.N` —
+  dotted counter from 1 (skill `release-tag`, #123). The existing
+  `v0.1.1-rc1` and `v0.1.1-rc2` tags predate the rule and stay as they
+  are (immutable); the workflow refuses the undotted form for new tags
 - **Never reuse a number** — a failed publish keeps its tag as an audit
   marker; bump to the next rc/version (see §Failed publishes below)
 
@@ -926,11 +963,11 @@ ecosystem shares.
 - Owner-only — the admin bypass on the tag-protection ruleset is the
   only path to create, move/update, or delete `v*` tags; the ruleset
   enforces that restriction on every other collaborator
-- CLI-only: `git tag vX.Y.Z && git push origin vX.Y.Z`. Never create
-  a release tag through the GitHub web UI (the commands must stay
-  reproducible and scriptable)
-- Lightweight or annotated — the publish workflow reads the tag name,
-  not the tag type; both are accepted
+- CLI-only: `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+  Never create a release tag through the GitHub web UI (the commands
+  must stay reproducible and scriptable)
+- Signed and annotated, always — the prod workflow verifies the
+  signature against `.github/allowed_signers` of `main`
 
 ### Protection — ruleset active
 
@@ -943,17 +980,19 @@ Repository ruleset scoped to `refs/tags/v*`:
 - Canonical policy, apply/update commands, and verification commands:
   [.github/tag-protection.md](./.github/tag-protection.md)
 
-### Signing — progressive (optional today → mandatory before public)
+### Signing — mandatory (since #163)
 
-- **Today (private repo)**: signing is **optional**. GitHub displays
-  `Unverified` next to each tag. Accept it.
-- **Before the repo goes public**: tags must be signed. Configure a
-  GPG or SSH signing key once (`user.signingkey` in `git config`),
-  then use `git tag -s vX.Y.Z` instead of `git tag`. GitHub will
-  display `Verified`.
-- Signing becomes a hard item on the §Public release checklist the
-  day the repo visibility changes — no repo goes public with
-  unsigned release tags going forward.
+- Every release tag is **SSH-signed** by a key listed in
+  `.github/allowed_signers` (committed, read from `main` by the
+  workflow and by `scripts/attest.sh`). Configure once per machine:
+  `git config gpg.format ssh`, `git config user.signingkey ~/.ssh/<key>.pub`,
+  `git config tag.gpgSign true`; the private key sits in `ssh-agent`.
+- GitHub displays `Verified` once the same public key is uploaded to
+  the account as a **signing key**. Tags created before #163 stay as
+  they are (immutable, `Unverified`).
+- Only the owner's key is in the trust store today; adding a signer is
+  a PR on `.github/allowed_signers`, merged to `main` before that
+  signer's first tag.
 
 ### Release notes — `CHANGELOG.md` first, GitHub auto-list as complement
 
@@ -977,11 +1016,11 @@ Repository ruleset scoped to `refs/tags/v*`:
 ### Failed publishes
 
 - Keep the failed tag as an audit marker — **never delete it**
-- Reconcile the failed `[X.Y.Z-rcN]` entry in `CHANGELOG.md` to state
+- Reconcile the failed `[X.Y.Z-rc.N]` entry in `CHANGELOG.md` to state
   explicitly that nothing shipped under that tag (see the
   `[0.1.1-rc1]` section for the template)
-- Bump to the next rc number (e.g. from `v0.1.1-rc1` go to
-  `v0.1.1-rc2`) — never reuse the failed number
+- Bump to the next rc number (e.g. from `v0.8.0-rc.1` go to
+  `v0.8.0-rc.2`) — never reuse the failed number
 
 ---
 

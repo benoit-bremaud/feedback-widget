@@ -7,15 +7,13 @@
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:coverage": "pnpm -r test:coverage",
     "sonar": "pnpm build && pnpm test:coverage && sonar-scanner-npm",
-    "verify": "./scripts/verify.sh",
-    "prepare": "git config core.hooksPath .githooks",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
