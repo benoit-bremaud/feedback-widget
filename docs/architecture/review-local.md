@@ -1,7 +1,7 @@
 # Local review — feedback-widget (ci/163-local-ci-publish-only)
 
 - Date: 2026-11-07
-- Commit: 3aa57c9 (ca5c729 reviewed, fixes in 8ef102d, 87c5984 and 3aa57c9)
+- Commit: 88fc259 (ca5c729 reviewed, fixes in 8ef102d, 87c5984 and 3aa57c9; 88fc259 ignores `.scannerwork/`, found by the pre-merge run)
 - Scope: branch diff origin/main...HEAD (#163) — `--push` mode
 - Checks run: adversarial (Opus, 4 rounds) · design · docs · tests · security · correctness
 - Verdict: ship (every Must fixed) · Must 0 open (9 fixed) · Should 0 open (13 fixed, 1 follow-up) · Nice 4 follow-ups
@@ -14,18 +14,18 @@
 - Round 4 on `3aa57c9`: 1 fixed · 0 not fixed · 0 regressed · new Must 0 · **Push gate: open**
 - Hosted reviewers: none by design (private Free repository, no Copilot; this report stands in, CLAUDE.md)
 
-## Pre-merge gate (head SHA 3aa57c9)
+## Pre-merge gate (head SHA 88fc259)
 
 | Step        | Result                                                                                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0 CI mirror | n/a — no `pull_request` workflow left; `prod.yml` rehearsed with act (`just rehearse`: classify ok on stable, prerelease, refused)                      |
 | 1 Tests     | ✅ core + web vitest suites · ✅ test-local-ci 63 cases · ✅ test-attest 20 cases                                                                       |
 | 2 Coverage  | tests core 97.56 % stmts / 95.45 % branches / 91.3 % funcs / 97.36 % lines · web 97.95 / 93.11 / 99.33 / 99.7 (floor 80) · docs 100 % (75/75, floor 90) |
-| 3 SonarQube | ⏸ deferred to the pre-merge run (`--push`)                                                                                                              |
+| 3 SonarQube | ✅ PASSED on 88fc259 (`just gate origin/main`, local instance)                                                                                          |
 | 4 Secrets   | ✅ gitleaks clean (origin/main..HEAD and `--all`) · no tracked .env · diff read: a public SSH key and GHSA ids only                                     |
-| 5 E2E/smoke | ⏸ deferred to the pre-merge run (`--push`); no runtime change in this diff                                                                              |
+| 5 E2E/smoke | n/a — a package with no runtime change in this diff; the bundle is checked on the Worker staging host (`just attest staging`)                           |
 
-- Gate: `--push`: **pre-push green** — `mise x -- just check` passed from a clean env (25 s), SonarQube and step 5 deferred (never GREEN)
+- Gate: **GREEN — ready for the merge question** — `mise x -- just gate origin/main` passed on 88fc259 (check, SonarQube PASSED, rehearse ok, `attest: gate recorded on 88fc259…`, commit status `gate` = success). `sh scripts/attest.sh verify gate 88fc259` prints `attest: no .github/allowed_signers on origin/main`: the trust store lands on `main` with this PR (bootstrap, ADR-0003), so this first merge needs the owner's waiver; `just gate` on `main` after the merge is the first verifiable attestation.
 
 ## 🔴 Must Have (all fixed in 8ef102d / 87c5984)
 
