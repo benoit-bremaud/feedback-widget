@@ -156,7 +156,8 @@ publish tag:
     sha=$(sh scripts/attest.sh release "$tag")
     git merge-base --is-ancestor "$sha" origin/main || { echo "publish: $tag is not on main" >&2; exit 1; }
     back=$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)
-    tmp=$(git rev-parse --git-dir) rc="$(git rev-parse --git-dir)/publish.npmrc"
+    tmp=$(git rev-parse --git-dir) # holds main's copy of the version check and the npmrc
+    rc="$tmp/publish.npmrc"
     cp scripts/check-release-version.sh "$tmp/check-release-version.sh" # main's copy, as prod.yml
     trap 'rm -f "$rc" "$tmp/check-release-version.sh"; git checkout --quiet "$back"' EXIT
     git -c advice.detachedHead=false checkout --quiet "$sha"
