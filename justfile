@@ -156,10 +156,11 @@ publish tag:
     sha=$(sh scripts/attest.sh release "$tag")
     git merge-base --is-ancestor "$sha" origin/main || { echo "publish: $tag is not on main" >&2; exit 1; }
     back=$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)
-    rc="$(git rev-parse --git-dir)/publish.npmrc"
-    trap 'rm -f "$rc"; git checkout --quiet "$back"' EXIT
+    tmp=$(git rev-parse --git-dir) rc="$(git rev-parse --git-dir)/publish.npmrc"
+    cp scripts/check-release-version.sh "$tmp/check-release-version.sh" # main's copy, as prod.yml
+    trap 'rm -f "$rc" "$tmp/check-release-version.sh"; git checkout --quiet "$back"' EXIT
     git -c advice.detachedHead=false checkout --quiet "$sha"
-    sh scripts/check-release-version.sh "$tag"
+    sh "$tmp/check-release-version.sh" "$tag"
     pnpm install --frozen-lockfile
     pnpm -r build
     pnpm -r typecheck

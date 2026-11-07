@@ -38,7 +38,7 @@ body() { just --show "$1" | grep -v '^ *#'; } # body <recipe>: its lines, commen
 body gate | grep -q '^ *sh scripts/attest.sh write gate$' || fail "gate does not write the attestation"; ok
 body merge | grep -q '^ *sh scripts/attest.sh verify gate "\$sha"$' || fail "merge does not verify the attestation"; ok
 body publish | grep -q '^ *sha=$(sh scripts/attest.sh release "\$tag")$' || fail "publish skips attest.sh release"; ok
-body publish | grep -q 'check-release-version.sh "\$tag"' || fail "publish skips the release-version check"; ok
+body publish | grep -q '^ *sh "\$tmp/check-release-version.sh" "\$tag"$' || fail "publish skips the release-version check"; ok
 body attest | grep -q '^ *sh scripts/attest.sh verify gate HEAD' || fail "attest staging does not verify the gate"; ok
 body attest | grep -q '^ *sh scripts/attest.sh write deploy/staging$' || fail "attest staging does not write the note"; ok
 e3=$(body gate | grep -n '^ *exit 3$' | head -1 | cut -d: -f1); at=$(body gate | grep -n 'attest.sh write gate' | cut -d: -f1)

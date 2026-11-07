@@ -422,7 +422,7 @@ context.
 ```sh
 git clone git@github.com:benoit-bremaud/feedback-widget.git
 cd feedback-widget
-just setup   # mise install (pinned toolchain), pnpm install, git hooks (CONTRIBUTING § Local CI)
+mise install && mise x -- just setup   # pinned toolchain, pnpm install, git hooks (CONTRIBUTING § Local CI)
 pnpm build
 ```
 

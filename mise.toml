@@ -5,8 +5,8 @@
 # `pnpm exec`) and Semgrep (`uvx semgrep@…` in the justfile: a mise pipx install needs a
 # mise-managed Python).
 #
-# Node matches .nvmrc and the `engines` floor (>= 22): a global mise shim resolving another Node would
-# run the suites on a version nothing else tests.
+# Node matches .nvmrc and the root `engines` floor (>= 22, the toolchain; the published packages keep
+# >= 20): a global mise shim resolving another Node would run the suites on a version nothing else tests.
 [tools]
 node = "22.21.1"
 pnpm = "10.30.3"
