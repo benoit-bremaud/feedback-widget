@@ -25,14 +25,15 @@ Read it once end-to-end. After that, use it as a reference.
 7. [Pull Request description template](#pull-request-description-template)
 8. [Definition of Done](#definition-of-done)
 9. [Testing requirements](#testing-requirements)
-10. [Local CI — the four tiers](#local-ci--the-four-tiers)
-11. [Security](#security)
-12. [AI attribution — allowed](#ai-attribution--allowed)
-13. [Public release checklist](#public-release-checklist)
-14. [Changelog and project log](#changelog-and-project-log)
-15. [Release workflow](#release-workflow)
-16. [Tag conventions](#tag-conventions)
-17. [Cross-links](#cross-links)
+10. [Linting and formatting](#linting-and-formatting)
+11. [Local CI — the four tiers](#local-ci--the-four-tiers)
+12. [Security](#security)
+13. [AI attribution — allowed](#ai-attribution--allowed)
+14. [Public release checklist](#public-release-checklist)
+15. [Changelog and project log](#changelog-and-project-log)
+16. [Release workflow](#release-workflow)
+17. [Tag conventions](#tag-conventions)
+18. [Cross-links](#cross-links)
 
 ---
 
@@ -284,7 +285,10 @@ docs/T-5-contributing
 drives the work, without opening GitHub. When you have five branches checked
 out across two machines, that matters.
 
-**Never commit directly to `main`.** The branch is protected: direct pushes
+**Never commit directly to `main`.** GitHub does not enforce this on a
+private Free repository (see `.github/branch-protection.md`): the pre-push
+hook (`just check`) and the attestation `just merge` demands are the
+barriers. The intended policy once protection is available: direct pushes
 by collaborators are rejected, force-pushes are blocked, and deletions are
 blocked. The owner retains an emergency bypass
 (`enforce_admins: false` in the current policy — see
@@ -529,9 +533,9 @@ restatement of the name.
 ## Linting and formatting
 
 Code style is enforced by ESLint (correctness + repo conventions) and
-Prettier (whitespace, quotes, semicolons, line wrapping). Both run in
-`just lint`: on the staged files at every commit (L0), on the whole
-repository at every push (L1).
+Prettier (whitespace, quotes, semicolons, line wrapping). Both run on the
+staged files at every commit (`just fast`, L0) and on the whole repository
+at every push (`just lint`, inside `just check`, L1).
 
 ### Commands
 
@@ -594,10 +598,10 @@ To get auto-format on save:
 - **JetBrains** — enable `Prettier` and `ESLint` under Languages &
   Frameworks → JavaScript; set the actions to run on save.
 
-Git hooks used to be out of scope, on the grounds that CI was the single
-source of truth. That reversed once the checks moved local: see
-[Local CI](#local-ci--the-four-tiers). `lefthook.yml` wires them;
-`just setup` installs them once per clone.
+`lefthook.yml` wires the git hooks of the [Local CI](#local-ci--the-four-tiers);
+`just setup` installs them once per clone. A clone from before #163 still
+points `core.hooksPath` at the removed `.githooks/`: `just setup` resets it
+(`lefthook install --reset-hooks-path`).
 
 ---
 
@@ -612,12 +616,12 @@ git hooks. Once per clone:
 just setup   # mise install, pnpm install --frozen-lockfile, lefthook install
 ```
 
-| Tier | Recipe         | When                                                           | Holds                                                                                                                                                            |
-| ---- | -------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| L0   | `just fast`    | pre-commit hook (staged files only, < 10 s)                    | gitleaks on the staged diff, eslint, prettier, typos, actionlint, shellcheck; commit-msg: Conventional Commits                                                   |
-| L1   | `just check`   | pre-push hook (< 3 min, ≈ 50 s today)                          | `lint` + `test` (build, typecheck, suites with coverage, the tests of the CI wiring) + `security` (Semgrep CE, osv-scanner) + `secrets` (gitleaks, full history) |
-| L2   | `just gate`    | `review-local` § 2b, on the **pushed** head before every merge | `check` + SonarQube (quality gate waited for) + `just rehearse` of a changed workflow (act), then the **attestation**                                            |
-| L3   | `just nightly` | systemd user timer                                             | `check` + TruffleHog + `mise outdated`                                                                                                                           |
+| Tier | Recipe         | When                                                           | Holds                                                                                                                                                                                                     |
+| ---- | -------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L0   | `just fast`    | pre-commit hook (staged files only, < 10 s)                    | gitleaks on the staged diff, eslint, prettier, typos, actionlint, shellcheck (the commit-msg hook checks the Conventional Commits subject separately)                                                     |
+| L1   | `just check`   | pre-push hook (< 3 min)                                        | `lint` (+ doc coverage ≥ 90 %) + `test` (frozen lockfile, build, typecheck, suites with coverage, the tests of the CI wiring) + `security` (Semgrep CE, osv-scanner) + `secrets` (gitleaks, full history) |
+| L2   | `just gate`    | `review-local` § 2b, on the **pushed** head before every merge | `check` + SonarQube (quality gate waited for) + `just rehearse` of a changed workflow (act), then the **attestation**                                                                                     |
+| L3   | `just nightly` | systemd user timer `feedback-widget-local-ci-nightly.timer`    | `check` + TruffleHog + `mise outdated`                                                                                                                                                                    |
 
 Run a tier as `mise x -- just <tier>` when your shell does not activate
 mise (the hooks do). To push past L1 deliberately — a work-in-progress
@@ -695,8 +699,9 @@ them, and skipping it is not a licence to push a red suite.
   at the repo root with **placeholder** values (never real values) — it
   becomes the canonical template for contributors. The project currently
   has no runtime env vars, so there is no `.env.example` yet.
-- Gitleaks runs on every push, every PR, and weekly — any finding fails the
-  build.
+- Gitleaks runs locally: on the staged diff at every commit (L0), on the
+  full history at every push (`just secrets`, L1) and before every merge;
+  TruffleHog runs nightly (L3). Any finding fails the tier.
 
 ### If a secret is ever committed
 
@@ -908,14 +913,17 @@ The bump is **PATCH only when `main` is still at the last tag**; if `main`
 already carries unreleased work, that work ships too and the version follows
 the rule above for everything embarked (a `feat` on `main` makes the hotfix a
 MINOR, not a PATCH). **Backports are not supported**: `prod.yml` refuses a
-tag that is not on `main`, and every stable tag is published as `latest`, so
+tag whose commit is not an ancestor of `main` (both channels), and every
+stable tag is published as `latest`, so
 a `v0.6.1` cut after `v0.7.0` would downgrade `pnpm add` consumers. When an
 urgent fix meets a loaded `main`, either release `main` under its honest
 bump or keep the unreleased feature behind a flag until then.
 
 **Never tag a commit that is not on `main`.** The prod workflow
-enforces this — a stable tag needs the gate attestation, which only a
-pushed, gated commit carries — do not try to work around the check.
+enforces this: every tag must be an ancestor of `main`, a stable tag also
+needs the gate attestation and the `deploy/staging` note, and the tag must
+equal the version of both manifests (`scripts/check-release-version.sh`).
+Do not try to work around the check.
 
 **Tag protection.** Release tags matching `v*` are protected via a
 GitHub ruleset: creation, update, and deletion are blocked for
@@ -1008,7 +1016,7 @@ Repository ruleset scoped to `refs/tags/v*`:
 ### Failed publishes
 
 - Keep the failed tag as an audit marker — **never delete it**
-- Reconcile the failed `[X.Y.Z-rcN]` entry in `CHANGELOG.md` to state
+- Reconcile the failed `[X.Y.Z-rc.N]` entry in `CHANGELOG.md` to state
   explicitly that nothing shipped under that tag (see the
   `[0.1.1-rc1]` section for the template)
 - Bump to the next rc number (e.g. from `v0.8.0-rc.1` go to

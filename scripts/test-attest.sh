@@ -1,7 +1,7 @@
 #!/bin/sh
-# Tests for scripts/attest.sh (#213, ADR-0003/0004; copied from ~/.claude/scripts, the cassette part
-# dropped: this repo calls no third party), against a fake
-# `gh` (commit statuses kept in files), a bare remote and throwaway SSH keys: the attestation is
+# Tests for scripts/attest.sh (agents-skills #213, ADR-0003/0004) against a fake `gh` (commit statuses
+# kept in files), a bare remote and throwaway SSH keys. Copied from ~/.claude/scripts without its
+# cassette section (this repository calls no third party). The attestation is
 # written and pushed, verified from a second clone, and refused when missing, forged, moved to
 # another commit or carried by a non-release or unsigned tag. Needs git, ssh-keygen.
 set -e

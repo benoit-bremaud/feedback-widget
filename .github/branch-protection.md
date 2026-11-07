@@ -18,16 +18,14 @@ GitHub Pro or make this repository public`. Branch protection is a paid
 
 - Pull request required before merge (no direct pushes to `main`)
 - Required status checks (strict / up-to-date branch):
-  - `build-test`
-  - `lint`
-  - `Secret detection`
+  - `gate` (commit status written by `scripts/attest.sh write gate`, #163)
 - Linear history required (squash/rebase only, no merge commits)
 - Force-pushes blocked
 - Deletions blocked
 - `required_approving_review_count`: **0** — this is a solo-dev project,
-  so explicit approval is not enforced. The CI gate + author
-  self-review + automated reviewers (Copilot, Codex) act as the
-  review signal. Revisit if a second maintainer joins.
+  so explicit approval is not enforced. The attested `just gate` +
+  author self-review + the `review-local` report act as the review
+  signal (no hosted reviewer, see CLAUDE.md). Revisit if a second maintainer joins.
 - `enforce_admins`: **false** — the repository owner keeps a bypass
   for emergency recovery (broken `main`, revert of a bad merge, etc.).
   The intent is still to always go through a PR; the bypass exists
@@ -63,7 +61,7 @@ gh api repos/benoit-bremaud/feedback-widget/branches/main/protection \
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": ["build-test", "lint", "Secret detection"]
+    "contexts": ["gate"]
   },
   "enforce_admins": false,
   "required_pull_request_reviews": {

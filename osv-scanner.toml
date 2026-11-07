@@ -1,44 +1,109 @@
-# osv-scanner waivers (just security, skill local-ci). Every entry names a follow-up issue and
-# expires: after effectiveUntil the finding is red again. Development dependencies only; nothing
-# here ships in the published packages.
-[[PackageOverrides]]
-name = "@vitest/mocker"
-ecosystem = "npm"
-ignore = true
-reason = "dev dependency (vitest), fixed in 4.1.12: in-range update pending, #164"
-effectiveUntil = 2026-12-31T00:00:00Z
+# osv-scanner waivers (just security, skill local-ci): one entry per advisory, never per package, so a
+# new advisory on the same package is red again. Every entry names a follow-up issue and expires:
+# after ignoreUntil the finding is red again. Development dependencies only; nothing here ships in
+# the published packages. Refresh the list after `pnpm update` (#164).
 
-[[PackageOverrides]]
-name = "vite"
-ecosystem = "npm"
-ignore = true
-reason = "dev dependency (vitest), fixed in 8.1.6: in-range update pending, #164"
-effectiveUntil = 2026-12-31T00:00:00Z
+# @vitest/mocker 4.1.11 (vitest), fixed in 4.1.12: in-range update pending, #164
+[[IgnoredVulns]]
+id = "GHSA-qxg6-89mg-rqv8"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency @vitest/mocker, fixed in 4.1.12, #164"
+[[IgnoredVulns]]
+id = "GHSA-xp26-3454-mjgp"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency @vitest/mocker, fixed in 4.1.12, #164"
 
-[[PackageOverrides]]
-name = "happy-dom"
-ecosystem = "npm"
-ignore = true
-reason = "test DOM, fixed in 21.0.4: in-range update pending, #164"
-effectiveUntil = 2026-12-31T00:00:00Z
+# vite 8.0.16 (vitest), fixed in 8.1.6: in-range update pending, #164
+[[IgnoredVulns]]
+id = "GHSA-587h-7wmj-h5pm"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency vite, fixed in 8.1.6, #164"
+[[IgnoredVulns]]
+id = "GHSA-698v-4r3x-3vcv"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency vite, fixed in 8.1.6, #164"
+[[IgnoredVulns]]
+id = "GHSA-9jrq-w75r-8gcw"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency vite, fixed in 8.1.6, #164"
+[[IgnoredVulns]]
+id = "GHSA-r825-w8mm-5pxw"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency vite, fixed in 8.1.6, #164"
+[[IgnoredVulns]]
+id = "GHSA-rq7h-c2jc-7f22"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "dev dependency vite, fixed in 8.1.6, #164"
 
-[[PackageOverrides]]
-name = "follow-redirects"
-ecosystem = "npm"
-ignore = true
-reason = "sonarqube-scanner → axios, fixed in 1.16.2: in-range update pending, #164"
-effectiveUntil = 2026-12-31T00:00:00Z
+# happy-dom 21.0.1 (test DOM), fixed in 21.0.4: in-range update pending, #164
+[[IgnoredVulns]]
+id = "GHSA-834v-8h66-3h79"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "test DOM happy-dom, fixed in 21.0.4, #164"
 
-[[PackageOverrides]]
-name = "node-forge"
-ecosystem = "npm"
-ignore = true
-reason = "sonarqube-scanner only, local scan tool; GHSA-86w9-cpqp-85rv has no fix (accepted risk, #164)"
-effectiveUntil = 2026-12-31T00:00:00Z
+# follow-redirects 1.16.1 (sonarqube-scanner → axios), fixed in 1.16.2: in-range update pending, #164
+[[IgnoredVulns]]
+id = "GHSA-mrwp-f3q8-3g9p"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "sonarqube-scanner → axios → follow-redirects, fixed in 1.16.2, #164"
 
-[[PackageOverrides]]
-name = "minimatch"
-ecosystem = "npm"
-ignore = true
-reason = "transitive dev dependency, fix is a major (11.x) its parents have not adopted, #164"
-effectiveUntil = 2026-12-31T00:00:00Z
+# minimatch 10.2.6 (transitive dev dependency), fix is a major (11.x) its parents have not adopted, #164
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "transitive dev dependency minimatch, fix is a major its parents have not adopted, #164"
+
+# node-forge 1.4.0: sonarqube-scanner only, a local scan tool. Twelve advisories fixed in 1.5.0 (#164);
+# GHSA-86w9-cpqp-85rv has no fix (accepted risk, SECURITY.md).
+[[IgnoredVulns]]
+id = "GHSA-4487-j8r4-4g2f"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-4642-5mcj-2rqw"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-525v-9gp9-w22h"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-5cwg-6vw7-rj6p"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-5x38-2vff-x55p"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-6wvx-3r32-xmcg"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-7wch-p9px-956x"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-8hrf-8g6f-7xwp"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-h6cr-wjv9-3cpp"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-hqq3-7jhf-c5jx"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-jc66-7q78-782g"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-ppp5-5v6c-4jwp"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), fixed in 1.5.0, #164"
+[[IgnoredVulns]]
+id = "GHSA-86w9-cpqp-85rv"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "node-forge via sonarqube-scanner (local scan tool), no fix published: accepted risk, SECURITY.md, #164"

@@ -38,7 +38,7 @@
     "clean": "rm -rf dist dist-bundle"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "@benoit-bremaud/feedback-widget-core": "workspace:*"

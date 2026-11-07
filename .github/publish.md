@@ -126,7 +126,9 @@ would not have `read:packages` for this private repo.
 - Consumer PATs: **90-day expiry**, rotated on calendar or whenever
   a new major release ships. Set GitHub to send expiry reminders.
 - The publisher side uses the built-in `GITHUB_TOKEN` on each run —
-  nothing to rotate.
+  nothing to rotate. The laptop fallback (`just publish <tag>`) needs a
+  fine-grained token `fw-publish-fallback-<yyyy>` (packages: write,
+  30-day expiry), exported as `NODE_AUTH_TOKEN` and revoked after the run.
 - If a consumer PAT is ever leaked, revoke it at
   `https://github.com/settings/tokens`, then update the consumer
   secret with a fresh token. No package republish needed.

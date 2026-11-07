@@ -1346,9 +1346,19 @@ Hardening` (#2, 4 issues) for CI/quality hardening and `v0.3.0
   `gitleaks.yml`; `publish.yml` became `prod.yml` (skill `release-tag` §
   Prod workflow): `classify` → trusted `attest.sh release` of `main` →
   publish `latest`, pre-release tags (`-rc.N`, dotted, #123) signed and on
-  `main` → `rc`. Release tags are now signed; `.nvmrc` pins Node 22.21.1.
-  Measured: `just fast` ≈ 3 s, `just check` ≈ 50 s. Actions minutes
-  Oct + Nov 2026: 142 + 18, the table is on the issue.
+  `main` → `rc`; both channels must be ancestors of `main` and match the
+  manifest versions (`scripts/check-release-version.sh`). Release tags are
+  now signed; `.nvmrc` pins Node 22.21.1 and `engines` moved to `>= 22`
+  (Node 20 is tested nowhere any more). Measured: `just fast` ≈ 3 s,
+  `just check` ≈ 25 s. Actions minutes Oct + Nov 2026: 142 + 18, the table
+  is on the issue. The pre-push review (`review-local --push`, five
+  dimensions, adversarial on Opus) found eight Must, all fixed in the second
+  commit: ESLint-ignored staged files, lockfile drift check, the fallback's
+  missing `.npmrc`, `&&` under `sh -eu`, `lefthook install
+  --reset-hooks-path` for pre-#163 clones, stale `branch-protection.md`
+  contexts, `classify` tested without Docker, and the L3 timer. L3 runs on
+  this machine: `~/.config/systemd/user/feedback-widget-local-ci-nightly.*`
+  (04:20, `Persistent=true`, `notify-send` on failure).
 - **Why:** GitHub bills the personal account for Actions minutes beyond the
   private-repo quota (agents-skills#210, model A, ADR-0004; wave 0 bis
   agents-skills#259): the only thing GitHub still runs is the publication
