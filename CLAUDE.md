@@ -23,24 +23,28 @@ Worker + D1). Specs and UML for the whole pipeline are kept **here**, under
 
 ## Commands
 
-| Command                                                      | What                                                                                                                                |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm verify`                                                | Local gate: format → lint → gitleaks → build → typecheck → tests+coverage → SonarQube. Runs on `git push` via `.githooks/pre-push`. |
-| `pnpm build` / `pnpm typecheck` / `pnpm test`                | Per-package via `pnpm -r`.                                                                                                          |
-| `pnpm test:coverage`                                         | Thresholds enforced (see CONTRIBUTING § Coverage).                                                                                  |
-| `pnpm lint` / `pnpm format:check`                            | Zero-warning policy; Prettier owns formatting.                                                                                      |
-| `pnpm sonar`                                                 | Local SonarQube at `http://localhost:9000`, needs `SONAR_TOKEN` exported. Never paste that token anywhere.                          |
-| `pnpm --filter @benoit-bremaud/feedback-widget build:bundle` | Emits `feedback-widget.js` + `widget-X.Y.Z.js`.                                                                                     |
+| Command                                                         | What                                                                                                                                                          |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `just setup`                                                    | Once per clone: `mise install`, `pnpm install --frozen-lockfile`, `lefthook install` (hooks pre-commit / commit-msg / pre-push).                              |
+| `just fast` / `just check` / `just gate` / `just nightly`       | Local CI tiers (skill `local-ci`): L0 on commit, L1 on push (`lint test security secrets`), L2 before merge (+ SonarQube, `rehearse`, attestation), L3 timer. |
+| `just merge <n>` / `just attest staging` / `just publish <tag>` | Merge only an attested head; record the staging QA pass on `main`; publish from the laptop when Actions cannot run.                                           |
+| `pnpm build` / `pnpm typecheck` / `pnpm test`                   | Per-package via `pnpm -r`.                                                                                                                                    |
+| `pnpm test:coverage`                                            | Thresholds enforced (see CONTRIBUTING § Coverage).                                                                                                            |
+| `pnpm lint` / `pnpm format:check`                               | Zero-warning policy; Prettier owns formatting.                                                                                                                |
+| `pnpm sonar`                                                    | Local SonarQube at `http://localhost:9000`, needs `SONAR_TOKEN` exported (so does `just gate`). Never paste that token anywhere.                              |
+| `pnpm --filter @benoit-bremaud/feedback-widget build:bundle`    | Emits `feedback-widget.js` + `widget-X.Y.Z.js`.                                                                                                               |
 
 ## Three gates before any push
 
 Conception (skill `uml-diagram-new`) → pre-push review (skill `review-local`,
-then `pnpm verify`) → PR review (skill `pr-review-procedure`). No hosted
-reviewer: the `review-local` report on the PR
-head stands in for the automated review in the merge gate. `pnpm verify`
-fails on a missing scanner unless `VERIFY_ALLOW_SKIP=1`. GitHub Actions does not run
-(billing): `pnpm verify` is the CI of record, hosted workflows are manual only. Procedure:
-[CONTRIBUTING § Working method](CONTRIBUTING.md#working-method--the-three-gates).
+then `just check`) → PR review (skill `pr-review-procedure`), then `just gate`
+on the pushed head and `just merge <n>`. No hosted reviewer: the
+`review-local` report on the PR head stands in for the automated review in
+the merge gate. A tool that cannot run fails the tier (no skip flag).
+GitHub Actions keeps one workflow, `prod.yml`, on a signed `v*` tag
+(agents-skills ADR-0004): `just check` is the CI of record. Procedure:
+[CONTRIBUTING § Working method](CONTRIBUTING.md#working-method--the-three-gates)
+and [§ Local CI](CONTRIBUTING.md#local-ci--the-four-tiers).
 
 ## Repo-specific traps
 
@@ -56,11 +60,15 @@ fails on a missing scanner unless `VERIFY_ALLOW_SKIP=1`. GitHub Actions does not
 - **Every widget release needs a bundle refresh in the Worker repo**
   (`public/widget.js` + `public/widget-X.Y.Z.js`).
 - **`main` is not branch-protected** (free plan, private repo). The pre-push
-  hook is the last barrier. Always `git branch --show-current` before commit.
+  hook (`just check`) and the attestation `just merge` demands are the
+  barriers. Always `git branch --show-current` before commit.
+- **Release tags are signed** (`git tag -s`, key in `.github/allowed_signers`)
+  and need `just gate` + `just attest staging` on the tagged `main` commit;
+  pre-release tags use the dotted form `vX.Y.Z-rc.N`.
 - `CHANGELOG.md` = published versions only. `PROJECT_LOG.md` = operational
   journal; bundle the entry for the previous PR into the next substantive PR.
 - No SonarCloud and no CodeQL (private repo, free plan): static analysis is
-  the local SonarQube step of `pnpm verify`.
+  Semgrep CE in `just check` and the local SonarQube step of `just gate`.
 
 ## GitHub metadata
 

@@ -1,0 +1,44 @@
+# osv-scanner waivers (just security, skill local-ci). Every entry names a follow-up issue and
+# expires: after effectiveUntil the finding is red again. Development dependencies only; nothing
+# here ships in the published packages.
+[[PackageOverrides]]
+name = "@vitest/mocker"
+ecosystem = "npm"
+ignore = true
+reason = "dev dependency (vitest), fixed in 4.1.12: in-range update pending, #164"
+effectiveUntil = 2026-12-31T00:00:00Z
+
+[[PackageOverrides]]
+name = "vite"
+ecosystem = "npm"
+ignore = true
+reason = "dev dependency (vitest), fixed in 8.1.6: in-range update pending, #164"
+effectiveUntil = 2026-12-31T00:00:00Z
+
+[[PackageOverrides]]
+name = "happy-dom"
+ecosystem = "npm"
+ignore = true
+reason = "test DOM, fixed in 21.0.4: in-range update pending, #164"
+effectiveUntil = 2026-12-31T00:00:00Z
+
+[[PackageOverrides]]
+name = "follow-redirects"
+ecosystem = "npm"
+ignore = true
+reason = "sonarqube-scanner → axios, fixed in 1.16.2: in-range update pending, #164"
+effectiveUntil = 2026-12-31T00:00:00Z
+
+[[PackageOverrides]]
+name = "node-forge"
+ecosystem = "npm"
+ignore = true
+reason = "sonarqube-scanner only, local scan tool; GHSA-86w9-cpqp-85rv has no fix (accepted risk, #164)"
+effectiveUntil = 2026-12-31T00:00:00Z
+
+[[PackageOverrides]]
+name = "minimatch"
+ecosystem = "npm"
+ignore = true
+reason = "transitive dev dependency, fix is a major (11.x) its parents have not adopted, #164"
+effectiveUntil = 2026-12-31T00:00:00Z

@@ -10,7 +10,7 @@ GitHub Pro or make this repository public`. Branch protection is a paid
 > feature for private repositories, so nothing below is in force today:
 > **direct pushes to `main` succeed**. Always check
 > `git branch --show-current` before committing. The pre-push hook
-> described in [CONTRIBUTING.md](../CONTRIBUTING.md#local-verification-gate)
+> described in [CONTRIBUTING.md](../CONTRIBUTING.md#local-ci--the-four-tiers)
 > is the interim control. Apply this configuration the day the repo goes
 > public or the plan changes.
 
@@ -36,11 +36,16 @@ GitHub Pro or make this repository public`. Branch protection is a paid
 
 ## Apply / update
 
-Every required status check below is a job in this repo:
+The only status a PR head can carry is written by the local CI, not by a
+workflow (#163, skill `local-ci`):
 
-- `build-test` — [`.github/workflows/ci.yml`](workflows/ci.yml)
-- `lint` — [`.github/workflows/lint.yml`](workflows/lint.yml)
-- `Secret detection` — [`.github/workflows/gitleaks.yml`](workflows/gitleaks.yml)
+- `gate` — set by `scripts/attest.sh write gate` at the end of `just gate`,
+  together with a signed note on `refs/notes/gate`; `just merge <n>`
+  verifies both before merging.
+
+The former checks `build-test`, `lint` and `Secret detection` belonged to
+workflows removed in #163 (`ci.yml`, `lint.yml`, `gitleaks.yml`); a
+protection rule that still required them would block every merge.
 
 `SonarCloud Code Analysis` **was** listed here and has been removed:
 SonarCloud's free plan analyzes public projects only, so that check can
