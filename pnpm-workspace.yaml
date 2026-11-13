@@ -1,2 +1,6 @@
 packages:
   - 'packages/*'
+# sonarqube-scanner 5.0.1 pins node-forge 1.4.0 (nine advisories fixed in 1.4.1-1.4.3, #164).
+# Remove once the scanner depends on node-forge >= 1.4.3.
+overrides:
+  'node-forge@<1.4.3': ^1.4.3
