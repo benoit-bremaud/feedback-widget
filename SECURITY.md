@@ -49,10 +49,9 @@ pin a version and bump deliberately; only the latest release receives fixes.
   filtering, rate limiting and validation are enforced server-side by
   `feedback-pipeline-worker`.
 
-## Accepted risks (reviewed 2026-10-15)
+## Accepted risks (reviewed 2026-11-13)
 
-| Finding                                                                        | Why accepted                                                                                                                                            | Review trigger                                                                               |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `node-forge` ≤ 1.4.0 (RSA PKCS#1 v1.5 signature check) via `sonarqube-scanner` | No fixed upstream version. Dev-only, runs on the maintainer's machine during the local SonarQube scan; never in CI, never in the shipped bundle.        | A patched `node-forge` or a scanner release without it; re-run `pnpm audit` at each release. |
-| `main` not branch-protected                                                    | GitHub Free does not offer protection on private repos. The pre-push hook (`just check`) and the gate attestation `just merge` demands are the barrier. | Repo goes public, or the plan changes.                                                       |
-| No CodeQL / Dependency Review workflows                                        | Both need GitHub Advanced Security on private repos.                                                                                                    | Repo goes public (see the public release checklist).                                         |
+| Finding                                 | Why accepted                                                                                                                                            | Review trigger                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `main` not branch-protected             | GitHub Free does not offer protection on private repos. The pre-push hook (`just check`) and the gate attestation `just merge` demands are the barrier. | Repo goes public, or the plan changes.               |
+| No CodeQL / Dependency Review workflows | Both need GitHub Advanced Security on private repos.                                                                                                    | Repo goes public (see the public release checklist). |
