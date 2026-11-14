@@ -46,7 +46,7 @@ e3=$(body gate | grep -n '^ *exit 3$' | head -1 | cut -d: -f1); at=$(body gate |
 [ -n "$e3" ] && [ -n "$at" ] && [ "$e3" -lt "$at" ] || fail "gate must exit 3 (Docker down) before it writes the attestation"; ok
 
 # Nightly (#171): check and drift only warn; a vulnerability or a secret fails; clean origin/main worktree.
-for l in 'warn just check' 'warn mise outdated' 'osv-scanner scan source .* || rc=1' 'just secrets || rc=1' \
+for l in 'warn just check' 'drift=$(mise outdated --bump --no-global --json).*' 'osv-scanner scan source .* || rc=1' 'just secrets || rc=1' \
   'trufflehog git .* --fail .* || rc=1' 'exit "\$rc"'; do
   body nightly | grep -q "^ *$l$" || fail "nightly lacks: $l"; ok
 done

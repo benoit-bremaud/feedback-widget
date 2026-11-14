@@ -180,7 +180,8 @@ nightly:
     rc=0
     warn() { "$@" || echo "WARNING nightly: $* (drift, not a failure)" >&2; }
     warn just check
-    warn mise outdated
+    drift=$(mise outdated --bump --no-global --json) # exits 0 even when a pin lags: compare the output
+    [ "$drift" = "{}" ] || echo "WARNING nightly: mise outdated: $drift (drift, not a failure)" >&2
     osv-scanner scan source --config osv-scanner.toml --lockfile pnpm-lock.yaml || rc=1
     just secrets || rc=1
     trufflehog git "file://$PWD" --no-verification --fail --no-update || rc=1
