@@ -621,7 +621,7 @@ just setup   # mise install, pnpm install --frozen-lockfile, lefthook install
 | L0   | `just fast`    | pre-commit hook (staged files only, < 10 s)                    | gitleaks on the staged diff, eslint, prettier, typos, actionlint, shellcheck (the commit-msg hook checks the Conventional Commits subject separately)                                                     |
 | L1   | `just check`   | pre-push hook (< 3 min)                                        | `lint` (+ doc coverage ≥ 90 %) + `test` (frozen lockfile, build, typecheck, suites with coverage, the tests of the CI wiring) + `security` (Semgrep CE, osv-scanner) + `secrets` (gitleaks, full history) |
 | L2   | `just gate`    | `review-local` § 2b, on the **pushed** head before every merge | `check` + SonarQube (quality gate waited for) + `just rehearse` of a changed workflow (act), then the **attestation**                                                                                     |
-| L3   | `just nightly` | systemd user timer `feedback-widget-local-ci-nightly.timer`    | `check` + TruffleHog + `mise outdated`                                                                                                                                                                    |
+| L3   | `just nightly` | systemd user timer `feedback-widget-local-ci-nightly.timer`    | clean origin/main worktree (units in `scripts/systemd/`); fails on osv-scanner, gitleaks, TruffleHog; `check` + `mise outdated` only warn                                                                 |
 
 Run a tier as `mise x -- just <tier>` when your shell does not activate
 mise (the hooks do). To push past L1 deliberately — a work-in-progress

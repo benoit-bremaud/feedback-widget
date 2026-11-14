@@ -171,6 +171,18 @@ publish tag:
     echo "publish: $tag ($sha) published by the local fallback: log it in PROJECT_LOG.md"
 
 # L3 — nightly, systemd user timer feedback-widget-local-ci-nightly.timer (no time budget)
-nightly: check
-    trufflehog git "file://$PWD" --no-verification --fail --no-update
-    mise outdated
+# (units in scripts/systemd/), run in a clean origin/main worktree (#171, agents-skills#427). Only a
+# vulnerability (osv-scanner) or a secret (gitleaks, TruffleHog) fails it; lint, tests and tool drift
+# warn: they already gate every push and merge.
+nightly:
+    #!/bin/sh
+    set -u
+    rc=0
+    warn() { "$@" || echo "WARNING nightly: $* (drift, not a failure)" >&2; }
+    warn just check
+    drift=$(mise outdated --bump --no-global --json) # exits 0 even when a pin lags: compare the output
+    [ "$drift" = "{}" ] || echo "WARNING nightly: mise outdated: $drift (drift, not a failure)" >&2
+    osv-scanner scan source --config osv-scanner.toml --lockfile pnpm-lock.yaml || rc=1
+    just secrets || rc=1
+    trufflehog git "file://$PWD" --no-verification --fail --no-update || rc=1
+    exit "$rc"

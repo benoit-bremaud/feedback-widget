@@ -1,6 +1,7 @@
 #!/bin/sh
 # Tests for the local CI wiring (#163, skill local-ci rule 7): the tiers compose (check ⊇ lint + test +
-# security + secrets; gate and nightly ⊇ check), gate ends with the attestation and merge / publish verify
+# security + secrets; gate ⊇ check, nightly warns on check and fails only on a vulnerability or a
+# secret in a clean origin/main worktree), gate ends with the attestation and merge / publish verify
 # it (agents-skills ADR-0003/0004), prod.yml is the only workflow, takes attest.sh from main and its
 # `classify` step sorts real tag names (run here with bash, no Docker: `just rehearse` runs it under act),
 # the release-version check accepts and refuses the right tag, lefthook.yml is valid and wires the
@@ -33,7 +34,7 @@ done
 cd "$root"
 deps() { just --show "$1" | grep -E "^$1( |:)" | sed 's/.*: *//'; } # deps <recipe>
 for d in lint test security secrets; do deps check | grep -qw "$d" || fail "check lacks $d"; ok; done
-for r in gate nightly; do deps "$r" | grep -qw check || fail "$r does not depend on check"; ok; done
+deps gate | grep -qw check || fail "gate does not depend on check"; ok
 body() { just --show "$1" | grep -v '^ *#'; } # body <recipe>: its lines, comments dropped
 body gate | grep -q '^ *sh scripts/attest.sh write gate$' || fail "gate does not write the attestation"; ok
 body merge | grep -q '^ *sh scripts/attest.sh verify gate "\$sha"$' || fail "merge does not verify the attestation"; ok
@@ -43,6 +44,17 @@ body attest | grep -q '^ *sh scripts/attest.sh verify gate HEAD' || fail "attest
 body attest | grep -q '^ *sh scripts/attest.sh write deploy/staging$' || fail "attest staging does not write the note"; ok
 e3=$(body gate | grep -n '^ *exit 3$' | head -1 | cut -d: -f1); at=$(body gate | grep -n 'attest.sh write gate' | cut -d: -f1)
 [ -n "$e3" ] && [ -n "$at" ] && [ "$e3" -lt "$at" ] || fail "gate must exit 3 (Docker down) before it writes the attestation"; ok
+
+# Nightly (#171): check and drift only warn; a vulnerability or a secret fails; clean origin/main worktree.
+for l in 'warn just check' 'drift=$(mise outdated --bump --no-global --json).*' 'osv-scanner scan source .* || rc=1' 'just secrets || rc=1' \
+  'trufflehog git .* --fail .* || rc=1' 'exit "\$rc"'; do
+  body nightly | grep -q "^ *$l$" || fail "nightly lacks: $l"; ok
+done
+u=scripts/systemd/feedback-widget-local-ci-nightly.service
+grep -q '^WorkingDirectory=' "$u" && fail "nightly unit runs in the working checkout"; ok
+grep -q '^ExecStartPre=/usr/bin/git -C ${WT} reset --quiet --hard origin/main$' "$u" || fail "nightly unit does not reset to origin/main"; ok
+grep -q '^ExecStartPre=/usr/bin/git -C ${WT} clean -ffdq$' "$u" || fail "nightly unit does not clean the worktree"; ok
+grep -q 'pnpm install --frozen-lockfile' "$u" || fail "nightly unit skips the lockfile install"; ok
 
 # The prod workflow.
 wf=.github/workflows/prod.yml

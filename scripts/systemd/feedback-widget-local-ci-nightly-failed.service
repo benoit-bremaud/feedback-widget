@@ -1,0 +1,6 @@
+[Unit]
+Description=Desktop notification when the feedback-widget nightly local CI fails
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/notify-send --urgency=critical "feedback-widget local CI nightly failed" "journalctl --user -u feedback-widget-local-ci-nightly.service"

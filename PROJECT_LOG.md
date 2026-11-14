@@ -1370,3 +1370,24 @@ staging` records the QA pass of the bundle on the Worker's staging host
   `pnpm update` that day (`aikidoctl certconfig`, owner-side).
 - **Ref:** issue [#163](https://github.com/benoit-bremaud/feedback-widget/issues/163),
   follow-up [#164](https://github.com/benoit-bremaud/feedback-widget/issues/164).
+
+## 2026-11-13
+
+### node-forge override 1.4.3
+
+- **What:** pnpm override `node-forge` 1.4.3, clearing nine osv-scanner
+  advisories found by the nightly.
+- **Ref:** PR [#170](https://github.com/benoit-bremaud/feedback-widget/pull/170), commit `c36039f`.
+
+## 2026-11-15
+
+### Nightly on a clean origin/main worktree
+
+- **What:** the L3 units move into `scripts/systemd/`; the service runs in
+  `~/.cache/nightly/feedback-widget`, fetched, reset to `origin/main`,
+  cleaned and `pnpm install --frozen-lockfile` on each run. `just nightly`
+  fails only on osv-scanner, gitleaks or TruffleHog; `just check` and
+  `mise outdated` print `WARNING nightly: … (drift, not a failure)`.
+- **Why:** owner decision 2026-11-13 on agents-skills#427: four of nine
+  nightly failures across projects came from dirty working checkouts.
+- **Ref:** issue [#171](https://github.com/benoit-bremaud/feedback-widget/issues/171).
